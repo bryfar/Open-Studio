@@ -13,7 +13,7 @@ import "./globals.css";
 import { getLocale } from "@/lib/i18n";
 
 export const metadata: Metadata = {
-  title: "Motion Editor",
+  title: "Open Studio",
   description: "Browser-based video editor with timeline, multi-track support, screen recording, and video export",
 };
 

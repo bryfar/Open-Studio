@@ -1,9 +1,9 @@
-# 🎬 Motion Editor
+# 🎬 Open Studio
 
 A powerful browser-based video editor with timeline, multi-track support, screen recording, motion graphics, keyframe animations, and video export capabilities.
 
-![License](https://img.shields.io/github/license/cristianolivera1/motion-editor)
-![Version](https://img.shields.io/github/v/release/cristianolivera1/motion-editor)
+![License](https://img.shields.io/github/license/bryfar/open-studio)
+![Version](https://img.shields.io/github/v/release/bryfar/open-studio)
 ![Next.js](https://img.shields.io/badge/Next.js-16-black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-38bdf8)

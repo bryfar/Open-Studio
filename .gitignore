@@ -3,15 +3,15 @@ node_modules/
 .pnp
 .pnp.js
 
-# Testing
-coverage/
-
-# Next.js
+# Build output
 .next/
 out/
-
-# Production
 build/
+
+# Testing
+coverage/
+test-results/
+playwright-report/
 
 # Misc
 .DS_Store
@@ -41,3 +41,7 @@ next-env.d.ts
 
 # System
 Thumbs.db
+
+# Backup files
+*.bak
+*.tmp

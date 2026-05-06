@@ -407,7 +407,7 @@ export default function DashboardPage() {
   return (
     <main className="h-screen overflow-auto bg-[var(--bg-primary)] text-[var(--text-primary)]">
       <div className="h-8 bg-[#111a2b] text-[11px] text-center text-[var(--text-secondary)] flex items-center justify-center border-b border-[var(--border-default)]">
-        Motion Editor — tus proyectos se guardan localmente en este navegador
+        Open Studio — tus proyectos se guardan localmente en este navegador
       </div>
       <div className="flex min-h-[calc(100vh-2rem)]">
         <aside className="w-64 border-r border-[var(--border-default)] bg-[#0f1522] p-3 flex flex-col" aria-label="Navegación principal">
