@@ -1,0 +1,1733 @@
+'use client';
+
+import { useState, useCallback, useRef } from 'react';
+import Image from 'next/image';
+import { useEditorStore, createClip, createTrack } from '@/stores/editorStore';
+import { Button } from '@/components/ui/Button';
+import { Slider } from '@/components/ui/Slider';
+import { icons } from '@/components/icons';
+import { cn, generateId } from '@/lib/utils';
+import type { BackgroundStyle, Clip, Effect, MediaFile, Track } from '@/types';
+import { BUILTIN_TEMPLATES } from '@/lib/templates';
+import {
+  STUDIO_GRADIENT_PRESETS,
+  STUDIO_MOCKUP_PRESETS,
+  STUDIO_SOLID_COLORS,
+  STUDIO_WALLPAPER_CATEGORIES,
+  STUDIO_WALLPAPERS,
+  StudioWallpaperCategoryId,
+  studioMockupCategoryBackground,
+} from '@/lib/studioCatalog';
+import { EFFECT_PRESETS, FILTER_PRESETS, TRANSITION_PRESETS } from '@/lib/motionCatalog';
+import {
+  applyMotionPresetToClip,
+  MOTION_DESIGN_PRESETS,
+} from '@/lib/motionDesignCatalog';
+import {
+  defaultProjectBackground,
+  findBackgroundEditTarget,
+  resolveBackgroundAtTime,
+} from '@/lib/sceneTimeline';
+import { ProjectZoomCursorSections } from '@/components/editor/ProjectZoomCursorSections';
+import { ShortFormClipsPanel } from '@/components/editor/ShortFormClipsPanel';
+import { scheduleMediaFileMetadataProbe } from '@/lib/scheduleMediaProbe';
+
+type SectionType =
+  | 'workflow'
+  | 'multimedia'
+  | 'templates'
+  | 'background'
+  | 'mockup'
+  | 'videos'
+  | 'shorts'
+  | 'elements'
+  | 'audio'
+  | 'text'
+  | 'subtitles'
+  | 'transcribe'
+  | 'effects'
+  | 'motion'
+  | 'lienzo'
+  | 'transitions'
+  | 'filters'
+  | 'brandkit'
+  | 'record'
+  | 'upload';
+
+const LIBRARY_TOOL_SECTIONS: Array<[SectionType, string, keyof typeof icons]> = [
+  ['workflow', 'Estudio', 'workflow'],
+  ['multimedia', 'Multimedia', 'folder'],
+  ['templates', 'Plantillas', 'video'],
+  ['elements', 'Elementos', 'layers'],
+  ['videos', 'Videos', 'video'],
+  ['shorts', 'Shorts', 'cut'],
+  ['audio', 'Audio', 'audio'],
+  ['text', 'Texto', 'text'],
+  ['subtitles', 'Subtítulos', 'text'],
+  ['transcribe', 'Transcribir', 'audio'],
+  ['effects', 'Efectos', 'layers'],
+  ['motion', 'Motion', 'layers'],
+  ['lienzo', 'Zoom/Cursor', 'screen'],
+  ['transitions', 'Transiciones', 'move'],
+  ['filters', 'Filtros', 'eye'],
+  ['brandkit', 'Kit marca', 'layers'],
+  ['background', 'Background', 'layers'],
+  ['mockup', 'Mockup', 'maximize'],
+  ['record', 'Record', 'screen'],
+  ['upload', 'Upload', 'upload'],
+];
+
+const SECTION_LABELS: Record<SectionType, string> = {
+  workflow: 'Estudio · flujo rápido',
+  multimedia: 'Biblioteca',
+  templates: 'Plantillas',
+  background: 'Fondo',
+  mockup: 'Mockup',
+  videos: 'Videos',
+  shorts: 'Shorts virales',
+  elements: 'Elementos',
+  audio: 'Audio',
+  text: 'Texto',
+  subtitles: 'Subtítulos',
+  transcribe: 'Transcripción',
+  effects: 'Efectos',
+  motion: 'Motion',
+  lienzo: 'Zoom / cursor',
+  transitions: 'Transiciones',
+  filters: 'Filtros',
+  brandkit: 'Kit de marca',
+  record: 'Grabación',
+  upload: 'Subir archivos',
+};
+
+export function AssetLibrary() {
+  const [activeSection, setActiveSection] = useState<SectionType>('multimedia');
+  const [backgroundTab, setBackgroundTab] = useState<'wallpaper' | 'color' | 'image'>('wallpaper');
+  const [wallpaperCategory, setWallpaperCategory] = useState<StudioWallpaperCategoryId>(
+    STUDIO_WALLPAPER_CATEGORIES[0]?.id ?? 'gradient'
+  );
+  const [templateSourceFilter, setTemplateSourceFilter] = useState<
+    'all' | 'native' | 'jitter' | 'hera'
+  >('all');
+  const [resourceNotice, setResourceNotice] = useState<string | null>(null);
+  const [subtitleTab, setSubtitleTab] = useState<'presets' | 'fuente' | 'efectos'>('presets');
+  const [transitionEdgeTab, setTransitionEdgeTab] = useState<'in' | 'out'>('in');
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const backgroundImageInputRef = useRef<HTMLInputElement>(null);
+  const elementImageInputRef = useRef<HTMLInputElement>(null);
+  const { mediaFiles, project, dispatch, selectedClipId, currentTime } = useEditorStore();
+
+  const updateProjectStyle = useCallback((patch: Record<string, unknown>) => {
+    if (!project) return;
+    dispatch({ type: 'UPDATE_PROJECT', payload: patch });
+  }, [project, dispatch]);
+
+  const getTargetClipContext = () => {
+    if (!project) return null;
+    if (selectedClipId) {
+      for (const track of project.tracks) {
+        const clip = track.clips.find((c) => c.id === selectedClipId);
+        if (clip) return { track, clip };
+      }
+    }
+    const videoTrack = project.tracks.find((t) => t.type === 'video' && t.visible);
+    if (videoTrack) {
+      const atPlayhead = videoTrack.clips.find(
+        (c) => currentTime >= c.startTime && currentTime < c.startTime + c.duration
+      );
+      if (atPlayhead) return { track: videoTrack, clip: atPlayhead };
+      const sorted = [...videoTrack.clips].sort((a, b) => a.startTime - b.startTime);
+      if (sorted.length > 0) return { track: videoTrack, clip: sorted[0] };
+    }
+    for (const track of project.tracks) {
+      const active = track.clips.find(
+        (c) => currentTime >= c.startTime && currentTime < c.startTime + c.duration
+      );
+      if (active) return { track, clip: active };
+    }
+    for (const track of project.tracks) {
+      if (track.clips.length > 0) return { track, clip: track.clips[0] };
+    }
+    return null;
+  };
+
+  const withTargetClip = (
+    fn: (ctx: { track: Track; clip: Clip }) => void,
+    messageWhenMissing: string
+  ) => {
+    const ctx = getTargetClipContext();
+    if (!ctx) {
+      setResourceNotice(messageWhenMissing);
+      return;
+    }
+    dispatch({ type: 'SET_SELECTED_CLIP', payload: ctx.clip.id });
+    fn(ctx);
+    setResourceNotice(`Aplicado a: ${ctx.clip.name}`);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragging(false);
+
+      const files = Array.from(e.dataTransfer.files);
+      files.forEach((file) => {
+        const url = URL.createObjectURL(file);
+        const payload: MediaFile = {
+          id: Math.random().toString(36).substring(2, 15),
+          name: file.name,
+          type: file.type,
+          url,
+          thumbnail: url,
+        };
+        dispatch({ type: 'ADD_MEDIA_FILE', payload });
+        scheduleMediaFileMetadataProbe(dispatch, payload);
+      });
+    },
+    [dispatch]
+  );
+
+  const handleBrowseClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    Array.from(files).forEach((file) => {
+      const url = URL.createObjectURL(file);
+      const payload: MediaFile = {
+        id: Math.random().toString(36).substring(2, 15),
+        name: file.name,
+        type: file.type,
+        url,
+        thumbnail: url,
+      };
+      dispatch({ type: 'ADD_MEDIA_FILE', payload });
+      scheduleMediaFileMetadataProbe(dispatch, payload);
+    });
+
+    e.target.value = '';
+  };
+
+  const handleAddToTimeline = (media: MediaFile) => {
+    const currentProject = useEditorStore.getState().project;
+    if (!currentProject) return;
+
+    const type = media.type.startsWith('video')
+      ? 'video'
+      : media.type.startsWith('audio')
+      ? 'audio'
+      : media.type.startsWith('image')
+      ? 'image'
+      : 'video';
+
+    let resolvedTrack = currentProject.tracks.find((t) => t.type === type);
+    if (!resolvedTrack) {
+      const newTrack = createTrack(`${type.charAt(0).toUpperCase() + type.slice(1)} Track`, type);
+      dispatch({
+        type: 'ADD_TRACK',
+        payload: newTrack,
+      });
+      resolvedTrack = newTrack;
+    }
+
+    if (!resolvedTrack) return;
+
+    const clip = createClip(
+      resolvedTrack.id,
+      type,
+      media.name,
+      0,
+      media.duration || 5,
+      media.url,
+      media.type
+    );
+
+    dispatch({
+      type: 'ADD_CLIP',
+      payload: { trackId: resolvedTrack.id, clip },
+    });
+    dispatch({ type: 'SET_SELECTED_CLIP', payload: clip.id });
+    dispatch({ type: 'SET_CURRENT_TIME', payload: clip.startTime });
+    dispatch({ type: 'SET_PLAYBACK_STATE', payload: 'paused' });
+    setResourceNotice(`Recurso agregado: ${clip.name}`);
+  };
+
+  const handleApplyTemplate = (templateId: string) => {
+    const template = BUILTIN_TEMPLATES.find((t) => t.id === templateId);
+    if (!template) return;
+    dispatch({ type: 'SET_PROJECT', payload: template.buildProject() });
+    dispatch({ type: 'SET_SELECTED_CLIP', payload: null });
+    dispatch({ type: 'SET_SELECTED_CLIP_IDS', payload: [] });
+    setResourceNotice(`Plantilla aplicada: ${template.name}`);
+  };
+
+  const handleAddText = () => {
+    const currentProject = useEditorStore.getState().project;
+    if (!currentProject) return;
+
+    let track = currentProject.tracks.find((t) => t.type === 'text');
+    if (!track) {
+      track = createTrack('Text Track 1', 'text');
+      dispatch({
+        type: 'ADD_TRACK',
+        payload: track,
+      });
+    }
+    if (!track) return;
+
+    const clip = createClip(track.id, 'text', 'Text', 0, 10);
+    clip.text = 'New Text';
+    clip.fontSize = 48;
+    clip.color = '#ffffff';
+
+    dispatch({
+      type: 'ADD_CLIP',
+      payload: { trackId: track.id, clip },
+    });
+  };
+
+  const handleAddShape = (shape: 'rectangle' | 'circle' | 'triangle') => {
+    const currentProject = useEditorStore.getState().project;
+    if (!currentProject) return;
+    let textTrack = currentProject.tracks.find((t) => t.type === 'text');
+    if (!textTrack) {
+      textTrack = createTrack('Elements Track', 'text');
+      dispatch({ type: 'ADD_TRACK', payload: textTrack });
+    }
+
+    const glyph = shape === 'circle' ? '●' : shape === 'triangle' ? '▲' : '■';
+    const clip = createClip(textTrack.id, 'text', `Shape ${shape}`, 0, 8);
+    clip.text = glyph;
+    clip.fontSize = 72;
+    clip.color = '#ffffff';
+
+    dispatch({
+      type: 'ADD_CLIP',
+      payload: { trackId: textTrack.id, clip },
+    });
+  };
+
+  const quickAddTextTemplate = (text: string, size: number, color: string) => {
+    const currentProject = useEditorStore.getState().project;
+    if (!currentProject) return;
+    let track = currentProject.tracks.find((t) => t.type === 'text');
+    if (!track) {
+      track = createTrack('Text Track', 'text');
+      dispatch({ type: 'ADD_TRACK', payload: track });
+    }
+    const clip = createClip(track.id, 'text', text, 0, 8);
+    clip.text = text;
+    clip.fontSize = size;
+    clip.color = color;
+    dispatch({ type: 'ADD_CLIP', payload: { trackId: track.id, clip } });
+  };
+
+  /** Subtítulo en el cabezal actual (estilo cortos / captions). */
+  const quickAddCaptionAtPlayhead = (
+    text: string,
+    size: number,
+    color: string,
+    withShadow: boolean
+  ) => {
+    const currentProject = useEditorStore.getState().project;
+    if (!currentProject) return;
+    let track = currentProject.tracks.find((t) => t.type === 'text');
+    if (!track) {
+      track = createTrack('Text Track', 'text');
+      dispatch({ type: 'ADD_TRACK', payload: track });
+    }
+    const clip = createClip(track.id, 'text', text.slice(0, 28), currentTime, 4.5);
+    clip.text = text;
+    clip.fontSize = size;
+    clip.color = color;
+    if (withShadow) {
+      clip.effects = [
+        {
+          id: generateId(),
+          type: 'shadow',
+          value: 14,
+          enabled: true,
+        },
+      ];
+    }
+    dispatch({ type: 'ADD_CLIP', payload: { trackId: track.id, clip } });
+    setResourceNotice(`Texto añadido en ${currentTime.toFixed(2)}s`);
+  };
+
+  const insertWorkflowTimestamp = () => {
+    if (!project) return;
+    const t = currentTime;
+    const m = Math.floor(t / 60);
+    const s = Math.floor(t % 60);
+    const cs = Math.floor((t % 1) * 100);
+    const stamp = `[${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(cs).padStart(2, '0')}] `;
+    const prev = project.textWorkflowNotes ?? '';
+    const sep = prev.length > 0 && !prev.endsWith('\n') ? '\n' : '';
+    updateProjectStyle({ textWorkflowNotes: prev + sep + stamp });
+  };
+
+  const CATALOG_EFFECT_DEFAULTS: Partial<Record<Effect['type'], number>> = {
+    blur: 20,
+    brightness: 18,
+    contrast: 18,
+    shadow: 8,
+    shake: 18,
+    'chromatic-aberration': 16,
+    glow: 24,
+    'motion-blur': 22,
+    grayscale: 72,
+    sepia: 58,
+    saturate: 118,
+    'hue-rotate': 28,
+    invert: 22,
+  };
+
+  const applyCatalogEffect = (effectId: string) => {
+    withTargetClip((ctx) => {
+      const effectType = effectId as Effect['type'];
+      const valid: Effect['type'][] = [
+        'blur',
+        'brightness',
+        'contrast',
+        'shadow',
+        'shake',
+        'chromatic-aberration',
+        'glow',
+        'motion-blur',
+        'grayscale',
+        'sepia',
+        'saturate',
+        'hue-rotate',
+        'invert',
+      ];
+      if (!valid.includes(effectType)) return;
+      const defaultValue = CATALOG_EFFECT_DEFAULTS[effectType] ?? 20;
+      const exists = ctx.clip.effects.some((e) => e.type === effectType);
+      const nextEffects = exists
+        ? ctx.clip.effects.map((e) => (e.type === effectType ? { ...e, enabled: true } : e))
+        : [
+            ...ctx.clip.effects,
+            {
+              id: generateId(),
+              type: effectType,
+              value: defaultValue,
+              enabled: true,
+            },
+          ];
+      dispatch({
+        type: 'UPDATE_CLIP',
+        payload: { trackId: ctx.track.id, clip: { ...ctx.clip, effects: nextEffects } },
+      });
+    }, 'No hay clips en la línea de tiempo. Añade un video o clip primero.');
+  };
+
+  const applyCatalogFilter = (filterId: string) => {
+    withTargetClip((ctx) => {
+      const presets: Record<string, Array<{ type: Effect['type']; value: number }>> = {
+        cinematic: [
+          { type: 'contrast', value: 28 },
+          { type: 'brightness', value: -8 },
+        ],
+        vivid: [
+          { type: 'contrast', value: 22 },
+          { type: 'brightness', value: 10 },
+          { type: 'saturate', value: 118 },
+        ],
+        warm: [{ type: 'brightness', value: 6 }, { type: 'sepia', value: 18 }],
+        cool: [{ type: 'contrast', value: 10 }, { type: 'hue-rotate', value: 195 }],
+        mono: [{ type: 'grayscale', value: 72 }, { type: 'contrast', value: 22 }],
+        retro: [
+          { type: 'contrast', value: 14 },
+          { type: 'shadow', value: 6 },
+          { type: 'sepia', value: 26 },
+        ],
+        bleach: [
+          { type: 'brightness', value: 24 },
+          { type: 'contrast', value: -8 },
+          { type: 'saturate', value: 78 },
+        ],
+        noir: [
+          { type: 'contrast', value: 42 },
+          { type: 'grayscale', value: 58 },
+        ],
+        pastel: [
+          { type: 'brightness', value: 10 },
+          { type: 'saturate', value: 82 },
+          { type: 'contrast', value: -14 },
+        ],
+      };
+      const nextEffects = [...ctx.clip.effects];
+      for (const p of presets[filterId] ?? []) {
+        const idx = nextEffects.findIndex((e) => e.type === p.type);
+        if (idx >= 0) nextEffects[idx] = { ...nextEffects[idx], value: p.value, enabled: true };
+        else nextEffects.push({ id: generateId(), type: p.type, value: p.value, enabled: true });
+      }
+      dispatch({
+        type: 'UPDATE_CLIP',
+        payload: { trackId: ctx.track.id, clip: { ...ctx.clip, effects: nextEffects } },
+      });
+    }, 'No hay clips en la línea de tiempo. Añade un video o clip primero.');
+  };
+
+  const applyCatalogTransition = (transitionId: string, edge: 'in' | 'out') => {
+    withTargetClip((ctx) => {
+      const preset = TRANSITION_PRESETS.find((p) => p.id === transitionId);
+      if (!preset) return;
+      dispatch({
+        type: edge === 'in' ? 'SET_CLIP_TRANSITION_IN' : 'SET_CLIP_TRANSITION_OUT',
+        payload: {
+          trackId: ctx.track.id,
+          clipId: ctx.clip.id,
+          transition:
+            transitionId === 'cut'
+              ? null
+              : { id: preset.id, name: preset.name, duration: preset.duration ?? 0.35 },
+        },
+      });
+    }, 'No hay clips en la línea de tiempo. Añade un video o clip primero.');
+  };
+
+  const applyMotionDesignPreset = (presetId: string) => {
+    withTargetClip((ctx) => {
+      dispatch({
+        type: 'UPDATE_CLIP',
+        payload: {
+          trackId: ctx.track.id,
+          clip: applyMotionPresetToClip(ctx.clip, presetId),
+        },
+      });
+    }, 'No hay clips en la línea de tiempo. Añade un video o clip primero.');
+  };
+
+  const applyAudioMixPreset = (volume: number, label: string) => {
+    withTargetClip((ctx) => {
+      dispatch({
+        type: 'UPDATE_CLIP',
+        payload: {
+          trackId: ctx.track.id,
+          clip: { ...ctx.clip, volume },
+        },
+      });
+      setResourceNotice(`Volumen (${label}): ${Math.round(volume * 100)} %`);
+    }, 'No hay clips en la línea de tiempo. Añade audio o vídeo primero.');
+  };
+
+  const handleAddElementImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const currentProject = useEditorStore.getState().project;
+    if (!currentProject || !e.target.files?.[0]) return;
+    const file = e.target.files[0];
+    const url = URL.createObjectURL(file);
+    dispatch({
+      type: 'ADD_MEDIA_FILE',
+      payload: {
+        id: Math.random().toString(36).substring(2, 15),
+        name: file.name,
+        type: file.type,
+        url,
+        thumbnail: url,
+      },
+    });
+    let imageTrack = currentProject.tracks.find((t) => t.type === 'image');
+    if (!imageTrack) {
+      imageTrack = createTrack('Image Overlay Track', 'image');
+      dispatch({ type: 'ADD_TRACK', payload: imageTrack });
+    }
+    const clip = createClip(imageTrack.id, 'image', file.name, 0, 8, url, file.type);
+    dispatch({ type: 'ADD_CLIP', payload: { trackId: imageTrack.id, clip } });
+    e.target.value = '';
+  };
+
+  const updateBackground = (patch: Partial<BackgroundStyle>) => {
+    const currentProject = useEditorStore.getState().project;
+    if (!currentProject) return;
+    const target = findBackgroundEditTarget(currentProject, currentTime);
+    const prev =
+      target?.clip.sceneBackground ??
+      currentProject.background ??
+      defaultProjectBackground();
+    const next: BackgroundStyle = { ...prev, ...patch };
+    dispatch({ type: 'UPDATE_PROJECT', payload: { background: next } });
+    if (target) {
+      dispatch({
+        type: 'UPDATE_CLIP',
+        payload: {
+          trackId: target.track.id,
+          clip: { ...target.clip, sceneBackground: next },
+        },
+      });
+    }
+  };
+
+  const clearSceneBackground = () => {
+    const currentProject = useEditorStore.getState().project;
+    if (!currentProject) return;
+    const target = findBackgroundEditTarget(currentProject, currentTime);
+    const prev =
+      target?.clip.sceneBackground ??
+      currentProject.background ??
+      defaultProjectBackground();
+    const next: BackgroundStyle = { ...prev, type: 'none' };
+    dispatch({ type: 'UPDATE_PROJECT', payload: { background: next } });
+    if (target) {
+      dispatch({
+        type: 'UPDATE_CLIP',
+        payload: {
+          trackId: target.track.id,
+          clip: { ...target.clip, sceneBackground: next },
+        },
+      });
+    }
+    setResourceNotice(
+      'Fondo transparente en este segmento. Puedes borrar el clip «Background» en la línea de tiempo.'
+    );
+  };
+
+  const handleBackgroundImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const currentProject = useEditorStore.getState().project;
+    if (!currentProject || !e.target.files?.[0]) return;
+    const file = e.target.files[0];
+    const url = URL.createObjectURL(file);
+    updateBackground({ type: 'image', imageUrl: url });
+    e.target.value = '';
+  };
+
+  const wallpaperCategories = STUDIO_WALLPAPER_CATEGORIES;
+  const safeWallpaperCategory = wallpaperCategories.some((category) => category.id === wallpaperCategory)
+    ? wallpaperCategory
+    : (wallpaperCategories[0]?.id ?? 'gradient');
+
+  const visibleTemplates = BUILTIN_TEMPLATES.filter((template) =>
+    templateSourceFilter === 'all' ? true : template.source === templateSourceFilter
+  );
+  const visibleWallpapers = STUDIO_WALLPAPERS.filter(
+    (wallpaper) => wallpaper.category === safeWallpaperCategory
+  );
+  const wallpaperTiles =
+    visibleWallpapers.length > 0 ? visibleWallpapers.slice(0, 24) : STUDIO_WALLPAPERS.slice(0, 24);
+
+  const resolvedSceneBackground = project
+    ? resolveBackgroundAtTime(project, currentTime).style ??
+      project.background ??
+      defaultProjectBackground()
+    : null;
+
+  const applyMockupPreset = (presetId: string) => {
+    const currentProject = useEditorStore.getState().project;
+    if (!currentProject) return;
+    const preset = STUDIO_MOCKUP_PRESETS.find((m) => m.id === presetId);
+    if (!preset) return;
+    const nextBg: BackgroundStyle = {
+      ...(currentProject.background ?? defaultProjectBackground()),
+      padding: preset.padding,
+      radius: preset.radius,
+      shadow: preset.shadow,
+    };
+    dispatch({
+      type: 'UPDATE_PROJECT',
+      payload: {
+        deviceFrame: {
+          ...(currentProject.deviceFrame ?? {
+            enabled: false,
+            type: 'none',
+            padding: 24,
+            radius: 16,
+            shadow: 24,
+          }),
+          enabled: preset.deviceType !== 'none',
+          type: preset.deviceType,
+          padding: preset.padding,
+          radius: preset.radius,
+          shadow: preset.shadow,
+        },
+        background: nextBg,
+      },
+    });
+    const target = findBackgroundEditTarget(currentProject, currentTime);
+    if (target) {
+      dispatch({
+        type: 'UPDATE_CLIP',
+        payload: {
+          trackId: target.track.id,
+          clip: { ...target.clip, sceneBackground: nextBg },
+        },
+      });
+    }
+  };
+
+  const scrollSections = LIBRARY_TOOL_SECTIONS.filter(([id]) => id !== 'multimedia');
+
+  return (
+    <div className="editor-panel-fill w-full flex-row overflow-hidden">
+      <div className="flex h-full min-h-0 w-[88px] shrink-0 flex-col self-stretch border-r border-[#283046] bg-[#0b0f17]">
+        <div className="shrink-0 border-b border-[#283046] px-1 pb-2 pt-2">
+          <button
+            type="button"
+            className={cn(
+              'w-full py-2 text-[10px] rounded-xl transition-all border flex flex-col items-center gap-1',
+              activeSection === 'multimedia'
+                ? 'text-[#ffffff] bg-[#202b3f] border-[#3d6ebf] shadow-[inset_0_0_0_1px_rgba(125,160,220,0.22)]'
+                : 'text-[#8793b0] hover:text-[#d6e4ff] hover:bg-[#141c2d] border-transparent'
+            )}
+            onClick={() => setActiveSection('multimedia')}
+            title="Biblioteca / multimedia"
+          >
+            <icons.folder size={14} />
+            <span>Multimedia</span>
+          </button>
+        </div>
+        <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overflow-x-hidden px-1 py-2">
+          {scrollSections.map(([id, label, icon]) => (
+            <button
+              key={id}
+              type="button"
+              className={cn(
+                'mx-0 py-2 text-[10px] rounded-xl transition-all border flex flex-col items-center gap-1',
+                activeSection === id
+                  ? 'text-[#ffffff] bg-[#202b3f] border-[#3d6ebf] shadow-[inset_0_0_0_1px_rgba(125,160,220,0.22)]'
+                  : 'text-[#8793b0] hover:text-[#d6e4ff] hover:bg-[#141c2d] border-transparent'
+              )}
+              onClick={() => setActiveSection(id)}
+              title={label}
+            >
+              {(() => {
+                const Icon = icons[icon];
+                return <Icon size={14} />;
+              })()}
+              <span>{label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex min-h-0 min-w-0 flex-1 max-w-full flex-col self-stretch overflow-hidden">
+        <div className="flex h-11 shrink-0 items-center justify-between gap-2 border-b border-[#283046] bg-gradient-to-r from-[#0f1522] to-[#0c111c] px-3">
+          <span className="min-w-0 truncate text-[11px] font-semibold uppercase tracking-[0.12em] text-[#b8c5e8]">
+            {SECTION_LABELS[activeSection]}
+          </span>
+          {activeSection !== 'multimedia' && (
+            <button
+              type="button"
+              className="editor-chip shrink-0"
+              onClick={() => setActiveSection('multimedia')}
+            >
+              ← Biblioteca
+            </button>
+          )}
+        </div>
+        <div
+          className={cn('w-full min-w-0 flex-1 p-3 overflow-y-auto bg-[#0d111a]', isDragging && 'bg-sky-500/10')}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+          {activeSection === 'multimedia' && (
+            <div className="space-y-3">
+              <div className="rounded-xl border border-[#2a3348] bg-[#121827] p-3">
+                <p className="text-xs text-[#dbe7ff]">Kit de marca</p>
+                <p className="text-[11px] text-[#8190b1] mt-1">
+                  Crea una apariencia consistente con logos, presets y stickers.
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-zinc-400 mb-2">Videos</p>
+                <div className="grid grid-cols-1 gap-2">
+                  {mediaFiles.slice(0, 4).map((v, index) => (
+                    <button
+                      key={`${v.id}-${index}`}
+                    className="h-14 rounded-xl border border-[#2a3348] bg-[#121827] text-[10px] text-[#c0cce6] truncate px-2 hover:bg-[#1a2438]"
+                      onClick={() => handleAddToTimeline(v)}
+                    >
+                      {v.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs text-zinc-400 mb-2">Textos predefinidos</p>
+                <div className="grid grid-cols-1 gap-2">
+                  <button
+                    className="h-10 rounded-xl border border-[#2a3348] bg-[#121827] px-2 text-white text-sm leading-none whitespace-nowrap hover:bg-[#1a2438]"
+                    onClick={() => quickAddTextTemplate('Escribe tu texto aquí', 46, '#ffffff')}
+                  >
+                    Escribe tu texto aquí
+                  </button>
+                  <button
+                    className="h-10 rounded-xl border border-[#2a3348] bg-[#121827] px-2 text-white text-sm leading-none whitespace-nowrap hover:bg-[#1a2438]"
+                    onClick={() => quickAddTextTemplate('Escribe tu texto aquí', 46, '#e879f9')}
+                  >
+                    Escribe tu texto aquí
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeSection === 'workflow' && (
+            <div className="space-y-3">
+              <div className="rounded-xl border border-[#2a3348] bg-[#121827] p-3">
+                <p className="text-xs font-medium text-[#dbe7ff]">Estudio · flujo unificado</p>
+                <p className="text-[11px] text-[#8190b1] mt-1 leading-snug">
+                  Inspirado en editores como{' '}
+                  <a
+                    href="https://www.opus.pro/es-es/ai-video-editor"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sky-400 underline-offset-2 hover:underline"
+                  >
+                    referente del sector
+                  </a>
+                  : cortos, subtítulos con estilo, guion con tiempo, marca y export para redes — desde un solo
+                  panel.
+                </p>
+              </div>
+              <div className="grid grid-cols-1 gap-2">
+                <button
+                  type="button"
+                  className="rounded-lg border border-zinc-600 bg-zinc-800 px-2 py-2.5 text-left text-[11px] text-zinc-200 hover:bg-zinc-700"
+                  onClick={() => setActiveSection('shorts')}
+                >
+                  <span className="font-medium text-zinc-100">Shorts 1 clic</span>
+                  <span className="mt-0.5 block text-[10px] text-zinc-500">Segmentos desde biblioteca o timeline</span>
+                </button>
+                <button
+                  type="button"
+                  className="rounded-lg border border-zinc-600 bg-zinc-800 px-2 py-2.5 text-left text-[11px] text-zinc-200 hover:bg-zinc-700"
+                  onClick={() => setActiveSection('subtitles')}
+                >
+                  <span className="font-medium text-zinc-100">Subtítulos</span>
+                  <span className="mt-0.5 block text-[10px] text-zinc-500">Presets listos para redes</span>
+                </button>
+                <button
+                  type="button"
+                  className="rounded-lg border border-zinc-600 bg-zinc-800 px-2 py-2.5 text-left text-[11px] text-zinc-200 hover:bg-zinc-700"
+                  onClick={() => setActiveSection('transcribe')}
+                >
+                  <span className="font-medium text-zinc-100">Guion / voz</span>
+                  <span className="mt-0.5 block text-[10px] text-zinc-500">Planifica frases y tiempos</span>
+                </button>
+                <button
+                  type="button"
+                  className="rounded-lg border border-zinc-600 bg-zinc-800 px-2 py-2.5 text-left text-[11px] text-zinc-200 hover:bg-zinc-750"
+                  onClick={() => setActiveSection('brandkit')}
+                >
+                  <span className="font-medium text-zinc-100">Marca</span>
+                  <span className="mt-0.5 block text-[10px] text-zinc-500">Colores y logos rápidos</span>
+                </button>
+              </div>
+              <p className="text-[10px] leading-snug text-zinc-500">
+                <span className="text-zinc-400">Reencuadre del lienzo:</span> panel derecho de propiedades → sección
+                «Reencuadre del lienzo» (16:9, 9:16, 1:1, 4:5).{' '}
+                <span className="text-zinc-400">Export por red:</span> selector de plataforma en la barra superior.
+              </p>
+              <div className="rounded-lg border border-zinc-700 bg-zinc-900/60 p-2">
+                <label htmlFor="workflow-notes" className="text-[11px] font-medium text-zinc-400">
+                  Guion y marcas de tiempo
+                </label>
+                <textarea
+                  id="workflow-notes"
+                  rows={6}
+                  className="mt-1 w-full resize-y rounded-md border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-[11px] text-zinc-200 placeholder:text-zinc-600 focus:border-sky-500 focus:outline-none"
+                  placeholder={'Una línea por frase. Usa [00:12.00] para marcar el cabezal.\nEj: Hook fuerte en los primeros 3 s…'}
+                  value={project?.textWorkflowNotes ?? ''}
+                  onChange={(e) => updateProjectStyle({ textWorkflowNotes: e.target.value })}
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="mt-2 w-full"
+                  onClick={insertWorkflowTimestamp}
+                  disabled={!project}
+                >
+                  <icons.clock size={14} />
+                  <span className="ml-2">Insertar tiempo del cabezal</span>
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {activeSection === 'shorts' && (
+            <ShortFormClipsPanel onNotice={setResourceNotice} />
+          )}
+
+          {activeSection === 'videos' && (
+            <div className="space-y-3">
+              <Button variant="secondary" className="w-full" onClick={handleBrowseClick}>
+                <icons.upload size={14} />
+                <span className="ml-2">Upload video</span>
+              </Button>
+              {mediaFiles.filter((m) => m.type.startsWith('video')).length === 0 ? (
+                <p className="text-xs text-zinc-600 text-center py-4">No videos yet</p>
+              ) : (
+                <div className="space-y-2">
+                  {mediaFiles
+                    .filter((m) => m.type.startsWith('video'))
+                    .map((file, index) => (
+                      <button
+                        key={`${file.id}-${index}`}
+                        className="w-full flex items-center gap-2 p-2 bg-zinc-800 rounded-lg hover:bg-zinc-700"
+                        onClick={() => handleAddToTimeline(file)}
+                      >
+                        <div className="w-10 h-10 bg-zinc-700 rounded overflow-hidden flex-shrink-0">
+                          {file.thumbnail && (
+                            <Image
+                              src={file.thumbnail}
+                              alt={file.name}
+                              unoptimized
+                              width={40}
+                              height={40}
+                              className="w-full h-full object-cover"
+                            />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0 text-left">
+                          <p className="text-xs text-white truncate">{file.name}</p>
+                          <p className="text-[10px] text-zinc-500">{file.width}x{file.height}</p>
+                        </div>
+                      </button>
+                    ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeSection === 'upload' && (
+            <div className="space-y-3">
+              <div
+                className={cn(
+                  'border-2 border-dashed border-zinc-700 rounded-lg p-6 text-center transition-colors',
+                  isDragging && 'border-indigo-500 bg-indigo-500/10'
+                )}
+              >
+                <icons.upload className="mx-auto text-zinc-500 mb-2" size={24} />
+                <p className="text-xs text-zinc-500">Drop files here or</p>
+                <Button variant="ghost" size="sm" className="mt-2" onClick={handleBrowseClick}>
+                  Browse
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {activeSection === 'record' && (
+            <div className="space-y-3">
+              <p className="text-xs text-zinc-400">
+                Use the Record button in the top bar to open recording setup.
+              </p>
+              <div className="rounded-lg border border-zinc-700 p-3 bg-zinc-800/60">
+                <p className="text-xs text-zinc-300">Quick tips</p>
+                <ul className="mt-2 text-[11px] text-zinc-500 space-y-1">
+                  <li>1) Choose microphone/system audio</li>
+                  <li>2) Start recording and stop from header</li>
+                  <li>3) Recording is added to Videos automatically</li>
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {activeSection === 'audio' && (
+            <div className="space-y-3">
+              <div className="rounded-xl border border-[#2a3348] bg-[#111827] p-3">
+                <p className="text-sm font-semibold text-[#eef3ff]">Música</p>
+                <p className="mt-1 text-[11px] leading-snug text-[#f8a04b]">
+                  Parte de la música instrumental no está disponible por caducidad de licencia. Nuevos tracks pronto.
+                </p>
+              </div>
+              <Button variant="secondary" className="w-full h-10 rounded-xl" onClick={handleBrowseClick}>
+                <icons.upload size={14} />
+                <span className="ml-2">Subir</span>
+              </Button>
+              <div className="rounded-xl border border-[#2a3348] bg-[#0f1522] px-3 py-2 text-[11px] text-[#97a8cf]">
+                Buscar música libre de derechos
+              </div>
+              <div className="flex gap-2 overflow-x-auto">
+                {['All', 'Liked', 'Instrumental', 'Pop', 'Lo-fi'].map((tag) => (
+                  <span
+                    key={tag}
+                    className={cn(
+                      'whitespace-nowrap rounded-full border px-3 py-1 text-[11px]',
+                      tag === 'Instrumental'
+                        ? 'border-white bg-white text-[#0f1116]'
+                        : 'border-[#2a3348] bg-[#111827] text-[#c5d1ec]'
+                    )}
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+              <p className="text-[11px] text-zinc-500 leading-snug">
+                Mezcla rápida en el clip activo (volumen por clip).
+              </p>
+              <div className="grid grid-cols-1 gap-2">
+                <button
+                  type="button"
+                  className="rounded-xl border border-zinc-700 bg-zinc-800 px-2 py-2 text-[10px] text-zinc-200 hover:bg-zinc-700"
+                  onClick={() => applyAudioMixPreset(1, 'Normal')}
+                >
+                  Normal (100%)
+                </button>
+                <button
+                  type="button"
+                  className="rounded-xl border border-zinc-700 bg-zinc-800 px-2 py-2 text-[10px] text-zinc-200 hover:bg-zinc-700"
+                  onClick={() => applyAudioMixPreset(0.35, 'Bed')}
+                >
+                  Música fondo (~−9 dB)
+                </button>
+                <button
+                  type="button"
+                  className="rounded-xl border border-zinc-700 bg-zinc-800 px-2 py-2 text-[10px] text-zinc-200 hover:bg-zinc-700"
+                  onClick={() => applyAudioMixPreset(0.15, 'Ambiente')}
+                >
+                  Ambiente muy bajo
+                </button>
+                <button
+                  type="button"
+                  className="rounded-xl border border-zinc-700 bg-zinc-800 px-2 py-2 text-[10px] text-zinc-200 hover:bg-zinc-700"
+                  onClick={() => applyAudioMixPreset(0, 'Mute')}
+                >
+                  Silenciar clip
+                </button>
+              </div>
+              <div className="space-y-2">
+                {mediaFiles
+                  .filter((m) => m.type.startsWith('audio'))
+                  .map((file, index) => (
+                    <button
+                      key={`${file.id}-${index}`}
+                      className="w-full flex items-center gap-3 p-2.5 bg-zinc-900 rounded-xl border border-[#2a3348] hover:bg-zinc-800"
+                      onClick={() => handleAddToTimeline(file)}
+                    >
+                      <div className="h-10 w-10 shrink-0 rounded-md bg-[#1a2438] flex items-center justify-center">
+                        <icons.audio size={14} />
+                      </div>
+                      <div className="text-left min-w-0">
+                        <p className="text-xs text-white truncate">{file.name}</p>
+                        <p className="text-[10px] text-zinc-500">
+                          {Math.max(0, Math.round(file.duration ?? 0)).toString().padStart(2, '0')}s · {file.type}
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+              </div>
+            </div>
+          )}
+
+          {activeSection === 'elements' && (
+            <div className="space-y-3">
+              <div>
+                <p className="text-xs text-zinc-400 mb-2">Shapes</p>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    className="h-10 rounded bg-zinc-800 hover:bg-zinc-700 text-white text-lg"
+                    onClick={() => handleAddShape('rectangle')}
+                  >
+                    ■
+                  </button>
+                  <button
+                    className="h-10 rounded bg-zinc-800 hover:bg-zinc-700 text-white text-lg"
+                    onClick={() => handleAddShape('circle')}
+                  >
+                    ●
+                  </button>
+                  <button
+                    className="h-10 rounded bg-zinc-800 hover:bg-zinc-700 text-white text-lg"
+                    onClick={() => handleAddShape('triangle')}
+                  >
+                    ▲
+                  </button>
+                </div>
+              </div>
+              <Button
+                variant="secondary"
+                className="w-full"
+                onClick={handleAddText}
+              >
+                <icons.text size={14} />
+                <span className="ml-2">Add text</span>
+              </Button>
+              <Button
+                variant="ghost"
+                className="w-full"
+                onClick={() => elementImageInputRef.current?.click()}
+              >
+                <icons.upload size={14} />
+                <span className="ml-2">Upload overlay image</span>
+              </Button>
+            </div>
+          )}
+
+          {activeSection === 'text' && (
+            <div className="space-y-3">
+              <p className="text-xs text-zinc-400">Básico</p>
+              <Button
+                variant="secondary"
+                className="w-full"
+                onClick={() => quickAddTextTemplate('Agregar título', 56, '#ffffff')}
+              >
+                Agregar título
+              </Button>
+              <Button
+                variant="ghost"
+                className="w-full"
+                onClick={() => quickAddTextTemplate('Agregar texto del cuerpo', 34, '#f4f4f5')}
+              >
+                Agregar texto del cuerpo
+              </Button>
+              <p className="text-xs text-zinc-400">Tendencias</p>
+              <div className="grid grid-cols-1 gap-2">
+                {['PERFECTO', 'BOOYAH!', 'NICE TRY', 'Free Fire'].map((txt) => (
+                  <button
+                    key={txt}
+                    className="h-14 rounded border border-zinc-700 bg-zinc-800 text-[11px] text-zinc-200"
+                    onClick={() => quickAddTextTemplate(txt, 38, '#ffffff')}
+                  >
+                    {txt}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {activeSection === 'subtitles' && (
+            <div className="space-y-3">
+              <div className="rounded-xl border border-[#2a3348] bg-[#111827] p-1 grid grid-cols-3 gap-1 text-[12px]">
+                {([
+                  ['presets', 'Preajustes'],
+                  ['fuente', 'Fuente'],
+                  ['efectos', 'Efectos'],
+                ] as const).map(([id, label]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setSubtitleTab(id)}
+                    className={cn(
+                      'h-8 rounded-lg transition-colors',
+                      subtitleTab === id ? 'bg-[#202b3f] text-white' : 'text-[#9aa9cb] hover:bg-[#182335]'
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] leading-snug text-zinc-500">
+                Añade captions en la posición del <span className="text-zinc-400">cabezal</span> con estilos tipo
+                redes (sombra, neón, contraste). Edita texto y posición en el panel de propiedades del clip.
+              </p>
+              <p className="text-[10px] font-medium uppercase tracking-wide text-zinc-500">Presets animados</p>
+              <div className="grid grid-cols-1 gap-2">
+                <button
+                  type="button"
+                  className="h-24 rounded-xl border border-zinc-700 bg-zinc-800 px-2 py-2 text-left text-[10px] text-zinc-200 hover:bg-zinc-700"
+                  onClick={() => quickAddCaptionAtPlayhead('TEXTO EN NEGRITA', 50, '#ffffff', true)}
+                >
+                  <span className="font-medium text-zinc-100">Bold + sombra</span>
+                  <span className="mt-0.5 block text-[9px] text-zinc-500">Alto impacto</span>
+                </button>
+                <button
+                  type="button"
+                  className="h-24 rounded-xl border border-zinc-700 bg-zinc-800 px-2 py-2 text-left text-[10px] text-zinc-200 hover:bg-zinc-700"
+                  onClick={() => quickAddCaptionAtPlayhead('NEÓN', 44, '#2dd4bf', true)}
+                >
+                  <span className="font-medium text-zinc-100">Neón</span>
+                  <span className="mt-0.5 block text-[9px] text-zinc-500">TikTok / Reels</span>
+                </button>
+                <button
+                  type="button"
+                  className="h-24 rounded-xl border border-zinc-700 bg-zinc-800 px-2 py-2 text-left text-[10px] text-zinc-200 hover:bg-zinc-700"
+                  onClick={() => quickAddCaptionAtPlayhead('Minimal', 30, '#f4f4f5', false)}
+                >
+                  <span className="font-medium text-zinc-100">Minimal</span>
+                  <span className="mt-0.5 block text-[9px] text-zinc-500">Tipografía limpia</span>
+                </button>
+                <button
+                  type="button"
+                  className="h-24 rounded-xl border border-zinc-700 bg-zinc-800 px-2 py-2 text-left text-[10px] text-zinc-200 hover:bg-zinc-700"
+                  onClick={() => quickAddCaptionAtPlayhead('PALABRA CLAVE', 42, '#facc15', true)}
+                >
+                  <span className="font-medium text-zinc-100">Destacado</span>
+                  <span className="mt-0.5 block text-[9px] text-zinc-500">Énfasis amarillo</span>
+                </button>
+              </div>
+              <p className="text-[10px] font-medium uppercase tracking-wide text-zinc-500">Más</p>
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  className="w-full rounded-lg border border-zinc-700 bg-zinc-800 p-3 text-left hover:bg-zinc-700"
+                  onClick={() => quickAddCaptionAtPlayhead('Subtítulo manual', 28, '#ffffff', true)}
+                >
+                  <p className="text-xs text-zinc-200">Subtítulo en cabezal</p>
+                  <p className="text-[11px] text-zinc-500 mt-1">Texto editable; añade varios a lo largo del vídeo.</p>
+                </button>
+                <button
+                  type="button"
+                  className="w-full rounded-lg border border-zinc-700 bg-zinc-800 p-3 text-left hover:bg-zinc-700"
+                  onClick={() => setActiveSection('workflow')}
+                >
+                  <p className="text-xs text-zinc-200">Guion con marcas de tiempo</p>
+                  <p className="text-[11px] text-zinc-500 mt-1">
+                    Abre Estudio para planificar frases y pegar [MM:SS] desde el cabezal.
+                  </p>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {activeSection === 'transcribe' && (
+            <div className="space-y-3">
+              <div className="rounded-lg border border-zinc-700 bg-zinc-800 p-3">
+                <p className="text-xs text-zinc-200">Edición guiada por texto</p>
+                <p className="text-[11px] text-zinc-500 mt-1 leading-snug">
+                  En la nube, herramientas de edición generan transcripción automática. Aquí puedes{' '}
+                  <span className="text-zinc-400">pegar tu guion</span>, marcar tiempos con el cabezal y crear
+                  subtítulos desde la pestaña Subtítulos.
+                </p>
+              </div>
+              <label className="text-xs text-zinc-400">Idioma del guion</label>
+              <select className="w-full rounded border border-zinc-700 bg-zinc-800 px-2 py-2 text-xs text-zinc-200">
+                <option>Español</option>
+                <option>English</option>
+                <option>Português</option>
+              </select>
+              <Button variant="secondary" className="w-full" onClick={() => setActiveSection('workflow')}>
+                <icons.workflow size={14} />
+                <span className="ml-2">Abrir guion en Estudio</span>
+              </Button>
+              <Button
+                variant="ghost"
+                className="w-full"
+                onClick={() => quickAddTextTemplate('Bloque de guion — edítame', 22, '#93c5fd')}
+              >
+                Añadir bloque de texto al inicio (plantilla)
+              </Button>
+            </div>
+          )}
+
+          {activeSection === 'effects' && (
+            <div className="space-y-3">
+              <p className="text-xs text-zinc-400">
+                {selectedClipId ? 'Aplica al clip seleccionado' : 'Se aplica al clip activo (auto)'}
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {EFFECT_PRESETS.map((preset) => {
+                  const effectClass = `effect-${preset.id.replace('-', '-')}`;
+                  return (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      title={preset.hint ? `${preset.name} — ${preset.hint}` : preset.name}
+                      className="cap-effect-card"
+                      onClick={() => applyCatalogEffect(preset.id)}
+                    >
+                      <div className={`cap-effect-preview ${effectClass}`}>
+                        <span className="text-white text-xs font-medium drop-shadow-lg">{preset.name}</span>
+                      </div>
+                      <div className="cap-effect-preview-label">
+                        {preset.hint || preset.name}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {activeSection === 'motion' && (
+            <div className="space-y-3">
+              <p className="text-xs text-zinc-400">
+                Animaciones en clip activo (keyframes). Inspirado en composición tipo Remotion / Motion.
+              </p>
+              <div className="grid grid-cols-1 gap-2">
+                {MOTION_DESIGN_PRESETS.map((preset) => (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    title={preset.description}
+                    className="min-h-[3rem] rounded border border-zinc-700 bg-zinc-800 px-2 py-2 text-left text-[10px] text-zinc-200 hover:bg-zinc-700"
+                    onClick={() => applyMotionDesignPreset(preset.id)}
+                  >
+                    <span className="font-medium text-zinc-100">{preset.name}</span>
+                    <span className="mt-0.5 block text-[9px] leading-tight text-zinc-500">{preset.description}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {activeSection === 'lienzo' && (
+            <div className="flex min-h-0 flex-col space-y-3">
+              {!project ? (
+                <p className="text-xs text-zinc-500">Abre o crea un proyecto para usar zoom tutorial y cursor.</p>
+              ) : (
+                <>
+                  <div className="shrink-0 rounded-lg border border-sky-500/35 bg-sky-500/[0.07] px-3 py-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-sky-400">
+                      Herramientas de proyecto
+                    </p>
+                    <p className="mt-1 text-[10px] leading-snug text-zinc-500">
+                      Zoom y cursor aplican a <span className="text-zinc-400">todo el vídeo</span>, no al clip
+                      seleccionado. Lienzo (blur, marco) y cámara siguen en el panel derecho de propiedades.
+                    </p>
+                  </div>
+                  <ProjectZoomCursorSections
+                    project={project}
+                    currentTime={currentTime}
+                    updateProjectStyle={updateProjectStyle}
+                  />
+                </>
+              )}
+            </div>
+          )}
+
+          {activeSection === 'transitions' && (
+            <div className="space-y-3">
+              <div className="rounded-xl border border-[#2a3348] bg-[#111827] p-1 grid grid-cols-2 gap-1 text-[12px]">
+                <button
+                  type="button"
+                  onClick={() => setTransitionEdgeTab('in')}
+                  className={cn(
+                    'h-8 rounded-lg',
+                    transitionEdgeTab === 'in' ? 'bg-[#202b3f] text-white' : 'text-[#9aa9cb] hover:bg-[#182335]'
+                  )}
+                >
+                  Entrada
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTransitionEdgeTab('out')}
+                  className={cn(
+                    'h-8 rounded-lg',
+                    transitionEdgeTab === 'out' ? 'bg-[#202b3f] text-white' : 'text-[#9aa9cb] hover:bg-[#182335]'
+                  )}
+                >
+                  Salida
+                </button>
+              </div>
+              <p className="text-xs text-zinc-400">
+                {selectedClipId ? 'Selecciona transición para el clip' : 'Se aplica al clip activo (auto)'}
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {TRANSITION_PRESETS.map((preset) => {
+                  const transitionClass = `transition-${preset.id.replace('-', '-')}`;
+                  return (
+                    <button
+                      key={`${transitionEdgeTab}-${preset.id}`}
+                      className="cap-transition-card"
+                      onClick={() => applyCatalogTransition(preset.id, transitionEdgeTab)}
+                    >
+                      <div className={`cap-transition-preview ${transitionClass}`} />
+                      <div className="cap-filter-label">
+                        <span className="font-medium">{preset.name}</span>
+                        {preset.duration && <span className="text-zinc-500 ml-1">({preset.duration}s)</span>}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {activeSection === 'filters' && (
+            <div className="space-y-3">
+              <p className="text-xs text-zinc-400">
+                {selectedClipId ? 'Catálogo de filtros Timeline Pro' : 'Se aplica al clip activo (auto)'}
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {FILTER_PRESETS.map((preset) => {
+                  const filterClass = `filter-${preset.id.replace('-', '-')}`;
+                  return (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      title={preset.hint ? `${preset.name} — ${preset.hint}` : preset.name}
+                      className="cap-filter-card"
+                      onClick={() => applyCatalogFilter(preset.id)}
+                    >
+                      <div className={`cap-filter-preview ${filterClass}`} />
+                      <div className="cap-filter-label">
+                        <span className="font-medium">{preset.name}</span>
+                        {preset.hint && <span className="text-zinc-500 ml-1">— {preset.hint}</span>}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          {resourceNotice && (
+            <div className="rounded-md border border-sky-500/40 bg-sky-500/10 px-2 py-1 text-[10px] text-sky-200">
+              {resourceNotice}
+            </div>
+          )}
+
+          {activeSection === 'brandkit' && (
+            <div className="space-y-3">
+              <div className="rounded-lg border border-zinc-700 bg-zinc-800 p-3">
+                <p className="text-xs text-zinc-300">Kit de marca</p>
+                <p className="text-[11px] text-zinc-500 mt-1 leading-snug">
+                  Colores de marca en el fondo de escena, logos e identidad en texto — alineado a plantillas de marca
+                  de nivel profesional.
+                </p>
+              </div>
+              <p className="text-[10px] font-medium uppercase tracking-wide text-zinc-500">Colores rápidos</p>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  ['Primario oscuro', '#0f172a'],
+                  ['Slate', '#1e293b'],
+                  ['Marca violeta', '#7c3aed'],
+                  ['Acento rosa', '#db2777'],
+                  ['CTA ámbar', '#d97706'],
+                ].map(([label, hex]) => (
+                  <button
+                    key={hex}
+                    type="button"
+                    title={label}
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-zinc-600 ring-offset-2 ring-offset-zinc-900 hover:ring-2 hover:ring-sky-500/60"
+                    style={{ backgroundColor: hex }}
+                    onClick={() => updateBackground({ type: 'solid', color: hex })}
+                  />
+                ))}
+              </div>
+              <Button variant="secondary" className="w-full" onClick={handleBrowseClick}>
+                <icons.upload size={14} />
+                <span className="ml-2">Subir logo o imagen de marca</span>
+              </Button>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  className="h-16 rounded border border-zinc-700 bg-zinc-800 text-sm text-zinc-200 hover:bg-zinc-700"
+                  onClick={() => quickAddCaptionAtPlayhead('TU MARCA', 44, '#ffffff', true)}
+                >
+                  Wordmark blanco
+                </button>
+                <button
+                  type="button"
+                  className="h-16 rounded border border-zinc-700 bg-zinc-800 text-sm text-zinc-200 hover:bg-zinc-700"
+                  onClick={() => quickAddCaptionAtPlayhead('TU MARCA', 40, '#c4b5fd', true)}
+                >
+                  Wordmark color
+                </button>
+              </div>
+            </div>
+          )}
+
+          {activeSection === 'background' && (
+            <div className="space-y-3">
+              <Button variant="secondary" className="w-full text-xs" onClick={clearSceneBackground}>
+                Quitar fondo (transparente en el playhead)
+              </Button>
+              <p className="text-[10px] text-[#8190b1] leading-snug">
+                El fondo es un clip en la pista <span className="text-[#d6e4ff]">Background</span> al final
+                del timeline (capa bajo el vídeo del proyecto). Puedes borrarlo, moverlo o partirlo con
+                Split.
+              </p>
+              <div className="rounded-xl border border-[#2a3348] p-1 bg-[#111827] grid grid-cols-3 gap-1">
+                {([
+                  ['wallpaper', 'Wallpaper'],
+                  ['color', 'Color'],
+                  ['image', 'Image'],
+                ] as const).map(([id, label]) => (
+                  <button
+                    key={id}
+                    onClick={() => setBackgroundTab(id)}
+                    className={cn(
+                      'h-7 rounded-md text-[11px] transition-colors',
+                      backgroundTab === id
+                        ? 'bg-[#1f2937] text-white border border-[#2f9fe8]'
+                        : 'text-[#9badcf] hover:text-white'
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {backgroundTab === 'wallpaper' && (
+                <div className="space-y-2">
+                  <div className="grid grid-cols-4 gap-1">
+                    {wallpaperCategories.map((category) => (
+                      <button
+                        key={category.id}
+                        type="button"
+                        onClick={() => setWallpaperCategory(category.id)}
+                        className={cn(
+                          'h-7 rounded-md text-[10px] border',
+                          safeWallpaperCategory === category.id
+                            ? 'border-sky-400 bg-sky-500/10 text-white'
+                            : 'border-zinc-700 bg-zinc-900 text-zinc-300 hover:text-white'
+                        )}
+                      >
+                        {category.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-4 gap-2">
+                    {wallpaperTiles.map((wallpaper) => (
+                      <button
+                        key={wallpaper.id}
+                        type="button"
+                        className="h-10 rounded-lg border border-zinc-700"
+                        style={{ background: `url(${wallpaper.previewUrl}) center / cover no-repeat` }}
+                        onClick={() =>
+                          updateBackground({
+                            type: 'image',
+                            imageUrl: wallpaper.fullUrl,
+                          })
+                        }
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {backgroundTab === 'color' && (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 gap-2">
+                    <button
+                      className={cn(
+                        'h-9 rounded-lg border text-xs',
+                        resolvedSceneBackground?.type === 'solid'
+                          ? 'border-sky-400 text-white bg-sky-500/10'
+                          : 'border-zinc-700 text-zinc-300 bg-zinc-800'
+                      )}
+                      onClick={() => updateBackground({ type: 'solid' })}
+                    >
+                      Solid
+                    </button>
+                    <button
+                      className={cn(
+                        'h-9 rounded-lg border text-xs',
+                        resolvedSceneBackground?.type === 'gradient'
+                          ? 'border-sky-400 text-white bg-sky-500/10'
+                          : 'border-zinc-700 text-zinc-300 bg-zinc-800'
+                      )}
+                      onClick={() => updateBackground({ type: 'gradient' })}
+                    >
+                      Gradient
+                    </button>
+                  </div>
+
+                  <label className="text-[11px] text-zinc-400">Color 1</label>
+                  <input
+                    type="color"
+                    className="w-full h-9 rounded-lg border border-zinc-700 bg-zinc-800"
+                    value={
+                      resolvedSceneBackground?.gradientFrom ??
+                      resolvedSceneBackground?.color ??
+                      '#0d0d0d'
+                    }
+                    onChange={(e) =>
+                      updateBackground({
+                        color: e.target.value,
+                        gradientFrom: e.target.value,
+                      })
+                    }
+                  />
+
+                  <label className="text-[11px] text-zinc-400">Color 2</label>
+                  <input
+                    type="color"
+                    className="w-full h-9 rounded-lg border border-zinc-700 bg-zinc-800"
+                    value={resolvedSceneBackground?.gradientTo ?? '#6366f1'}
+                    onChange={(e) => updateBackground({ gradientTo: e.target.value })}
+                  />
+                  <div className="grid grid-cols-8 gap-1 pt-1">
+                    {STUDIO_SOLID_COLORS.slice(0, 24).map((color) => (
+                      <button
+                        key={color}
+                        className="h-5 w-5 rounded-md border border-zinc-700"
+                        style={{ backgroundColor: color }}
+                        onClick={() => updateBackground({ type: 'solid', color })}
+                      />
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-4 gap-2">
+                    {STUDIO_GRADIENT_PRESETS.map((preset) => (
+                      <button
+                        key={`${preset.from}-${preset.to}`}
+                        className="h-8 rounded-md border border-zinc-700"
+                        style={{ background: `linear-gradient(135deg, ${preset.from}, ${preset.to})` }}
+                        onClick={() =>
+                          updateBackground({
+                            type: 'gradient',
+                            color: preset.from,
+                            gradientFrom: preset.from,
+                            gradientTo: preset.to,
+                          })
+                        }
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {backgroundTab === 'image' && (
+                <div className="space-y-3">
+                  <button
+                    className="w-full h-20 rounded-xl border border-dashed border-zinc-700 bg-zinc-800/60 text-xs text-zinc-300 hover:bg-zinc-800"
+                    onClick={() => backgroundImageInputRef.current?.click()}
+                  >
+                    Drag an image here or upload a file
+                  </button>
+                  <Button
+                    variant="secondary"
+                    className="w-full"
+                    onClick={() => backgroundImageInputRef.current?.click()}
+                  >
+                    <icons.upload size={14} />
+                    <span className="ml-2">Upload background image</span>
+                  </Button>
+                </div>
+              )}
+
+              <div className="pt-2 border-t border-[#283046] space-y-2">
+                <p className="text-[11px] text-zinc-400 uppercase tracking-wide">Options</p>
+                <Slider
+                  label="Blur"
+                  min={0}
+                  max={24}
+                  step={1}
+                  value={resolvedSceneBackground?.blur ?? 0}
+                  onChange={(value) => updateBackground({ blur: value })}
+                />
+                <Slider
+                  label="Padding"
+                  min={0}
+                  max={60}
+                  step={1}
+                  value={resolvedSceneBackground?.padding ?? 0}
+                  onChange={(value) => updateBackground({ padding: value })}
+                />
+                <Slider
+                  label="Rounded"
+                  min={0}
+                  max={40}
+                  step={1}
+                  value={resolvedSceneBackground?.radius ?? 0}
+                  onChange={(value) => updateBackground({ radius: value })}
+                />
+                <Slider
+                  label="Shadows"
+                  min={0}
+                  max={48}
+                  step={1}
+                  value={resolvedSceneBackground?.shadow ?? 0}
+                  onChange={(value) => updateBackground({ shadow: value })}
+                />
+              </div>
+            </div>
+          )}
+
+          {activeSection === 'mockup' && (
+            <div className="space-y-3">
+              <p className="text-xs text-zinc-300">Mockups de dispositivo</p>
+              <div className="grid grid-cols-1 gap-2">
+                {STUDIO_MOCKUP_PRESETS.map((mockup) => (
+                  <button
+                    key={mockup.id}
+                    className={cn(
+                      'relative h-20 rounded-lg border text-left overflow-hidden',
+                      (project?.deviceFrame?.type ?? 'none') === mockup.deviceType &&
+                        (project?.background?.radius ?? 16) === mockup.radius
+                        ? 'border-sky-400 ring-1 ring-sky-400/60'
+                        : 'border-zinc-700 hover:border-zinc-500'
+                    )}
+                    onClick={() => applyMockupPreset(mockup.id)}
+                  >
+                    <div
+                      className="absolute inset-0 opacity-60"
+                      style={{
+                        background: `url(${studioMockupCategoryBackground(mockup.category)}) center / cover no-repeat`,
+                      }}
+                    />
+                    <div className="relative z-10 h-full w-full bg-gradient-to-t from-black/70 to-black/10 p-2 flex items-end">
+                      <span className="text-[10px] text-white font-semibold">{mockup.name}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {activeSection === 'templates' && (
+            <div className="space-y-3">
+              <div className="flex gap-2 flex-wrap">
+                {([
+                  ['all', 'All'],
+                  ['native', 'Native'],
+                  ['jitter', 'Fuente A'],
+                  ['hera', 'Fuente B'],
+                ] as const).map(([id, label]) => (
+                  <button
+                    key={id}
+                    className={cn(
+                      'px-2 py-1 rounded-full text-[10px] border',
+                      templateSourceFilter === id
+                        ? 'border-sky-400 bg-sky-400/10 text-white'
+                        : 'border-[#2a3348] bg-[#121827] text-[#aeb9d6] hover:bg-[#1a2438]'
+                    )}
+                    onClick={() => setTemplateSourceFilter(id)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {visibleTemplates.length === 0 && (
+                <p className="text-xs text-[#8b99b8]">No templates for this source.</p>
+              )}
+
+              {visibleTemplates.map((template, index) => (
+                <button
+                  key={`${template.source}-${template.id}-${index}`}
+                  className="w-full p-3 bg-zinc-800 rounded-lg text-left hover:bg-zinc-700 transition-colors"
+                  onClick={() => handleApplyTemplate(template.id)}
+                >
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-medium text-white">{template.name}</p>
+                    <span className="text-[10px] uppercase text-zinc-400">{template.source}</span>
+                  </div>
+                  <p className="text-[11px] text-zinc-400 mt-1">{template.description}</p>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="video/*,audio/*,image/*"
+        multiple
+        className="hidden"
+        onChange={handleFileChange}
+      />
+      <input
+        ref={backgroundImageInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleBackgroundImageChange}
+      />
+      <input
+        ref={elementImageInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleAddElementImage}
+      />
+    </div>
+  );
+}
