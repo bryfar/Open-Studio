@@ -3,6 +3,8 @@
     "output": "dist/linux"
   },
   "linux": {
+    "artifactName": "OpenStudio-${version}-${arch}.${ext}",
+    "executableName": "openstudio-desktop",
     "target": [
       {
         "target": "AppImage",
