@@ -17,31 +17,11 @@
       ]
     }
   ],
-  "publish": {
-    "provider": "github"
-  }
-}
-{
-  "appId": "com.openstudio.desktop",
-  "productName": "Open Studio",
-  "files": [
-    "main.cjs",
-    "preload.cjs"
-  ],
-  "extraResources": [
-    {
-      "from": "../web/out",
-      "to": "web-out",
-      "filter": [
-        "**/*"
-      ]
-    }
-  ],
   "publish": [
     {
       "provider": "github",
-      "owner": "${env.GH_OWNER}",
-      "repo": "${env.GH_REPO}",
+      "owner": "bryfar",
+      "repo": "Open-Studio",
       "releaseType": "release"
     }
   ]

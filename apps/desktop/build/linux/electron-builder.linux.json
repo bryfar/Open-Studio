@@ -20,25 +20,3 @@
     "category": "AudioVideo"
   }
 }
-{
-  "directories": {
-    "output": "dist/linux"
-  },
-  "linux": {
-    "target": [
-      {
-        "target": "AppImage",
-        "arch": [
-          "x64"
-        ]
-      },
-      {
-        "target": "deb",
-        "arch": [
-          "x64"
-        ]
-      }
-    ],
-    "category": "AudioVideo"
-  }
-}
