@@ -1,120 +1,115 @@
-# Open Studio
+# ✨ Open Studio
 
-Monorepo de Open Studio con tres aplicaciones principales:
+![Open Studio Cover](./portada.png)
 
-- `apps/web`: editor web (Next.js)
-- `apps/desktop`: app de escritorio (Electron)
-- `apps/openstudio-shorts-service`: API/worker para OpenShorts (FastAPI)
+> The VS Code of web builders: build, edit, ship and scale from one workspace.
 
-## Estructura del repositorio
+English | [Español](./README.es.md)
 
-```text
-Open-Studio/
-  apps/
-    web/
-    desktop/
-      build/
-        common/
-        windows/
-        macos/
-        linux/
-    openstudio-shorts-service/
-  docs/
-  landing/
-```
+[![CI](https://img.shields.io/badge/CI-GitHub_Actions-222?logo=githubactions)](https://github.com/bryfar/Open-Studio/actions)
+[![License](https://img.shields.io/badge/License-MIT-2ea44f)](./LICENSE)
+[![Stars](https://img.shields.io/github/stars/bryfar/Open-Studio?style=flat)](https://github.com/bryfar/Open-Studio/stargazers)
+[![Security](https://img.shields.io/badge/Security-Policy-blue)](./SECURITY.md)
+[![Code_of_Conduct](https://img.shields.io/badge/Code_of_Conduct-Policy-purple)](./CODE_OF_CONDUCT.md)
 
-## Requisitos
+## ⚡ Why Open Studio?
 
-- Node.js 20+
-- npm 10+
-- Python 3.10+ (para `openstudio-shorts-service`)
+| Platform | Strengths | Typical limitations | Open Studio difference |
+|---|---|---|---|
+| Webflow | Strong visual builder and CMS | Lower engineering-level control | Combines visual flow + code control + offline desktop |
+| Framer | Very fast for marketing pages | Less focused on complex product pipelines | End-to-end creation focus: pro editor, build, and distribution |
+| V0 | Fast AI UI generation | Requires manual production assembly | Monorepo ready to iterate, test, deploy, and package |
+| Open Studio | Editor + AI + desktop + release pipeline | Requires local initial setup | Open source end-to-end workflow to build and operate products |
 
-## Instalacion
+## 🚀 Quick Start
 
 ```bash
+# 1) Clone the repository
 git clone https://github.com/bryfar/Open-Studio.git
+
+# 2) Enter the project
 cd Open-Studio
+
+# 3) Install monorepo dependencies
 npm install
+
+# 4) Run baseline lint checks
+npm run lint
+
+# 5) Start the web app (Next.js)
+npm run dev
+
+# 6) Start the desktop app (Electron + web)
+npm run dev:desktop
+
+# 7) Start the shorts API (FastAPI)
+npm run dev:api
+
+# 8) Start the processing worker
+npm run dev:worker
 ```
 
-## Desarrollo
+## ▲ Deploy
 
-- Web: `npm run dev` o `npm run dev:app`
-- Desktop (Electron + web): `npm run dev:desktop`
-- API FastAPI: `npm run dev:api`
-- Worker de jobs: `npm run dev:worker`
-- Todo junto (web + api + worker): `npm run dev:full`
+| Option | When to use | Recommended steps |
+|---|---|---|
+| [Vercel](https://vercel.com/) | Fast deploy for the Next.js frontend | 1) Connect repo 2) Configure variables 3) Review [`vercel.json`](./vercel.json) 4) Enable branch/tag deploys |
+| [Cloudflare](https://www.cloudflare.com/) | Edge distribution and network control | 1) Configure project 2) Define variables 3) Set build command/output 4) Validate routing and caching |
 
-Rutas clave de la app web:
+Release checklist:
 
-- `http://localhost:3000/`
-- `http://localhost:3000/dashboard`
-- `http://localhost:3000/editor`
-- `http://localhost:3000/clip-generator`
-- `http://localhost:3000/ai-shorts`
+| Step | What to validate |
+|---|---|
+| 1 | Variables and secrets from [`.env.example`](./.env.example) and `apps/openstudio-shorts-service/.env.example` |
+| 2 | Deploy configuration in [`vercel.json`](./vercel.json) |
+| 3 | Minimum quality checks: `npm run lint` and `npm run e2e` |
+| 4 | Desktop release via semver tags (`v*`) with per-OS artifacts |
 
-Health del backend:
+## 🧭 Understand Fast
 
-- `http://localhost:8000/health`
+1. [`docs/WEB_FEATURE_STRUCTURE.md`](./docs/WEB_FEATURE_STRUCTURE.md)
+2. [`docs/EDITOR_ARCHITECTURE.md`](./docs/EDITOR_ARCHITECTURE.md)
+3. [`docs/kdenlive-parity-matrix.md`](./docs/kdenlive-parity-matrix.md)
+4. [`apps/web/README.md`](./apps/web/README.md)
+5. [`apps/desktop/README.md`](./apps/desktop/README.md)
+6. [`CONTRIBUTING.md`](./CONTRIBUTING.md)
 
-## Build y empaquetado Desktop por sistema operativo
+## 🛠️ Key Capabilities
 
-La app de escritorio esta separada por plataforma, cada una con su config y salida:
+- 🎬 Multi-track timeline editor (video, audio, text, overlays)
+- ✂️ Clip Generator to transform long videos into shorts
+- 🤖 AI Shorts with assisted generation pipeline
+- 💾 Local/offline desktop project persistence
+- 🖥️ Per-OS distribution (Windows, macOS, Linux)
+- 🔐 Secure Electron bridge (context isolation + controlled IPC)
+- 📦 Monorepo setup for web + desktop + service
+- 🚀 CI/CD for cross-platform artifacts and releases
 
-- Windows config: `apps/desktop/build/windows/electron-builder.windows.json`
-- macOS config: `apps/desktop/build/macos/electron-builder.macos.json`
-- Linux config: `apps/desktop/build/linux/electron-builder.linux.json`
-- Base compartida: `apps/desktop/build/common/electron-builder.base.json`
+## 📦 Monorepo Structure
 
-Comandos:
+- `apps/web` - Main frontend (Next.js)
+- `apps/desktop` - Desktop runtime (Electron + electron-builder)
+- `apps/openstudio-shorts-service` - Shorts API/worker (FastAPI)
+- `docs` - Technical architecture docs
+- `landing` - Static landing site
 
-- Auto OS actual:
-  - `npm run desktop:dist`
-  - `npm run desktop:pack`
-- Especificos por OS:
-  - `npm run desktop:dist:windows`
-  - `npm run desktop:dist:macos`
-  - `npm run desktop:dist:linux`
-  - `npm run desktop:pack:windows`
-  - `npm run desktop:pack:macos`
-  - `npm run desktop:pack:linux`
+## 🤝 Contributing
 
-Salidas esperadas:
+For maintainers and human contributors:
 
-- `apps/desktop/dist/windows`
-- `apps/desktop/dist/macos`
-- `apps/desktop/dist/linux`
+- Follow [`CONTRIBUTING.md`](./CONTRIBUTING.md)
+- Respect [`CODE_OF_CONDUCT.md`](./CODE_OF_CONDUCT.md)
+- Report vulnerabilities through [`SECURITY.md`](./SECURITY.md)
+- Review project rules in [`GOVERNANCE.md`](./GOVERNANCE.md)
 
-Tipos de instalador por plataforma:
+For AI agents and assistants:
 
-- Windows: NSIS (`.exe`)
-- macOS: DMG (`.dmg`)
-- Linux: AppImage (`.AppImage`) y DEB (`.deb`)
+- Use [`AGENTS.md`](./AGENTS.md) as the primary guide
+- Review [`CLAUDE.md`](./CLAUDE.md) for complementary instructions
+- Keep consistency with security and governance standards
 
-## Testing y calidad
+## 📄 License
 
-- Lint web: `npm run lint`
-- E2E: `npm run e2e`
-- E2E UI: `npm run e2e:ui`
+MIT License. See [`LICENSE`](./LICENSE).
 
-## Notas de release
-
-- Workflow CI Desktop: `.github/workflows/desktop-release.yml`
-- Checklist manual: `docs/RELEASE_CHECKLIST.md`
-- Changelog de freeze: `docs/CHANGELOG_RELEASE_FREEZE_2026-05-08.md`
-
-## Variables y servicios externos
-
-En el servicio de shorts usa `apps/openstudio-shorts-service/.env.example` como base.
-
-Claves comunes para integraciones:
-
-- `GEMINI_API_KEY`
-- `FAL_KEY`
-- `ELEVENLABS_API_KEY`
-- `UPLOAD_POST_API_KEY`
-
-## Licencia
-
-- Codigo principal: MIT (ver `LICENSE`)
-- Notas de cumplimiento de dependencias/compatibilidad: `GPL_COMPLIANCE.md`
+Built for Creators, maintained by the open source community.
