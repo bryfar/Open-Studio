@@ -3,6 +3,7 @@ name: Desktop Release
 on:
   push:
     branches:
+      - master
       - main
     tags:
       - "v*"
