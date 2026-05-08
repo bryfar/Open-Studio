@@ -2,6 +2,10 @@
   "name": "@openstudio/desktop",
   "private": true,
   "version": "0.1.0",
+  "description": "Open Studio desktop app built with Electron",
+  "homepage": "https://github.com/bryfar/Open-Studio",
+  "author": "Open Studio",
+  "license": "MIT",
   "main": "main.cjs",
   "scripts": {
     "dev": "concurrently \"npm --workspace @openstudio/web run dev\" \"wait-on tcp:3000 && cross-env WEB_DEV_SERVER_URL=http://127.0.0.1:3000 electron .\"",
