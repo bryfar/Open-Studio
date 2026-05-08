@@ -4,7 +4,10 @@
   "version": "0.1.0",
   "description": "Open Studio desktop app built with Electron",
   "homepage": "https://github.com/bryfar/Open-Studio",
-  "author": "Open Studio",
+  "author": {
+    "name": "Open Studio",
+    "email": "maintainers@openstudio.app"
+  },
   "license": "MIT",
   "main": "main.cjs",
   "scripts": {
