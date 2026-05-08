@@ -8,6 +8,8 @@ node_modules/
 out/
 build/
 apps/desktop/dist/
+!apps/desktop/build/
+!apps/desktop/build/**
 
 # Testing
 coverage/
