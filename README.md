@@ -69,6 +69,77 @@ npm run start
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
+## OpenShorts Modules (Clip Generator + AI Shorts)
+
+This repo now includes dedicated OpenShorts-style routes with a separate FastAPI backend:
+
+- `http://localhost:3000/clip-generator`
+- `http://localhost:3000/ai-shorts`
+
+### Monorepo layout
+
+- `apps/web` -> web workspace wrapper (Next.js app in repo root during transition)
+- `apps/openstudio-shorts-service` -> FastAPI backend workspace
+
+### Backend setup (FastAPI service)
+
+```bash
+cd apps/openstudio-shorts-service
+python -m venv .venv
+# Windows PowerShell
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+copy .env.example .env
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
+
+### Run frontend + backend together
+
+From repo root:
+
+```bash
+npm run dev:full
+```
+
+This runs:
+- Next.js app on `:3000`
+- OpenShorts FastAPI service on `:8000`
+
+### Required API keys (real integrations)
+
+For full generation/publish flows, configure keys in UI inputs or service env:
+
+- Gemini (`GEMINI_API_KEY` / `X-Gemini-Key`)
+- fal.ai (`FAL_KEY` / `X-Fal-Key`)
+- ElevenLabs (`ELEVENLABS_API_KEY` / `X-ElevenLabs-Key`)
+- Upload-Post (`UPLOAD_POST_API_KEY` / `X-Upload-Post-Key`)
+
+### End-to-end test flow
+
+1. Open `/clip-generator`, upload a long video, click `Analyze`, then `Generate Clips`.
+2. Open `/ai-shorts`, provide URL or description, click `Analyze`, then `Generate`.
+3. For publish flow, provide Upload-Post key and click `Publish`.
+4. Monitor progress via job logs (`GET /api/jobs/{job_id}` via UI polling).
+
+## Advanced Editor Roadmap (Shotcut-inspired)
+
+OpenStudio now includes first-pass advanced modules in the editor side panel:
+
+- Audio Pro (buses, ducking, gain controls)
+- Timeline Pro (ripple/slip/slide/snap controls)
+- Keyframes Graph (easing batch application)
+- Scopes (waveform/vectorscope/histogram preview)
+- Multicam + Proxy controls
+- Batch Render queue presets
+
+Reference project used for advanced feature direction:
+
+- [Shotcut repository](https://github.com/mltframework/shotcut)
+
+License/compliance notes are documented in:
+
+- `GPL_COMPLIANCE.md`
+
 ## 📖 Usage Guide
 
 ### Creating a Project

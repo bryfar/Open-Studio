@@ -1,0 +1,28 @@
+{
+  "name": "@openstudio/desktop",
+  "private": true,
+  "version": "0.1.0",
+  "main": "main.cjs",
+  "scripts": {
+    "dev": "concurrently \"npm --workspace @openstudio/web run dev\" \"wait-on tcp:3000 && cross-env WEB_DEV_SERVER_URL=http://127.0.0.1:3000 electron .\"",
+    "build": "npm --workspace @openstudio/web run build:desktop",
+    "dist": "node -e \"const p=process.platform; const cmd=p==='win32'?'npm run dist:windows':p==='darwin'?'npm run dist:macos':'npm run dist:linux'; require('node:child_process').execSync(cmd,{stdio:'inherit'});\"",
+    "pack": "node -e \"const p=process.platform; const cmd=p==='win32'?'npm run pack:windows':p==='darwin'?'npm run pack:macos':'npm run pack:linux'; require('node:child_process').execSync(cmd,{stdio:'inherit'});\"",
+    "dist:windows": "npm run build && electron-builder --win -c build/common/electron-builder.base.json -c build/windows/electron-builder.windows.json --publish never",
+    "dist:macos": "npm run build && electron-builder --mac -c build/common/electron-builder.base.json -c build/macos/electron-builder.macos.json --publish never",
+    "dist:linux": "npm run build && electron-builder --linux -c build/common/electron-builder.base.json -c build/linux/electron-builder.linux.json --publish never",
+    "dist:windows:publish": "npm run build && electron-builder --win -c build/common/electron-builder.base.json -c build/windows/electron-builder.windows.json --publish always",
+    "dist:macos:publish": "npm run build && electron-builder --mac -c build/common/electron-builder.base.json -c build/macos/electron-builder.macos.json --publish always",
+    "dist:linux:publish": "npm run build && electron-builder --linux -c build/common/electron-builder.base.json -c build/linux/electron-builder.linux.json --publish always",
+    "pack:windows": "npm run build && electron-builder --win --dir -c build/common/electron-builder.base.json -c build/windows/electron-builder.windows.json",
+    "pack:macos": "npm run build && electron-builder --mac --dir -c build/common/electron-builder.base.json -c build/macos/electron-builder.macos.json",
+    "pack:linux": "npm run build && electron-builder --linux --dir -c build/common/electron-builder.base.json -c build/linux/electron-builder.linux.json"
+  },
+  "devDependencies": {
+    "electron": "37.2.0",
+    "electron-builder": "26.8.1",
+    "electron-updater": "6.6.2",
+    "serve-handler": "6.1.6",
+    "wait-on": "8.0.5"
+  }
+}

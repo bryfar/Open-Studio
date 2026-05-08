@@ -1,0 +1,14 @@
+{
+  "name": "@openstudio/web",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "cross-env OPENSTUDIO_HOME=app next dev --webpack",
+    "dev:landing": "cross-env OPENSTUDIO_HOME=landing next dev --webpack",
+    "build": "next build --webpack",
+    "build:desktop": "node ./scripts/prepare-desktop-assets.mjs && cross-env OPENSTUDIO_HOME=app OPENSTUDIO_DESKTOP_EXPORT=1 next build --webpack",
+    "start": "next start",
+    "lint": "eslint",
+    "create:feature": "node ./scripts/create-feature.mjs"
+  }
+}

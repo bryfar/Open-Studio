@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Open Studio — Browser-based Video Editor</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;460;500;540;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ===== OPEN STUDIO DARK THEME TOKENS ===== */
+    :root {
+      /* Dark Theme Colors - CapCut Style */
+      --os-bg-primary: #0a0b0f;
+      --os-bg-secondary: #0f1117;
+      --os-bg-tertiary: #161922;
+      --os-bg-elevated: #1e2330;
+      --os-bg-card: #1a1a24;
+      --os-bg-hover: #252532;
+      
+      /* Accent Colors */
+      --os-accent-primary: #31b4f3;
+      --os-accent-secondary: #5f6fff;
+      --os-accent-tertiary: #9f8bff;
+      --os-accent-purple: #7c3aed;
+      --os-accent-purple-light: #a855f7;
+      
+      /* Text Colors */
+      --os-text-primary: #ffffff;
+      --os-text-secondary: #a0a0b0;
+      --os-text-muted: #7984a0;
+      
+      /* Border & Surface */
+      --os-border-light: #2a2a3a;
+      --os-border-default: #283046;
+      
+      /* Gradients */
+      --os-gradient-purple: linear-gradient(135deg, var(--os-accent-purple), var(--os-accent-purple-light));
+      --os-hero-gradient: radial-gradient(ellipse 90% 55% at 50% -5%, rgba(49, 180, 243, 0.15), transparent 52%),
+        linear-gradient(180deg, #090b12 0%, #06070d 100%);
+      
+      /* Superhuman Colors (for footer) */
+      --parchment-canvas: #f2f0eb;
+      --aubergine: #421d24;
+      --aubergine-deep: #4e242c;
+      --bone: #ffffff;
+      --fog: #e3e3e2;
+      --graphite: #666666;
+      --iris: #714cb6;
+      --indigo-glow: #353088;
+      
+      /* Spacing */
+      --spacing-4: 4px;
+      --spacing-8: 8px;
+      --spacing-12: 12px;
+      --spacing-16: 16px;
+      --spacing-20: 20px;
+      --spacing-24: 24px;
+      --spacing-32: 32px;
+      --spacing-36: 36px;
+      --spacing-48: 48px;
+      --spacing-64: 64px;
+      
+      /* Border Radius */
+      --radius-buttons: 8px;
+      --radius-cards: 16px;
+      --radius-cardslarge: 24px;
+      --radius-pills: 999px;
+      --radius-announcement: 16px;
+      
+      /* Typography */
+      --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    
+    /* ===== RESET & BASE ===== */
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{font-family:var(--font-family);color:var(--os-text-primary);background:var(--os-bg-primary);line-height:1.5;-webkit-font-smoothing:antialiased}
+    a{text-decoration:none;color:inherit}
+    img{max-width:100%;height:auto}
+    
+    /* ===== TYPOGRAPHY ===== */
+    .font-display{font-family:var(--font-family)}
+    .text-display{font-size:64px;line-height:0.96;letter-spacing:-1.79px;font-weight:600}
+    .text-heading-lg{font-size:48px;line-height:1;letter-spacing:-1.3px;font-weight:600}
+    .text-heading{font-size:28px;line-height:1.2;letter-spacing:-0.62px;font-weight:600}
+    .text-heading-sm{font-size:22px;line-height:1.25;letter-spacing:-0.31px;font-weight:600}
+    .text-subheading{font-size:18px;line-height:1.3;letter-spacing:-0.14px;font-weight:460}
+    .text-body{font-size:16px;line-height:1.5;font-weight:460}
+    .text-body-sm{font-size:14px;line-height:1.5;font-weight:460}
+    .text-caption{font-size:12px;line-height:1.5;font-weight:500}
+    
+    /* ===== UTILITIES ===== */
+    .container{max-width:1200px;margin:0 auto;padding:0 32px}
+    .text-center{text-align:center}
+    .flex{display:flex}
+    .flex-col{flex-direction:column}
+    .items-center{align-items:center}
+    .justify-center{justify-content:center}
+    .justify-between{justify-content:space-between}
+    .gap-2{gap:8px}
+    .gap-3{gap:12px}
+    .gap-4{gap:16px}
+    .gap-6{gap:24px}
+    .gap-8{gap:32px}
+    .mb-2{margin-bottom:8px}
+    .mb-3{margin-bottom:12px}
+    .mb-4{margin-bottom:16px}
+    .mb-6{margin-bottom:24px}
+    .mb-8{margin-bottom:32px}
+    .mb-12{margin-bottom:48px}
+    .mt-6{margin-top:24px}
+    .mt-8{margin-top:32px}
+    .py-12{padding-top:48px;padding-bottom:48px}
+    .py-16{padding-top:64px;padding-bottom:64px}
+    .hidden{display:none}
+    @media(min-width:768px){.md-flex{display:flex}.md-grid{grid-template-columns:repeat(2,1fr)}.md-grid-3{grid-template-columns:repeat(3,1fr)}.md-hidden{display:none}.md-block{display:block}.md-text-left{text-align:left}}
+    @media(min-width:1024px){.lg-grid-3{grid-template-columns:repeat(3,1fr)}}
+    
+    /* ===== COLORS ===== */
+    .text-os-primary{color:var(--os-text-primary)}
+    .text-os-secondary{color:var(--os-text-secondary)}
+    .text-os-accent{color:var(--os-accent-primary)}
+    .text-iris{color:var(--iris)}
+    .bg-os-primary{background:var(--os-bg-primary)}
+    .bg-os-secondary{background:var(--os-bg-secondary)}
+    .bg-os-card{background:var(--os-bg-card)}
+    .bg-os-elevated{background:var(--os-bg-elevated)}
+    .bg-aubergine{background:var(--aubergine)}
+    
+    /* ===== BUTTONS ===== */
+    .btn{display:inline-flex;align-items:center;gap:8px;border-radius:var(--radius-buttons);padding:12px 24px;font-size:16px;font-weight:500;cursor:pointer;transition:all 0.2s ease}
+    .btn-primary{background:var(--os-gradient-purple);color:var(--os-text-primary);border:none}
+    .btn-primary:hover{box-shadow:0 0 20px rgba(124,58,237,0.4);transform:translateY(-2px)}
+    .btn-primary:focus{box-shadow:0 0 0 2px rgba(124,58,237,0.5)}
+    .btn-ghost{background:transparent;border:1px solid var(--os-accent-primary);color:var(--os-accent-primary)}
+    .btn-ghost:hover{background:rgba(49,180,243,0.1)}
+    .btn-signup{background:transparent;color:var(--os-text-secondary);border-radius:var(--radius-buttons);padding:6px 12px;font-size:14px;font-weight:500;border:1px solid var(--os-border-light)}
+    .btn-signup:hover{color:var(--os-text-primary);border-color:var(--os-accent-primary)}
+    .btn-sm{font-size:14px;padding:8px 16px}
+    
+    /* ===== ANIMATIONS ===== */
+    @keyframes fadeInUp{0%{opacity:0;transform:translateY(30px)}100%{opacity:1;transform:translateY(0)}}
+    @keyframes fadeSlideDown{0%{opacity:0;transform:translateY(-20px)}100%{opacity:1;transform:translateY(0)}}
+    @keyframes fadeSlideUp{0%{opacity:0;transform:translateY(20px)}100%{opacity:1;transform:translateY(0)}}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+    @keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+    @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+    .animate-fade-in-up{opacity:0;animation:fadeInUp 0.8s ease forwards}
+    .animate-fade-down{opacity:0;animation:fadeSlideDown 0.5s ease forwards}
+    .animate-fade-up{opacity:0;animation:fadeSlideUp 0.5s ease forwards}
+    .animate-float{animation:float 6s ease-in-out infinite}
+    .delay-1{animation-delay:0.1s}.delay-2{animation-delay:0.2s}.delay-3{animation-delay:0.3s}.delay-4{animation-delay:0.4s}.delay-5{animation-delay:0.5s}.delay-6{animation-delay:0.6s}
+    
+    /* ===== ANNOUNCEMENT BANNER ===== */
+    .announcement{background:linear-gradient(90deg,var(--os-accent-purple),var(--os-accent-secondary));padding:12px 0}
+    .announcement-content{max-width:1200px;margin:0 auto;padding:0 32px;display:flex;align-items:center;justify-content:center;gap:8px}
+    .announcement span{font-size:14px;font-weight:500;color:var(--os-text-primary)}
+    .announcement a{color:var(--os-text-primary);text-decoration:underline;font-size:14px}
+    
+    /* ===== NAVIGATION ===== */
+    .nav{position:fixed;top:0;left:0;right:0;z-index:50;background:rgba(10,11,15,0.8);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--os-border-light)}
+    .nav.scrolled{background:rgba(10,11,15,0.95)}
+    .nav-container{max-width:1200px;margin:0 auto;padding:16px 32px;display:flex;align-items:center;justify-content:space-between}
+    .nav-logo{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:600;color:var(--os-text-primary)}
+    .logo-icon{width:36px;height:36px;border-radius:var(--radius-buttons);background:var(--os-gradient-purple);display:flex;align-items:center;justify-content:center}
+    .nav-links{display:none;gap:32px}
+    @media(min-width:768px){.nav-links{display:flex}}
+    .nav-links a{font-size:16px;font-weight:460;color:var(--os-text-secondary)}
+    .nav-links a:hover{color:var(--os-text-primary)}
+    .nav-actions{display:flex;align-items:center;gap:12px}
+    
+    /* ===== HERO ===== */
+    .hero{min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative;padding:120px 32px 80px;background:var(--os-hero-gradient);overflow:hidden}
+    .hero-bg{position:absolute;inset:0}
+    .hero-gradient{position:absolute;inset:0;background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(49,180,243,0.15) 0%, transparent 60%),radial-gradient(ellipse 60% 40% at 80% 60%, rgba(124,58,237,0.1) 0%, transparent 50%)}
+    .hero-spotlight-1{position:absolute;inset:0;background:radial-gradient(circle at 68% 50%, rgba(49,180,243,0.3) 0px, transparent 50%)}
+    .hero-spotlight-2{position:absolute;inset:0;background:radial-gradient(circle at 30% 80%, rgba(124,58,237,0.3) 0px, transparent 50%)}
+    .hero-spotlight-3{position:absolute;inset:0;background:radial-gradient(circle at 80% 30%, rgba(95,111,255,0.2) 0px, transparent 40%)}
+    .hero-content{position:relative;z-index:1;max-width:700px;text-align:center}
+    .hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,0.08);backdrop-filter:blur(12px);border-radius:var(--radius-pills);padding:8px 16px;margin-bottom:24px;border:1px solid var(--os-border-light)}
+    .hero-badge span{font-size:14px;font-weight:500;color:var(--os-text-secondary)}
+    .badge-dot{width:8px;height:8px;border-radius:50%;background:var(--os-accent-primary);animation:pulse 2s infinite}
+    .hero-title{font-size:64px;line-height:0.96;letter-spacing:-1.79px;font-weight:600;color:var(--os-text-primary);margin-bottom:24px}
+    .hero-subtitle{font-size:20px;font-weight:460;line-height:1.5;color:var(--os-text-secondary);margin-bottom:32px;letter-spacing:-0.16px}
+    .hero-buttons{display:flex;flex-direction:column;gap:12px;margin-bottom:48px}
+    @media(min-width:480px){.hero-buttons{flex-direction:row;justify-content:center}}
+    .hero-stats{display:flex;align-items:center;justify-content:center;gap:24px;flex-wrap:wrap}
+    .stat{display:flex;flex-direction:column;align-items:center;gap:2px}
+    .stat-number{font-size:24px;font-weight:600;color:var(--os-text-primary)}
+    .stat-label{font-size:12px;color:var(--os-text-muted);text-transform:uppercase;letter-spacing:0.05em}
+    .stat-divider{width:1px;height:30px;background:var(--os-border-light)}
+    
+    /* ===== GLASSMORPHIC PANELS ===== */
+    .glass-panel{background:rgba(255,255,255,0.05);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.08);color:var(--os-text-primary)}
+    .floating-panel{position:absolute;z-index:2;animation:float 6s ease-in-out infinite}
+    .floating-panel-1{top:25%;left:8%;border-radius:var(--radius-cardslarge);padding:16px;width:280px;animation-delay:0s;background:rgba(26,26,36,0.8);border:1px solid var(--os-border-light)}
+    .floating-panel-2{top:35%;right:8%;border-radius:var(--radius-pills);padding:12px 20px;animation-delay:1s;background:rgba(124,58,237,0.2);border:1px solid rgba(124,58,237,0.3)}
+    .floating-panel-3{bottom:25%;left:12%;border-radius:var(--radius-cardslarge);padding:16px;width:260px;animation-delay:2s;background:rgba(26,26,36,0.8);border:1px solid var(--os-border-light)}
+    .panel-header{display:flex;gap:6px;margin-bottom:12px}
+    .panel-dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.2)}
+    .panel-content{height:80px;background:rgba(255,255,255,0.05);border-radius:8px;border:1px solid var(--os-border-light)}
+    .panel-tags{display:flex;gap:8px;flex-wrap:wrap}
+    .panel-tag{background:rgba(49,180,243,0.15);padding:4px 12px;border-radius:var(--radius-pills);font-size:12px;font-weight:500;color:var(--os-accent-primary)}
+    
+    /* ===== SECTIONS ===== */
+    .section{padding:64px 32px}
+    .section-header{text-align:center;margin-bottom:48px}
+    .section-title{color:var(--os-text-primary)}
+    .section-subtitle{font-size:16px;color:var(--os-text-muted);max-width:500px;margin:16px auto 0}
+    
+    /* ===== HOW IT WORKS ===== */
+    .steps-grid{display:grid;grid-template-columns:1fr;gap:24px}
+    @media(min-width:768px){.steps-grid{grid-template-columns:repeat(3,1fr)}}
+    .step-card{background:var(--os-bg-card);border:1px solid var(--os-border-light);border-radius:var(--radius-cards);padding:24px;text-align:center;transition:all 0.2s ease}
+    .step-card:hover{border-color:var(--os-accent-primary);transform:translateY(-4px)}
+    .step-number{font-size:56px;font-weight:700;color:var(--os-border-light);line-height:1;margin-bottom:8px}
+    .step-icon{width:48px;height:48px;border-radius:var(--radius-buttons);background:rgba(49,180,243,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;color:var(--os-accent-primary)}
+    .step-title{font-size:20px;font-weight:600;color:var(--os-text-primary);margin-bottom:8px}
+    .step-description{font-size:14px;color:var(--os-text-muted)}
+    
+    /* ===== FEATURES ===== */
+    .features-grid{display:grid;grid-template-columns:1fr;gap:24px}
+    @media(min-width:768px){.features-grid{grid-template-columns:repeat(2,1fr)}}
+    @media(min-width:1024px){.features-grid{grid-template-columns:repeat(3,1fr)}}
+    .feature-card{background:var(--os-bg-card);border:1px solid var(--os-border-light);border-radius:var(--radius-cards);padding:24px;transition:all 0.2s ease}
+    .feature-card:hover{border-color:var(--os-accent-purple);transform:translateY(-4px)}
+    .feature-icon{width:48px;height:48px;border-radius:var(--radius-buttons);background:var(--os-gradient-purple);display:flex;align-items:center;justify-content:center;margin-bottom:16px;color:var(--os-text-primary)}
+    .feature-label{font-size:12px;font-weight:500;color:var(--os-accent-primary);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+    .feature-title{font-size:20px;font-weight:600;color:var(--os-text-primary);margin-bottom:8px}
+    .feature-description{font-size:14px;color:var(--os-text-muted);margin-bottom:16px}
+    .feature-tags{display:flex;flex-wrap:wrap;gap:6px}
+    .feature-tag{background:var(--os-bg-tertiary);padding:4px 10px;border-radius:var(--radius-pills);font-size:12px;color:var(--os-text-secondary)}
+    
+    /* ===== MARQUEE ===== */
+    .marquee{background:var(--os-bg-secondary);padding:48px 0;overflow:hidden;border-top:1px solid var(--os-border-light);border-bottom:1px solid var(--os-border-light)}
+    .marquee-track{display:flex;width:fit-content;animation:marquee 25s linear infinite}
+    .marquee-track:hover{animation-play-state:paused}
+    .marquee-item{flex-shrink:0;width:280px;height:180px;margin:0 12px;border-radius:var(--radius-cards);overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.3);border:1px solid var(--os-border-light)}
+    @media(min-width:768px){.marquee-item{width:360px;height:220px}}
+    .marquee-item img{width:100%;height:100%;object-fit:cover}
+    
+    /* ===== TESTIMONIALS ===== */
+    .testimonials{background:var(--os-bg-primary)}
+    .testimonials-grid{display:grid;grid-template-columns:1fr;gap:24px}
+    @media(min-width:768px){.testimonials-grid{grid-template-columns:repeat(3,1fr)}}
+    .testimonial-card{background:var(--os-bg-card);border-radius:var(--radius-cards);padding:24px;box-shadow:none;border:1px solid var(--os-border-light)}
+    .testimonial-card:hover{border-color:var(--os-accent-purple)}
+    .testimonial-stars{display:flex;gap:2px;margin-bottom:12px}
+    .testimonial-stars svg{width:14px;height:14px;color:#fbbf24;fill:#fbbf24}
+    .testimonial-text{font-size:15px;line-height:1.6;color:var(--os-text-secondary);margin-bottom:16px}
+    .testimonial-author{display:flex;align-items:center;gap:12px}
+    .author-avatar{width:40px;height:40px;border-radius:50%;background:var(--os-gradient-purple)}
+    .author-name{font-size:14px;font-weight:600;color:var(--os-text-primary)}
+    .author-role{font-size:12px;color:var(--os-text-muted)}
+    
+    /* ===== CTA ===== */
+    .cta{background:var(--os-bg-secondary);padding:96px 32px;border-top:1px solid var(--os-border-light)}
+    .cta-content{max-width:600px;margin:0 auto;text-align:center}
+    .cta-title{color:var(--os-text-primary);margin-bottom:16px}
+    .cta-subtitle{font-size:16px;color:var(--os-text-muted);margin-bottom:32px}
+    .cta-note{font-size:13px;color:var(--os-text-muted);margin-top:16px}
+    
+    /* ===== FOOTER - Superhuman Style ===== */
+    /* Background #421d24, white text, 4 columns, 32px h-padding, 36px v-padding */
+    .footer{background:var(--aubergine);padding:36px 32px}
+    .footer-container{max-width:1200px;margin:0 auto}
+    .footer-main{display:flex;flex-direction:column;gap:32px}
+    @media(min-width:768px){.footer-main{flex-direction:row;justify-content:space-between;align-items:flex-start}}
+    .footer-brand-area{max-width:280px}
+    .footer-logo-link{display:flex;align-items:center;gap:8px;text-decoration:none}
+    .footer-logo-icon{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--iris),var(--indigo-glow));display:flex;align-items:center;justify-content:center}
+    .footer-logo-text{font-size:18px;font-weight:600;color:var(--bone)}
+    .footer-tagline{font-size:14px;color:rgba(255,255,255,0.6);margin-top:8px;line-height:1.5}
+    .footer-nav{display:flex;gap:48px;flex-wrap:wrap}
+    .footer-nav-col{display:flex;flex-direction:column;gap:12px}
+    .footer-nav-col h4{font-size:14px;font-weight:600;color:var(--bone);margin-bottom:4px}
+    .footer-nav-col a{font-size:14px;font-weight:460;color:rgba(255,255,255,0.6);text-decoration:none;transition:color 0.2s}
+    .footer-nav-col a:hover{color:var(--bone)}
+    .footer-copyright{max-width:1200px;margin:48px auto 0;padding-top:24px;border-top:1px solid rgba(255,255,255,0.1);display:flex;flex-direction:column;gap:8px;text-align:center;font-size:13px;color:rgba(255,255,255,0.4)}
+@media(min-width:768px){.footer-copyright{flex-direction:row;justify-content:space-between;text-align:left}}
+    
+    /* ===== RESPONSIVE ===== */
+    @media(max-width:768px){
+      .floating-panel{display:none}
+      .hero-title{font-size:40px;letter-spacing:-1px}
+      .text-display{font-size:40px}
+      .text-heading-lg{font-size:32px}
+    }
+  </style>
+</head>
+<body>
+  
+  <!-- Announcement Banner -->
+  <div class="announcement">
+    <div class="announcement-content">
+      <span>✨ Open Studio is free forever</span>
+      <a href="/dashboard">Start creating →</a>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="nav" id="mainNav">
+    <div class="nav-container">
+      <a href="/" class="nav-logo">
+        <div class="logo-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+        </div>
+        <span>Open Studio</span>
+      </a>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#how-it-works">How it works</a>
+        <a href="#testimonials">Testimonials</a>
+      </div>
+      <div class="nav-actions">
+        <a href="/dashboard" class="btn-signup">Log in</a>
+        <a href="/dashboard" class="btn btn-primary btn-sm">Sign up</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-bg">
+      <div class="hero-gradient"></div>
+      <div class="hero-spotlight-1"></div>
+      <div class="hero-spotlight-2"></div>
+      <div class="hero-spotlight-3"></div>
+      <div class="hero-spotlight-4"></div>
+    </div>
+    
+    <!-- Glassmorphic Floating Panels -->
+    <div class="floating-panel floating-panel-1 glass-panel animate-fade-down">
+      <div class="panel-header">
+        <span class="panel-dot"></span>
+        <span class="panel-dot"></span>
+        <span class="panel-dot"></span>
+      </div>
+      <div class="panel-content"></div>
+    </div>
+    
+    <div class="floating-panel floating-panel-2 glass-panel animate-fade-up delay-2">
+      <span class="panel-tag">✨ 60+ Effects</span>
+    </div>
+    
+    <div class="floating-panel floating-panel-3 glass-panel animate-fade-up delay-3">
+      <div class="panel-header">
+        <span class="panel-dot"></span>
+        <span class="panel-dot"></span>
+      </div>
+      <div class="panel-tags">
+        <span class="panel-tag">MP4</span>
+        <span class="panel-tag">WebM</span>
+        <span class="panel-tag">GIF</span>
+      </div>
+    </div>
+    
+    <div class="hero-content">
+      <div class="hero-badge glass-panel animate-fade-in-up">
+        <span class="badge-dot"></span>
+        <span>Browser-based video editor</span>
+      </div>
+      <h1 class="hero-title text-display animate-fade-in-up delay-1">
+        Superpowers for<br>your videos
+      </h1>
+      <p class="hero-subtitle animate-fade-in-up delay-2">
+        Professional editing tools without the learning curve. Multi-track timeline, 
+        stunning effects, and instant export — all free.
+      </p>
+      <div class="hero-buttons animate-fade-in-up delay-3">
+        <a href="/dashboard" class="btn btn-primary">Start Editing Free →</a>
+        <a href="#features" class="btn btn-ghost">See features</a>
+      </div>
+      <div class="hero-stats animate-fade-in-up delay-4">
+        <div class="stat"><span class="stat-number">60+</span><span class="stat-label">Effects</span></div>
+        <div class="stat-divider"></div>
+        <div class="stat"><span class="stat-number">32+</span><span class="stat-label">Filters</span></div>
+        <div class="stat-divider"></div>
+        <div class="stat"><span class="stat-number">35+</span><span class="stat-label">Transitions</span></div>
+        <div class="stat-divider"></div>
+        <div class="stat"><span class="stat-number">100%</span><span class="stat-label">Free</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section id="how-it-works" class="section bg-os-secondary">
+    <div class="container">
+      <div class="section-header animate-fade-in-up">
+        <h2 class="section-title text-heading-lg">From import to export<br>in minutes</h2>
+        <p class="section-subtitle">No software to install. No subscriptions. Just create.</p>
+      </div>
+      <div class="steps-grid">
+        <div class="step-card animate-fade-in-up delay-1">
+          <div class="step-number">01</div>
+          <div class="step-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          </div>
+          <h3 class="step-title">Import your media</h3>
+          <p class="step-description">Drag & drop videos, images, or audio. Or record your screen directly.</p>
+        </div>
+        <div class="step-card animate-fade-in-up delay-2">
+          <div class="step-number">02</div>
+          <div class="step-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+          </div>
+          <h3 class="step-title">Edit with precision</h3>
+          <p class="step-description">Multi-track timeline with trimming, splitting, and keyframe animations.</p>
+        </div>
+        <div class="step-card animate-fade-in-up delay-3">
+          <div class="step-number">03</div>
+          <div class="step-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </div>
+          <h3 class="step-title">Export instantly</h3>
+          <p class="step-description">MP4, WebM, or GIF. All processing happens locally in your browser.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section id="features" class="section bg-os-primary">
+    <div class="container">
+      <div class="section-header animate-fade-in-up">
+        <h2 class="section-title text-heading-lg">Everything you need<br>to make magic</h2>
+        <p class="section-subtitle">Powerful features that rival professional software — but actually easy to use.</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card animate-fade-in-up delay-1">
+          <div class="feature-label">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+            Multi-Track
+          </div>
+          <h3 class="feature-title">Timeline</h3>
+          <p class="feature-description">Layer video, audio, and text tracks. Trim, split, and arrange with frame-perfect precision.</p>
+          <div class="feature-tags">
+            <span class="feature-tag">Video</span>
+            <span class="feature-tag">Audio</span>
+            <span class="feature-tag">Text</span>
+          </div>
+        </div>
+        <div class="feature-card animate-fade-in-up delay-2">
+          <div class="feature-label">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+            Effects
+          </div>
+          <h3 class="feature-title">60+ Video Effects</h3>
+          <p class="feature-description">Blur, color correction, distortion, stylize, lighting, and noise. Professional-grade.</p>
+          <div class="feature-tags">
+            <span class="feature-tag">Gaussian</span>
+            <span class="feature-tag">RGB Split</span>
+            <span class="feature-tag">Glow</span>
+          </div>
+        </div>
+        <div class="feature-card animate-fade-in-up delay-3">
+          <div class="feature-label">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+            Filters
+          </div>
+          <h3 class="feature-title">32+ Color Filters</h3>
+          <p class="feature-description">Cinematic, mood, vintage, and artistic filters. Transform footage with one click.</p>
+          <div class="feature-tags">
+            <span class="feature-tag">Cinematic</span>
+            <span class="feature-tag">Vintage</span>
+            <span class="feature-tag">Mood</span>
+          </div>
+        </div>
+        <div class="feature-card animate-fade-in-up delay-4">
+          <div class="feature-label">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+            Transitions
+          </div>
+          <h3 class="feature-title">35+ Transitions</h3>
+          <p class="feature-description">Smooth cuts, dissolves, wipes, slides, and glitch effects.</p>
+          <div class="feature-tags">
+            <span class="feature-tag">Fade</span>
+            <span class="feature-tag">Slide</span>
+            <span class="feature-tag">Zoom</span>
+          </div>
+        </div>
+        <div class="feature-card animate-fade-in-up delay-5">
+          <div class="feature-label">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+            Recording
+          </div>
+          <h3 class="feature-title">Screen Recording</h3>
+          <p class="feature-description">Record your screen, camera, or both. Perfect for tutorials and presentations.</p>
+          <div class="feature-tags">
+            <span class="feature-tag">Screen</span>
+            <span class="feature-tag">Webcam</span>
+            <span class="feature-tag">Audio</span>
+          </div>
+        </div>
+        <div class="feature-card animate-fade-in-up delay-6">
+          <div class="feature-label">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+            Export
+          </div>
+          <h3 class="feature-title">Export to MP4</h3>
+          <p class="feature-description">Download in MP4, WebM, or GIF. Fast, private, and secure.</p>
+          <div class="feature-tags">
+            <span class="feature-tag">MP4</span>
+            <span class="feature-tag">WebM</span>
+            <span class="feature-tag">GIF</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Marquee -->
+  <section class="marquee">
+    <div class="marquee-track">
+      <div class="marquee-item"><img src="https://motionsites.ai/assets/hero-space-voyage-preview-eECLH3Yc.gif" alt="Project"></div>
+      <div class="marquee-item"><img src="https://motionsites.ai/assets/hero-portfolio-cosmic-preview-BpvWJ3Nc.gif" alt="Project"></div>
+      <div class="marquee-item"><img src="https://motionsites.ai/assets/hero-velorah-preview-CJNTtbpd.gif" alt="Project"></div>
+      <div class="marquee-item"><img src="https://motionsites.ai/assets/hero-asme-preview-B_nGDnTP.gif" alt="Project"></div>
+      <div class="marquee-item"><img src="https://motionsites.ai/assets/hero-transform-data-preview-Cx5OU29N.gif" alt="Project"></div>
+      <div class="marquee-item"><img src="https://motionsites.ai/assets/hero-aethera-preview-DknSlcTa.gif" alt="Project"></div>
+      <div class="marquee-item"><img src="https://motionsites.ai/assets/hero-orbit-web3-preview-BXt4OttD.gif" alt="Project"></div>
+      <div class="marquee-item"><img src="https://motionsites.ai/assets/hero-nexora-preview-cx5HmUgo.gif" alt="Project"></div>
+      <!-- Duplicate -->
+      <div class="marquee-item"><img src="https://motionsites.ai/assets/hero-space-voyage-preview-eECLH3Yc.gif" alt="Project"></div>
+      <div class="marquee-item"><img src="https://motionsites.ai/assets/hero-portfolio-cosmic-preview-BpvWJ3Nc.gif" alt="Project"></div>
+      <div class="marquee-item"><img src="https://motionsites.ai/assets/hero-velorah-preview-CJNTtbpd.gif" alt="Project"></div>
+      <div class="marquee-item"><img src="https://motionsites.ai/assets/hero-asme-preview-B_nGDnTP.gif" alt="Project"></div>
+      <div class="marquee-item"><img src="https://motionsites.ai/assets/hero-transform-data-preview-Cx5OU29N.gif" alt="Project"></div>
+      <div class="marquee-item"><img src="https://motionsites.ai/assets/hero-aethera-preview-DknSlcTa.gif" alt="Project"></div>
+      <div class="marquee-item"><img src="https://motionsites.ai/assets/hero-orbit-web3-preview-BXt4OttD.gif" alt="Project"></div>
+      <div class="marquee-item"><img src="https://motionsites.ai/assets/hero-nexora-preview-cx5HmUgo.gif" alt="Project"></div>
+    </div>
+  </section>
+
+  <!-- Testimonials -->
+  <section id="testimonials" class="section testimonials">
+    <div class="container">
+      <div class="section-header animate-fade-in-up">
+        <h2 class="section-title text-heading-lg">Loved by creators<br>everywhere</h2>
+      </div>
+      <div class="testimonials-grid">
+        <div class="testimonial-card animate-fade-in-up delay-1">
+          <div class="testimonial-stars">
+            <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+            <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+            <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+            <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+            <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+          </div>
+          <p class="testimonial-text">"Open Studio transformed how I create content. It's fast, powerful, and completely free. I use it every day."</p>
+          <div class="testimonial-author">
+            <div class="author-avatar"></div>
+            <div>
+              <div class="author-name">Marcus Chen</div>
+              <div class="author-role">YouTube Creator</div>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial-card animate-fade-in-up delay-2">
+          <div class="testimonial-stars">
+            <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+            <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+            <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+            <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+            <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+          </div>
+          <p class="testimonial-text">"As a beginner, I was intimidated by video editors. Open Studio changed that — I made my first video in 10 minutes."</p>
+          <div class="testimonial-author">
+            <div class="author-avatar" style="background:linear-gradient(135deg,#f093fb,#f5576c)"></div>
+            <div>
+              <div class="author-name">Sarah Williams</div>
+              <div class="author-role">Content Creator</div>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial-card animate-fade-in-up delay-3">
+          <div class="testimonial-stars">
+            <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+            <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+            <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+            <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+            <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+          </div>
+          <p class="testimonial-text">"The screen recording feature is a game-changer. I record, edit, and export tutorials without leaving my browser."</p>
+          <div class="testimonial-author">
+            <div class="author-avatar" style="background:linear-gradient(135deg,#4facfe,#00f2fe)"></div>
+            <div>
+              <div class="author-name">James Rodriguez</div>
+              <div class="author-role">Tech Educator</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta">
+    <div class="cta-content animate-fade-in-up">
+      <h2 class="cta-title text-heading-lg">Ready to create<br>something amazing?</h2>
+      <p class="cta-subtitle">Join thousands of creators making videos with Open Studio.</p>
+      <a href="/dashboard" class="btn btn-primary">Start Editing — It's Free →</a>
+      <p class="cta-note">No downloads. No credit card. No limits.</p>
+    </div>
+  </section>
+
+  <!-- Footer - Superhuman Style: 4 columns, Aubergine bg -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-main">
+        <!-- Brand - Top Left -->
+        <div class="footer-brand-area">
+          <a href="/" class="footer-logo-link">
+            <div class="footer-logo-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+            </div>
+            <span class="footer-logo-text">Open Studio</span>
+          </a>
+          <p class="footer-tagline">Professional video editing in your browser.</p>
+        </div>
+        
+        <!-- 4 Column Links -->
+        <nav class="footer-nav">
+          <div class="footer-nav-col">
+            <h4>Product</h4>
+            <a href="#features">Features</a>
+            <a href="#how-it-works">How it works</a>
+            <a href="/dashboard">Editor</a>
+          </div>
+          <div class="footer-nav-col">
+            <h4>Resources</h4>
+            <a href="#">Documentation</a>
+            <a href="#">Keyboard Shortcuts</a>
+            <a href="#">API</a>
+          </div>
+          <div class="footer-nav-col">
+            <h4>Company</h4>
+            <a href="#">About</a>
+            <a href="#">Careers</a>
+            <a href="#">Blog</a>
+          </div>
+          <div class="footer-nav-col">
+            <h4>Connect</h4>
+            <a href="#">Twitter</a>
+            <a href="#">GitHub</a>
+            <a href="#">Discord</a>
+          </div>
+        </nav>
+      </div>
+      
+      <!-- Bottom -->
+      <div class="footer-copyright">
+        <span>© 2024 Open Studio. Built with Next.js & Tailwind CSS.</span>
+        <span>San Francisco, CA</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script>
+    // Nav scroll
+    const nav = document.getElementById('mainNav');
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 50) nav.classList.add('scrolled');
+      else nav.classList.remove('scrolled');
+    });
+
+    // Intersection Observer
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.opacity = '1';
+          entry.target.style.transform = 'translateY(0)';
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+    document.querySelectorAll('.animate-fade-in-up').forEach(el => observer.observe(el));
+
+    // Smooth scroll
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function(e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+  </script>
+</body>
+</html>
