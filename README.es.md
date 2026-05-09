@@ -1,6 +1,6 @@
 # ✨ Open Studio
 
-![Open Studio Cover](./portada.png)
+![Open Studio Cover](./docs/images/open-studio-banner.png)
 
 > The VS Code of web builders: build, edit, ship and scale from one workspace.
 
