@@ -2,6 +2,13 @@
   "directories": {
     "output": "dist/macos"
   },
+  "extraResources": [
+    {
+      "from": "build/web-export",
+      "to": "web-out",
+      "filter": ["**/*"]
+    }
+  ],
   "mac": {
     "target": [
       {

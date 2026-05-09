@@ -7,6 +7,14 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: process.cwd(),
   },
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.output = config.output ?? {};
+      // Dev / redes lentas: chunks grandes (p. ej. dashboard) pueden agotar el timeout por defecto.
+      config.output.chunkLoadTimeout = 180000;
+    }
+    return config;
+  },
   ...(isDesktopExport
     ? {
         output: 'export',

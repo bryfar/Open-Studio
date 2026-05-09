@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
-import { NewProjectDialog } from '@/shared/components/NewProjectDialog';
 import {
   deleteProject,
   listProjects,
@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/shared/components/ui/Button';
 import { StudioShell, StudioShellFooterNav } from '@/shared/components/StudioShell';
+import { useLocale } from '@/shared/i18n';
 import type { Project } from '@/shared/types';
 import { cn, generateId } from '@/shared/utils';
 
@@ -45,8 +46,14 @@ const WORKSPACES_KEY = 'opencut:workspaces';
 const WORKSPACE_ASSIGNMENTS_KEY = 'opencut:workspaceAssignments';
 const DEFAULT_WORKSPACE_ID = 'all';
 
+const LazyNewProjectDialog = dynamic(
+  () => import('@/shared/components/NewProjectDialog').then((m) => ({ default: m.NewProjectDialog })),
+  { ssr: false }
+);
+
 export default function DashboardPage() {
   const router = useRouter();
+  const { locale, setLocale, t } = useLocale();
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -65,7 +72,6 @@ export default function DashboardPage() {
   const [compactProjectCards, setCompactProjectCards] = useState(false);
   const [rememberLastSearch, setRememberLastSearch] = useState(true);
   const [telemetryEnabled, setTelemetryEnabled] = useState(false);
-  const [defaultLanguage, setDefaultLanguage] = useState<'es' | 'en'>('es');
   const [workspaces, setWorkspaces] = useState<WorkspaceItem[]>([
     { id: DEFAULT_WORKSPACE_ID, name: 'All projects', createdAt: 0 },
   ]);
@@ -98,15 +104,15 @@ export default function DashboardPage() {
         case 'modified-asc':
           return a.updatedAt - b.updatedAt;
         case 'name-asc':
-          return a.name.localeCompare(b.name, 'es');
+          return a.name.localeCompare(b.name, locale);
         case 'name-desc':
-          return b.name.localeCompare(a.name, 'es');
+          return b.name.localeCompare(a.name, locale);
         case 'modified-desc':
         default:
           return b.updatedAt - a.updatedAt;
       }
     });
-  }, [projects, search, selectedWorkspaceId, workspaceAssignments, sortMode]);
+  }, [projects, search, selectedWorkspaceId, workspaceAssignments, sortMode, locale]);
 
   const allVisibleSelected =
     filteredProjects.length > 0 && filteredProjects.every((project) => selectedProjectIds.includes(project.id));
@@ -120,9 +126,9 @@ export default function DashboardPage() {
       plan: 'Creator',
       totalProjects: total,
       totalMinutes: Math.round(totalDuration / 60),
-      lastProject: latest?.name ?? 'Sin actividad reciente',
+      lastProject: latest?.name ?? t('dashboard.noRecent'),
     };
-  }, [projects]);
+  }, [projects, t]);
 
   async function refresh() {
     try {
@@ -132,7 +138,7 @@ export default function DashboardPage() {
       console.error('Error loading projects', error);
       setToast({
         type: 'error',
-        message: 'No se pudieron cargar proyectos. Revisa permisos de almacenamiento del navegador.',
+        message: t('toast.loadProjectsError'),
       });
     } finally {
       setLoading(false);
@@ -150,8 +156,7 @@ export default function DashboardPage() {
         if (!cancelled) {
           setToast({
             type: 'error',
-            message:
-              'No se pudieron cargar proyectos. Revisa permisos de almacenamiento del navegador.',
+            message: t('toast.loadProjectsError'),
           });
         }
       })
@@ -161,7 +166,7 @@ export default function DashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -176,7 +181,6 @@ export default function DashboardPage() {
     const compactCards = window.localStorage.getItem('opencut:compactProjectCards');
     const rememberSearch = window.localStorage.getItem('opencut:rememberLastSearch');
     const telemetry = window.localStorage.getItem('opencut:telemetryEnabled');
-    const lang = window.localStorage.getItem('opencut:language');
     const savedSearch = window.localStorage.getItem('opencut:lastSearch');
     const notifyDesktop = window.localStorage.getItem('opencut:notifyDesktop');
     const notifyProduct = window.localStorage.getItem('opencut:notifyProductUpdates');
@@ -195,9 +199,6 @@ export default function DashboardPage() {
     }
     if (telemetry !== null) {
       queueMicrotask(() => setTelemetryEnabled(telemetry === '1'));
-    }
-    if (lang === 'en' || lang === 'es') {
-      queueMicrotask(() => setDefaultLanguage(lang));
     }
     if (notifyDesktop !== null) {
       queueMicrotask(() => setNotificationDesktop(notifyDesktop === '1'));
@@ -257,42 +258,34 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!toast) return;
-    const t = window.setTimeout(() => setToast(null), 3200);
-    return () => window.clearTimeout(t);
+    const toastDismissTimer = window.setTimeout(() => setToast(null), 3200);
+    return () => window.clearTimeout(toastDismissTimer);
   }, [toast]);
 
   useEffect(() => {
     if (!renameOpen) return;
-    const t = window.requestAnimationFrame(() => renameInputRef.current?.focus());
-    return () => window.cancelAnimationFrame(t);
+    const renameFocusFrame = window.requestAnimationFrame(() => renameInputRef.current?.focus());
+    return () => window.cancelAnimationFrame(renameFocusFrame);
   }, [renameOpen]);
 
-  const onboardingSteps = [
-    {
-      title: 'Bienvenido a Open Studio',
-      description:
-        'Editor de video con foco en privacidad, rapidez y herramientas de creación.',
-    },
-    {
-      title: 'Dashboard de proyectos',
-      description:
-        'Crea, renombra, elimina y abre proyectos desde un solo lugar. Al crear, configuras primero formato y plantilla.',
-    },
-    {
-      title: 'Editor modular',
-      description:
-        'Explora secciones de multimedia, efectos, transiciones, filtros, subtítulos y recursos avanzados.',
-    },
-    {
-      title: 'Listo para empezar',
-      description:
-        'Usa «Nuevo proyecto» para elegir nombre, formato, FPS y plantilla o lienzo en blanco.',
-    },
-  ];
+  const onboardingSteps = useMemo(
+    () => [
+      { title: t('onboarding.step0Title'), description: t('onboarding.step0Body') },
+      { title: t('onboarding.step1Title'), description: t('onboarding.step1Body') },
+      { title: t('onboarding.step2Title'), description: t('onboarding.step2Body') },
+      { title: t('onboarding.step3Title'), description: t('onboarding.step3Body') },
+    ],
+    [t]
+  );
+
+  function workspaceLabel(w: WorkspaceItem) {
+    if (w.id === DEFAULT_WORKSPACE_ID) return t('dashboard.allProjectsWorkspace');
+    return w.name;
+  }
 
   async function handleCreateProject(project: Project) {
     await saveProjectSnapshot(project.id, project, []);
-    setToast({ type: 'success', message: 'Proyecto creado correctamente.' });
+    setToast({ type: 'success', message: t('toast.projectCreated') });
     if (autoOpenEditorAfterCreate) {
       router.push(`/editor?projectId=${project.id}`);
       return;
@@ -302,13 +295,13 @@ export default function DashboardPage() {
 
   async function openProject(projectId: string) {
     try {
-      setToast({ type: 'success', message: 'Abriendo proyecto…' });
+      setToast({ type: 'success', message: t('toast.openingProject') });
       router.push(`/editor?projectId=${projectId}`);
     } catch (error) {
       console.error('No se pudo abrir snapshot.', error);
       setToast({
         type: 'error',
-        message: 'No se pudo abrir el proyecto.',
+        message: t('toast.openProjectError'),
       });
     }
   }
@@ -323,14 +316,14 @@ export default function DashboardPage() {
     if (!renameTarget) return;
     const next = renameValue.trim();
     if (!next) {
-      setToast({ type: 'error', message: 'El nombre no puede estar vacío.' });
+      setToast({ type: 'error', message: t('toast.renameEmpty') });
       return;
     }
     await renameProject(renameTarget.id, next);
     setRenameOpen(false);
     setRenameTarget(null);
     await refresh();
-    setToast({ type: 'success', message: 'Nombre actualizado.' });
+    setToast({ type: 'success', message: t('toast.renameSuccess') });
   }
 
   async function confirmDelete() {
@@ -343,20 +336,20 @@ export default function DashboardPage() {
     });
     setDeleteConfirmId(null);
     await refresh();
-    setToast({ type: 'success', message: 'Proyecto eliminado.' });
+    setToast({ type: 'success', message: t('toast.projectDeleted') });
   }
 
   function handleCreateWorkspace() {
     const nextName = newWorkspaceName.trim();
     if (!nextName) {
-      setToast({ type: 'error', message: 'Escribe un nombre para el espacio de trabajo.' });
+      setToast({ type: 'error', message: t('toast.workspaceNameRequired') });
       return;
     }
     const alreadyExists = workspaces.some(
       (workspace) => workspace.name.trim().toLowerCase() === nextName.toLowerCase()
     );
     if (alreadyExists) {
-      setToast({ type: 'error', message: 'Ya existe un espacio con ese nombre.' });
+      setToast({ type: 'error', message: t('toast.workspaceExists') });
       return;
     }
     const created: WorkspaceItem = {
@@ -367,7 +360,7 @@ export default function DashboardPage() {
     setWorkspaces((prev) => [...prev, created]);
     setSelectedWorkspaceId(created.id);
     setNewWorkspaceName('');
-    setToast({ type: 'success', message: 'Espacio de trabajo creado.' });
+    setToast({ type: 'success', message: t('toast.workspaceCreated') });
   }
 
   function assignProjectToWorkspace(projectId: string, workspaceId: string) {
@@ -408,7 +401,6 @@ export default function DashboardPage() {
       <StudioShell
         activeNav="dashboard"
         sidebarProfile={{
-          displayName: 'Usuario local',
           onOpenSettings: () => setShowSettingsPanel(true),
         }}
         sidebarFooter={<StudioShellFooterNav onNews={() => setShowNewsPanel(true)} />}
@@ -433,9 +425,9 @@ export default function DashboardPage() {
                   onChange={(e) => setSearch(e.target.value)}
                   className="ui-input w-full"
                   style={{ paddingLeft: '44px', paddingRight: search ? '64px' : '10px' }}
-                  placeholder="Buscar proyectos…"
+                  placeholder={t('dashboard.searchPlaceholder')}
                   type="search"
-                  aria-label="Buscar proyectos por nombre"
+                  aria-label={t('dashboard.searchAria')}
                 />
                 {search ? (
                   <button
@@ -443,7 +435,7 @@ export default function DashboardPage() {
                     onClick={() => setSearch('')}
                     className="absolute inset-y-0 right-2 my-auto h-6 rounded px-2 text-[11px] text-[var(--os-text-secondary)] hover:bg-[var(--os-bg-hover)] hover:text-white"
                   >
-                    Limpiar
+                    {t('dashboard.clearSearch')}
                   </button>
                 ) : null}
               </form>
@@ -454,7 +446,7 @@ export default function DashboardPage() {
                 className="h-full px-3"
                 onClick={() => setNewProjectOpen(true)}
               >
-                Nuevo proyecto
+                {t('dashboard.newProject')}
               </Button>
             </div>
 
@@ -462,9 +454,16 @@ export default function DashboardPage() {
               <div className="mb-4 rounded-xl border border-[var(--os-border-default)] bg-[var(--os-bg-panel)] px-3 py-3">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="text-xs text-[var(--os-text-secondary)]">
-                    <span className="text-[var(--os-text-secondary)]">Home</span> <span className="px-1 text-[var(--os-text-muted)]">›</span>{' '}
+                    <span className="text-[var(--os-text-secondary)]">{t('dashboard.breadcrumbHome')}</span>{' '}
+                    <span className="px-1 text-[var(--os-text-muted)]">›</span>{' '}
                     <span className="font-semibold text-[var(--os-text-primary)]">
-                    {workspaces.find((workspace) => workspace.id === selectedWorkspaceId)?.name ?? 'All projects'}
+                      {workspaceLabel(
+                        workspaces.find((workspace) => workspace.id === selectedWorkspaceId) ?? {
+                          id: DEFAULT_WORKSPACE_ID,
+                          name: 'All projects',
+                          createdAt: 0,
+                        }
+                      )}
                     </span>
                   </div>
                   <div className="grid w-full gap-2 sm:w-auto sm:grid-cols-[220px_220px_auto]">
@@ -472,23 +471,23 @@ export default function DashboardPage() {
                       className="ui-select w-full"
                       value={selectedWorkspaceId}
                       onChange={(e) => setSelectedWorkspaceId(e.target.value)}
-                      aria-label="Seleccionar espacio de trabajo"
+                      aria-label={t('dashboard.workspaceSelectAria')}
                     >
                       {workspaces.map((workspace) => (
                         <option key={workspace.id} value={workspace.id}>
-                          {workspace.name}
+                          {workspaceLabel(workspace)}
                         </option>
                       ))}
                     </select>
                     <input
                       className="ui-input w-full"
-                      placeholder="Nuevo espacio de trabajo"
+                      placeholder={t('dashboard.workspaceNewPlaceholder')}
                       value={newWorkspaceName}
                       onChange={(e) => setNewWorkspaceName(e.target.value)}
-                      aria-label="Nombre del nuevo espacio"
+                      aria-label={t('dashboard.workspaceNewAria')}
                     />
                     <Button type="button" variant="secondary" size="sm" onClick={handleCreateWorkspace}>
-                      Crear espacio
+                      {t('dashboard.workspaceCreate')}
                     </Button>
                   </div>
                 </div>
@@ -502,7 +501,7 @@ export default function DashboardPage() {
                       checked={allVisibleSelected}
                       onChange={toggleSelectAllVisibleProjects}
                     />
-                    Seleccionar todo
+                    {t('dashboard.selectAll')}
                   </label>
                   <span className="text-[var(--os-border-default)]">|</span>
                   <select
@@ -513,12 +512,12 @@ export default function DashboardPage() {
                         e.target.value as 'modified-desc' | 'modified-asc' | 'name-asc' | 'name-desc'
                       )
                     }
-                    aria-label="Ordenar proyectos"
+                    aria-label={t('dashboard.sortAria')}
                   >
-                    <option value="modified-desc">Modificado ↓</option>
-                    <option value="modified-asc">Modificado ↑</option>
-                    <option value="name-asc">Nombre A-Z</option>
-                    <option value="name-desc">Nombre Z-A</option>
+                    <option value="modified-desc">{t('dashboard.sortModifiedDesc')}</option>
+                    <option value="modified-asc">{t('dashboard.sortModifiedAsc')}</option>
+                    <option value="name-asc">{t('dashboard.sortNameAsc')}</option>
+                    <option value="name-desc">{t('dashboard.sortNameDesc')}</option>
                   </select>
                 </div>
                 <div className="inline-flex rounded-xl border border-[var(--os-border-default)] bg-[var(--os-surface-1)] p-1">
@@ -528,7 +527,7 @@ export default function DashboardPage() {
                     className={`rounded-md px-2 py-1 ${
                       projectViewMode === 'grid' ? 'bg-[var(--os-bg-active)] text-white' : 'text-[var(--os-text-secondary)]'
                     }`}
-                    aria-label="Vista de cuadrícula"
+                    aria-label={t('dashboard.gridViewAria')}
                   >
                     <LayoutGrid size={14} />
                   </button>
@@ -538,7 +537,7 @@ export default function DashboardPage() {
                     className={`rounded-md px-2 py-1 ${
                       projectViewMode === 'list' ? 'bg-[var(--os-bg-active)] text-white' : 'text-[var(--os-text-secondary)]'
                     }`}
-                    aria-label="Vista de lista"
+                    aria-label={t('dashboard.listViewAria')}
                   >
                     <List size={14} />
                   </button>
@@ -546,19 +545,23 @@ export default function DashboardPage() {
               </div>
               <div className="flex min-h-0 flex-1 flex-col">
                 <div className="mb-3 flex shrink-0 items-center justify-between">
-                  <h2 className="text-base font-semibold tracking-tight text-[var(--os-text-primary)]">Todos los proyectos</h2>
-                  <span className="text-xs text-[var(--os-text-muted)]">{filteredProjects.length} elementos</span>
+                  <h2 className="text-base font-semibold tracking-tight text-[var(--os-text-primary)]">
+                    {t('dashboard.allProjectsTitle')}
+                  </h2>
+                  <span className="text-xs text-[var(--os-text-muted)]">
+                    {t('dashboard.itemsCount', { count: filteredProjects.length })}
+                  </span>
                 </div>
                 {loading ? (
                   <p className="text-xs text-[var(--os-text-muted)]" aria-live="polite">
-                    Cargando…
+                    {t('dashboard.loading')}
                   </p>
                 ) : filteredProjects.length === 0 ? (
                   <div className="flex h-full min-h-0 flex-1 items-center justify-center rounded-xl border border-dashed border-[var(--os-border-default)] p-8 text-center">
                     <p className="text-sm text-[var(--os-text-muted)]">
                       {search.trim()
-                        ? `No hay resultados para «${search}».`
-                        : 'Aún no hay proyectos. Crea uno con el asistente.'}
+                        ? t('dashboard.emptySearch', { query: search.trim() })
+                        : t('dashboard.emptyProjects')}
                     </p>
                   </div>
                 ) : (
@@ -600,9 +603,9 @@ export default function DashboardPage() {
                             checked={selectedProjectIds.includes(p.id)}
                             onChange={() => toggleProjectSelection(p.id)}
                             className="h-4 w-4 rounded border-[var(--os-border-default)] accent-[var(--os-accent-primary)]"
-                            aria-label={`Seleccionar proyecto ${p.name}`}
+                            aria-label={t('dashboard.selectProjectNamed', { name: p.name })}
                           />
-                          {selectedProjectIds.includes(p.id) ? 'Seleccionado' : 'Seleccionar'}
+                          {selectedProjectIds.includes(p.id) ? t('dashboard.selected') : t('dashboard.selectProject')}
                         </label>
                         <div
                           className={`${
@@ -617,7 +620,7 @@ export default function DashboardPage() {
                             <h3 className="text-sm font-medium truncate">{p.name}</h3>
                             {selectedProjectIds.includes(p.id) ? (
                               <span className="rounded-full border border-[var(--os-border-accent)]/40 bg-[var(--os-timeline-selection)] px-2 py-0.5 text-[10px] font-medium text-[var(--os-text-primary)]">
-                                Activo
+                                {t('dashboard.active')}
                               </span>
                             ) : null}
                           </div>
@@ -625,12 +628,14 @@ export default function DashboardPage() {
                             {p.width}×{p.height} · {Math.round(p.duration)}s
                           </p>
                           <p className="text-[11px] text-[var(--os-text-muted)] mt-1">
-                            Created {new Date(p.createdAt).toISOString().slice(0, 10)}
+                            {t('dashboard.createdLine', {
+                              date: new Date(p.createdAt).toISOString().slice(0, 10),
+                            })}
                           </p>
                         </div>
                         <div className={`${projectViewMode === 'list' ? 'w-56' : 'mt-2'}`}>
                           <label className="sr-only" htmlFor={`workspace-${p.id}`}>
-                            Espacio de trabajo
+                            {t('dashboard.workspaceLabel')}
                           </label>
                           <select
                             id={`workspace-${p.id}`}
@@ -640,7 +645,7 @@ export default function DashboardPage() {
                           >
                             {workspaces.map((workspace) => (
                               <option key={workspace.id} value={workspace.id}>
-                                {workspace.name}
+                                {workspaceLabel(workspace)}
                               </option>
                             ))}
                           </select>
@@ -662,7 +667,7 @@ export default function DashboardPage() {
                             )}
                             onClick={() => openProject(p.id)}
                           >
-                            Abrir
+                            {t('dashboard.open')}
                           </Button>
                           <Button
                             type="button"
@@ -674,7 +679,7 @@ export default function DashboardPage() {
                             )}
                             onClick={() => openRename(p.id, p.name)}
                           >
-                            Renombrar
+                            {t('dashboard.rename')}
                           </Button>
                           <Button
                             type="button"
@@ -686,7 +691,7 @@ export default function DashboardPage() {
                             )}
                             onClick={() => setDeleteConfirmId(p.id)}
                           >
-                            Eliminar
+                            {t('dashboard.delete')}
                           </Button>
                         </div>
                       </article>
@@ -699,22 +704,24 @@ export default function DashboardPage() {
         </div>
       </StudioShell>
 
-      <NewProjectDialog
-        open={newProjectOpen}
-        onOpenChange={setNewProjectOpen}
-        onComplete={async (project) => {
-          try {
-            await handleCreateProject(project);
-          } catch (error) {
-            console.error(error);
-            setToast({
-              type: 'error',
-              message: 'No se pudo guardar el proyecto. Revisa el almacenamiento del navegador.',
-            });
-            throw error;
-          }
-        }}
-      />
+      {newProjectOpen ? (
+        <LazyNewProjectDialog
+          open={newProjectOpen}
+          onOpenChange={setNewProjectOpen}
+          onComplete={async (project) => {
+            try {
+              await handleCreateProject(project);
+            } catch (error) {
+              console.error(error);
+              setToast({
+                type: 'error',
+                message: t('toast.saveProjectError'),
+              });
+              throw error;
+            }
+          }}
+        />
+      ) : null}
 
       {renameOpen && renameTarget && (
         <div
@@ -734,10 +741,10 @@ export default function DashboardPage() {
             className="w-full max-w-md rounded-xl border border-[var(--os-border-default)] bg-[var(--os-media-card-bg)] p-5 shadow-xl"
           >
             <h2 id={renameTitleId} className="text-sm font-semibold text-[var(--os-text-primary)]">
-              Renombrar proyecto
+              {t('rename.title')}
             </h2>
             <label htmlFor="rename-input" className="sr-only">
-              Nuevo nombre
+              {t('rename.inputAria')}
             </label>
             <input
               ref={renameInputRef}
@@ -757,10 +764,10 @@ export default function DashboardPage() {
                   setRenameTarget(null);
                 }}
               >
-                Cancelar
+                {t('rename.cancel')}
               </Button>
               <Button type="button" variant="primary" size="sm" onClick={() => void submitRename()}>
-                Guardar
+                {t('rename.save')}
               </Button>
             </div>
           </div>
@@ -782,15 +789,15 @@ export default function DashboardPage() {
             className="w-full max-w-md rounded-xl border border-[var(--os-border-default)] bg-[var(--os-media-card-bg)] p-5 shadow-xl"
           >
             <h2 id="delete-project-title" className="text-sm font-semibold text-[var(--os-text-primary)]">
-              ¿Eliminar proyecto?
+              {t('delete.title')}
             </h2>
-            <p className="text-xs text-[var(--os-text-secondary)] mt-2">Esta acción no se puede deshacer.</p>
+            <p className="text-xs text-[var(--os-text-secondary)] mt-2">{t('delete.warning')}</p>
             <div className="mt-4 flex justify-end gap-2">
               <Button type="button" variant="ghost" size="sm" onClick={() => setDeleteConfirmId(null)}>
-                Cancelar
+                {t('delete.cancel')}
               </Button>
               <Button type="button" variant="danger" size="sm" onClick={() => void confirmDelete()}>
-                Eliminar
+                {t('delete.confirm')}
               </Button>
             </div>
           </div>
@@ -825,7 +832,7 @@ export default function DashboardPage() {
               aria-valuemin={1}
               aria-valuemax={onboardingSteps.length}
               aria-valuenow={onboardingStep + 1}
-              aria-label="Progreso del tour"
+              aria-label={t('onboarding.progressAria')}
             >
               <div
                 className="h-full rounded-full bg-[var(--os-text-primary)] transition-[width] duration-300 ease-out"
@@ -840,7 +847,7 @@ export default function DashboardPage() {
                 className="h-9 shrink-0"
                 onClick={completeOnboarding}
               >
-                Saltar
+                {t('onboarding.skip')}
               </Button>
               <Button
                 type="button"
@@ -850,7 +857,7 @@ export default function DashboardPage() {
                 disabled={onboardingStep === 0}
                 onClick={() => setOnboardingStep((s) => Math.max(0, s - 1))}
               >
-                Atrás
+                {t('onboarding.back')}
               </Button>
               {onboardingStep < onboardingSteps.length - 1 ? (
                 <Button
@@ -860,7 +867,7 @@ export default function DashboardPage() {
                   className="h-9 min-w-[6.25rem] flex-1 sm:flex-none"
                   onClick={() => setOnboardingStep((s) => Math.min(onboardingSteps.length - 1, s + 1))}
                 >
-                  Siguiente
+                  {t('onboarding.next')}
                 </Button>
               ) : (
                 <Button
@@ -870,7 +877,7 @@ export default function DashboardPage() {
                   className="h-9 min-w-[6.25rem] flex-1 sm:flex-none"
                   onClick={completeOnboarding}
                 >
-                  Empezar
+                  {t('onboarding.start')}
                 </Button>
               )}
             </div>
@@ -908,9 +915,9 @@ export default function DashboardPage() {
             <div className="grid md:grid-cols-[220px_1fr]">
               <aside className="border-b border-[var(--os-border-default)] bg-[var(--os-bg-canvas)] p-4 md:border-b-0 md:border-r">
                 <h2 id="news-panel-title" className="flex items-center gap-2 text-sm font-semibold text-[var(--os-text-primary)]">
-                  <BellRing size={15} /> Notificaciones
+                  <BellRing size={15} /> {t('news.title')}
                 </h2>
-                <p className="mt-1 text-xs text-[var(--os-text-secondary)]">Controla alertas y revisa el historial reciente.</p>
+                <p className="mt-1 text-xs text-[var(--os-text-secondary)]">{t('news.subtitle')}</p>
                 <div className="mt-4 space-y-1 text-xs">
                   <button
                     type="button"
@@ -921,7 +928,7 @@ export default function DashboardPage() {
                         : 'text-[var(--os-text-secondary)] hover:bg-[var(--os-bg-hover)]'
                     }`}
                   >
-                    <span>Centro de notificaciones</span>
+                    <span>{t('news.tabFeed')}</span>
                     <ChevronRight size={14} />
                   </button>
                   <button
@@ -933,7 +940,7 @@ export default function DashboardPage() {
                         : 'text-[var(--os-text-secondary)] hover:bg-[var(--os-bg-hover)]'
                     }`}
                   >
-                    <span>Historial y changelog</span>
+                    <span>{t('news.tabChangelog')}</span>
                     <ChevronRight size={14} />
                   </button>
                 </div>
@@ -942,10 +949,10 @@ export default function DashboardPage() {
                 {newsTab === 'feed' ? (
                   <>
                     <div className="rounded-xl border border-[var(--os-border-default)] bg-gradient-to-br from-[var(--os-surface-2)] to-[var(--os-media-card-bg)] p-4">
-                      <p className="text-sm font-semibold text-[var(--os-text-primary)]">Preferencias de notificación</p>
+                      <p className="text-sm font-semibold text-[var(--os-text-primary)]">{t('news.prefsTitle')}</p>
                       <div className="mt-3 space-y-2">
                         <label className="flex items-center justify-between rounded-lg border border-[var(--os-border-default)] bg-[var(--os-surface-1)] px-3 py-2">
-                          <span className="text-xs text-[var(--os-text-primary)]">Alertas dentro del dashboard</span>
+                          <span className="text-xs text-[var(--os-text-primary)]">{t('news.toggleDesktop')}</span>
                           <button
                             type="button"
                             role="switch"
@@ -969,7 +976,7 @@ export default function DashboardPage() {
                           </button>
                         </label>
                         <label className="flex items-center justify-between rounded-lg border border-[var(--os-border-default)] bg-[var(--os-surface-1)] px-3 py-2">
-                          <span className="text-xs text-[var(--os-text-primary)]">Novedades de producto</span>
+                          <span className="text-xs text-[var(--os-text-primary)]">{t('news.toggleProduct')}</span>
                           <button
                             type="button"
                             role="switch"
@@ -993,7 +1000,7 @@ export default function DashboardPage() {
                           </button>
                         </label>
                         <label className="flex items-center justify-between rounded-lg border border-[var(--os-border-default)] bg-[var(--os-surface-1)] px-3 py-2">
-                          <span className="text-xs text-[var(--os-text-primary)]">Alertas de seguridad</span>
+                          <span className="text-xs text-[var(--os-text-primary)]">{t('news.toggleSecurity')}</span>
                           <button
                             type="button"
                             role="switch"
@@ -1021,19 +1028,15 @@ export default function DashboardPage() {
                     <ul className="mt-4 space-y-2 text-xs text-[var(--os-text-secondary)]">
                       <li className="rounded-lg border border-[var(--os-border-default)] bg-[var(--os-bg-panel-2)] p-3">
                         <p className="font-medium text-[var(--os-text-primary)] flex items-center gap-2">
-                          <Megaphone size={14} /> Dashboard actualizado
+                          <Megaphone size={14} /> {t('news.feedItem1Title')}
                         </p>
-                        <p className="mt-1 text-[var(--os-text-secondary)]">
-                          Búsqueda reconstruida, sidebar optimizado y mejor flujo de creación.
-                        </p>
+                        <p className="mt-1 text-[var(--os-text-secondary)]">{t('news.feedItem1Body')}</p>
                       </li>
                       <li className="rounded-lg border border-[var(--os-border-default)] bg-[var(--os-bg-panel-2)] p-3">
                         <p className="font-medium text-[var(--os-text-primary)] flex items-center gap-2">
-                          <Zap size={14} /> Productividad
+                          <Zap size={14} /> {t('news.feedItem2Title')}
                         </p>
-                        <p className="mt-1 text-[var(--os-text-secondary)]">
-                          Ajustes y notificaciones persistentes para personalizar tu espacio.
-                        </p>
+                        <p className="mt-1 text-[var(--os-text-secondary)]">{t('news.feedItem2Body')}</p>
                       </li>
                     </ul>
                   </>
@@ -1041,21 +1044,21 @@ export default function DashboardPage() {
                   <ul className="space-y-2 text-xs text-[var(--os-text-secondary)]">
                     <li className="rounded-lg border border-[var(--os-border-default)] bg-[var(--os-bg-panel-2)] p-3">
                       <p className="font-medium text-[var(--os-text-primary)] flex items-center gap-2">
-                        <Clock3 size={14} /> v0.1.9
+                        <Clock3 size={14} /> {t('news.changelog019')}
                       </p>
-                      <p className="mt-1 text-[var(--os-text-secondary)]">Centro de notificaciones renovado y nuevos toggles.</p>
+                      <p className="mt-1 text-[var(--os-text-secondary)]">{t('news.changelog019Body')}</p>
                     </li>
                     <li className="rounded-lg border border-[var(--os-border-default)] bg-[var(--os-bg-panel-2)] p-3">
                       <p className="font-medium text-[var(--os-text-primary)] flex items-center gap-2">
-                        <Clock3 size={14} /> v0.1.8
+                        <Clock3 size={14} /> {t('news.changelog018')}
                       </p>
-                      <p className="mt-1 text-[var(--os-text-secondary)]">Ajustes avanzados y panel de usuario renovado.</p>
+                      <p className="mt-1 text-[var(--os-text-secondary)]">{t('news.changelog018Body')}</p>
                     </li>
                   </ul>
                 )}
                 <div className="mt-4 flex justify-end">
                   <Button type="button" variant="primary" size="sm" onClick={() => setShowNewsPanel(false)}>
-                    Cerrar
+                    {t('news.close')}
                   </Button>
                 </div>
               </section>
@@ -1082,13 +1085,13 @@ export default function DashboardPage() {
               <aside className="border-b border-[var(--os-border-default)] bg-[var(--os-bg-canvas)] p-4 md:border-b-0 md:border-r">
                 <div className="flex items-center justify-between">
                   <h2 id="settings-panel-title" className="text-2xl font-semibold tracking-tight text-white">
-                    General
+                    {t('settings.panelTitle')}
                   </h2>
                   <button
                     type="button"
                     onClick={() => setShowSettingsPanel(false)}
                     className="rounded-md p-1 text-[var(--os-text-secondary)] transition hover:bg-[var(--os-bg-hover)] hover:text-white"
-                    aria-label="Cerrar panel de ajustes"
+                    aria-label={t('settings.closeAria')}
                   >
                     <X size={14} />
                   </button>
@@ -1103,7 +1106,9 @@ export default function DashboardPage() {
                         : 'text-[var(--os-text-secondary)] hover:bg-[var(--os-bg-hover)]'
                     }`}
                   >
-                    <span className="flex items-center gap-2"><Settings size={14} /> General</span>
+                    <span className="flex items-center gap-2">
+                      <Settings size={14} /> {t('settings.sidebarGeneral')}
+                    </span>
                     <ChevronRight size={14} />
                   </button>
                   <button
@@ -1115,7 +1120,9 @@ export default function DashboardPage() {
                         : 'text-[var(--os-text-secondary)] hover:bg-[var(--os-bg-hover)]'
                     }`}
                   >
-                    <span className="flex items-center gap-2"><Sparkles size={14} /> Editor</span>
+                    <span className="flex items-center gap-2">
+                      <Sparkles size={14} /> {t('settings.sidebarEditor')}
+                    </span>
                     <ChevronRight size={14} />
                   </button>
                   <button
@@ -1127,20 +1134,20 @@ export default function DashboardPage() {
                         : 'text-[var(--os-text-secondary)] hover:bg-[var(--os-bg-hover)]'
                     }`}
                   >
-                    <span className="flex items-center gap-2"><Shield size={14} /> Privacidad</span>
+                    <span className="flex items-center gap-2">
+                      <Shield size={14} /> {t('settings.sidebarPrivacy')}
+                    </span>
                     <ChevronRight size={14} />
                   </button>
                 </div>
               </aside>
               <section className="p-5">
                 <div className="rounded-xl border border-[var(--os-border-default)] bg-[var(--os-bg-panel)] p-4">
-                  <p className="text-lg font-semibold text-white">Secure your account</p>
-                  <p className="mt-1 text-sm text-[var(--os-text-primary)]">
-                    Activa MFA para proteger tu cuenta cuando inicias sesión.
-                  </p>
+                  <p className="text-lg font-semibold text-white">{t('settings.secureTitle')}</p>
+                  <p className="mt-1 text-sm text-[var(--os-text-primary)]">{t('settings.secureBody')}</p>
                   <div className="mt-3">
                     <Button type="button" variant="secondary" size="sm">
-                      Set up MFA
+                      {t('settings.mfaCta')}
                     </Button>
                   </div>
                 </div>
@@ -1150,18 +1157,15 @@ export default function DashboardPage() {
                   <>
                     <label className="flex items-center justify-between rounded-lg border border-[var(--os-border-default)] bg-[var(--os-bg-panel-2)] px-3 py-3">
                       <div>
-                        <p className="text-sm text-[var(--os-text-primary)]">Idioma principal</p>
-                        <p className="text-[11px] text-[var(--os-text-secondary)]">Idioma base de la interfaz del dashboard.</p>
+                        <p className="text-sm text-[var(--os-text-primary)]">{t('settings.languageTitle')}</p>
+                        <p className="text-[11px] text-[var(--os-text-secondary)]">{t('settings.languageHelp')}</p>
                       </div>
                       <select
                         className="ui-select h-8 text-xs w-32"
-                        value={defaultLanguage}
+                        value={locale}
                         onChange={(e) => {
                           const next = e.target.value as 'es' | 'en';
-                          setDefaultLanguage(next);
-                          if (typeof window !== 'undefined') {
-                            window.localStorage.setItem('opencut:language', next);
-                          }
+                          setLocale(next);
                         }}
                       >
                         <option value="es">Español</option>
@@ -1170,8 +1174,8 @@ export default function DashboardPage() {
                     </label>
                     <label className="flex items-center justify-between rounded-lg border border-[var(--os-border-default)] bg-[var(--os-bg-panel-2)] px-3 py-3">
                       <div>
-                        <p className="text-sm text-[var(--os-text-primary)]">Recordar última búsqueda</p>
-                        <p className="text-[11px] text-[var(--os-text-secondary)]">Mantiene el filtro activo al volver al dashboard.</p>
+                        <p className="text-sm text-[var(--os-text-primary)]">{t('settings.rememberSearchTitle')}</p>
+                        <p className="text-[11px] text-[var(--os-text-secondary)]">{t('settings.rememberSearchHelp')}</p>
                       </div>
                       <input
                         type="checkbox"
@@ -1188,8 +1192,8 @@ export default function DashboardPage() {
                     </label>
                     <label className="flex items-center justify-between rounded-lg border border-[var(--os-border-default)] bg-[var(--os-bg-panel-2)] px-3 py-3">
                       <div>
-                        <p className="text-sm text-[var(--os-text-primary)]">Abrir editor al crear proyecto</p>
-                        <p className="text-[11px] text-[var(--os-text-secondary)]">Salta directo al timeline tras crear un proyecto.</p>
+                        <p className="text-sm text-[var(--os-text-primary)]">{t('settings.autoOpenEditorTitle')}</p>
+                        <p className="text-[11px] text-[var(--os-text-secondary)]">{t('settings.autoOpenEditorHelp')}</p>
                       </div>
                       <input
                         type="checkbox"
@@ -1209,8 +1213,8 @@ export default function DashboardPage() {
                   <>
                     <label className="flex items-center justify-between rounded-lg border border-[var(--os-border-default)] bg-[var(--os-bg-panel-2)] px-3 py-3">
                       <div>
-                        <p className="text-sm text-[var(--os-text-primary)]">Reducir animaciones</p>
-                        <p className="text-[11px] text-[var(--os-text-secondary)]">Disminuye transiciones para mejorar enfoque y rendimiento.</p>
+                        <p className="text-sm text-[var(--os-text-primary)]">{t('settings.reducedMotionTitle')}</p>
+                        <p className="text-[11px] text-[var(--os-text-secondary)]">{t('settings.reducedMotionHelp')}</p>
                       </div>
                       <input
                         type="checkbox"
@@ -1223,15 +1227,15 @@ export default function DashboardPage() {
                           }
                           setToast({
                             type: 'success',
-                            message: next ? 'Animaciones reducidas activadas.' : 'Animaciones reducidas desactivadas.',
+                            message: next ? t('toast.motionOn') : t('toast.motionOff'),
                           });
                         }}
                       />
                     </label>
                     <label className="flex items-center justify-between rounded-lg border border-[var(--os-border-default)] bg-[var(--os-bg-panel-2)] px-3 py-3">
                       <div>
-                        <p className="text-sm text-[var(--os-text-primary)]">Tarjetas de proyecto compactas</p>
-                        <p className="text-[11px] text-[var(--os-text-secondary)]">Muestra más proyectos por pantalla en el grid.</p>
+                        <p className="text-sm text-[var(--os-text-primary)]">{t('settings.compactCardsTitle')}</p>
+                        <p className="text-[11px] text-[var(--os-text-secondary)]">{t('settings.compactCardsHelp')}</p>
                       </div>
                       <input
                         type="checkbox"
@@ -1251,8 +1255,8 @@ export default function DashboardPage() {
                   <>
                     <label className="flex items-center justify-between rounded-lg border border-[var(--os-border-default)] bg-[var(--os-bg-panel-2)] px-3 py-3">
                       <div>
-                        <p className="text-sm text-[var(--os-text-primary)]">Telemetría anónima</p>
-                        <p className="text-[11px] text-[var(--os-text-secondary)]">Ayuda a mejorar el producto con métricas no personales.</p>
+                        <p className="text-sm text-[var(--os-text-primary)]">{t('settings.telemetryTitle')}</p>
+                        <p className="text-[11px] text-[var(--os-text-secondary)]">{t('settings.telemetryHelp')}</p>
                       </div>
                       <input
                         type="checkbox"
@@ -1267,47 +1271,66 @@ export default function DashboardPage() {
                       />
                     </label>
                     <div className="rounded-lg border border-[var(--os-border-default)] bg-[var(--os-bg-panel-2)] p-3 text-xs text-[var(--os-text-secondary)]">
-                      Tus proyectos se guardan localmente en este navegador mediante IndexedDB/localStorage.
+                      {t('settings.privacyStorageNote')}
                     </div>
                   </>
                 )}
                   </div>
                   <aside className="rounded-xl border border-[var(--os-border-default)] bg-[var(--os-bg-panel-2)] p-3">
                     <h3 className="text-xs font-semibold text-[var(--os-text-primary)] flex items-center gap-2">
-                      <User size={14} /> Perfil de usuario
+                      <User size={14} /> {t('settings.profileTitle')}
                     </h3>
                     <div className="mt-3 space-y-2 text-xs text-[var(--os-text-secondary)]">
-                      <p><span className="text-[var(--os-text-primary)]">Nombre:</span> {userProfile.name}</p>
-                      <p><span className="text-[var(--os-text-primary)]">Plan:</span> {userProfile.plan}</p>
-                      <p><span className="text-[var(--os-text-primary)]">Proyectos:</span> {userProfile.totalProjects}</p>
-                      <p><span className="text-[var(--os-text-primary)]">Minutos editados:</span> {userProfile.totalMinutes}</p>
-                      <p className="truncate"><span className="text-[var(--os-text-primary)]">Último proyecto:</span> {userProfile.lastProject}</p>
+                      <p>
+                        <span className="text-[var(--os-text-primary)]">{t('settings.profileName')}</span> {userProfile.name}
+                      </p>
+                      <p>
+                        <span className="text-[var(--os-text-primary)]">{t('settings.profilePlan')}</span> {userProfile.plan}
+                      </p>
+                      <p>
+                        <span className="text-[var(--os-text-primary)]">{t('settings.profileProjects')}</span>{' '}
+                        {userProfile.totalProjects}
+                      </p>
+                      <p>
+                        <span className="text-[var(--os-text-primary)]">{t('settings.profileMinutes')}</span>{' '}
+                        {userProfile.totalMinutes}
+                      </p>
+                      <p className="truncate">
+                        <span className="text-[var(--os-text-primary)]">{t('settings.profileLast')}</span>{' '}
+                        {userProfile.lastProject}
+                      </p>
                     </div>
                     <div className="mt-3 space-y-2 text-[11px]">
                       <div className="rounded-md border border-[var(--os-border-strong)] bg-[var(--os-surface-2)] px-2 py-1.5 text-[var(--os-text-secondary)] flex items-center gap-2">
-                        <CheckCircle2 size={13} /> Sincronización local activa
+                        <CheckCircle2 size={13} /> {t('settings.syncLocal')}
                       </div>
                       <div className="rounded-md border border-[var(--os-border-strong)] bg-[var(--os-surface-2)] px-2 py-1.5 text-[var(--os-text-secondary)] flex items-center gap-2">
-                        <HardDrive size={13} /> Almacenamiento del navegador
+                        <HardDrive size={13} /> {t('settings.storageBrowser')}
                       </div>
                       <div className="rounded-md border border-[var(--os-border-strong)] bg-[var(--os-surface-2)] px-2 py-1.5 text-[var(--os-text-secondary)] flex items-center gap-2">
-                        <Shield size={13} /> Preferencias protegidas localmente
+                        <Shield size={13} /> {t('settings.prefsLocal')}
                       </div>
                       <div className="rounded-md border border-[var(--os-border-strong)] bg-[var(--os-surface-2)] px-2 py-1.5 text-[var(--os-text-secondary)] flex items-center gap-2">
-                        <Globe size={13} /> Idioma actual: {defaultLanguage === 'es' ? 'Español' : 'English'}
+                        <Globe size={13} />{' '}
+                        {t('settings.currentLanguage', {
+                          lang: locale === 'es' ? 'Español' : 'English',
+                        })}
                       </div>
                       <div className="rounded-md border border-[var(--os-border-strong)] bg-[var(--os-surface-2)] px-2 py-1.5 text-[var(--os-text-secondary)] flex items-center gap-2">
-                        <Bell size={13} /> Alertas activas: {notificationDesktop || notificationProductUpdates || notificationSecurity ? 'Sí' : 'No'}
+                        <Bell size={13} />{' '}
+                        {notificationDesktop || notificationProductUpdates || notificationSecurity
+                          ? t('settings.alertsOn')
+                          : t('settings.alertsOff')}
                       </div>
                     </div>
                 </aside>
               </div>
               <div className="mt-4 flex justify-end gap-2">
                 <Button type="button" variant="secondary" size="sm" onClick={() => setShowSettingsPanel(false)}>
-                  Cancelar
+                  {t('settings.cancel')}
                 </Button>
                 <Button type="button" variant="primary" size="sm" onClick={() => setShowSettingsPanel(false)}>
-                  Guardar y cerrar
+                  {t('settings.saveClose')}
                 </Button>
               </div>
             </section>

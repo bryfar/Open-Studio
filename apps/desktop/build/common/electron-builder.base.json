@@ -11,7 +11,7 @@
   ],
   "extraResources": [
     {
-      "from": "../web/out",
+      "from": "build/web-export",
       "to": "web-out",
       "filter": [
         "**/*"

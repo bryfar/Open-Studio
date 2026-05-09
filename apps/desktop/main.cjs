@@ -114,6 +114,24 @@ function registerIpcHandlers() {
     const bytes = Buffer.from(payload.text, 'utf8');
     return saveBinaryToPath(payload.defaultFileName, bytes, payload.filters);
   });
+
+  ipcMain.handle('desktop:shell:open-external', async (_event, url) => {
+    if (typeof url !== 'string' || !url.trim()) {
+      return { ok: false };
+    }
+    try {
+      const u = new URL(url);
+      const localHost = u.hostname === 'localhost' || u.hostname === '127.0.0.1';
+      const allowed = u.protocol === 'https:' || (u.protocol === 'http:' && localHost);
+      if (!allowed) {
+        return { ok: false };
+      }
+      await shell.openExternal(url);
+      return { ok: true };
+    } catch {
+      return { ok: false };
+    }
+  });
 }
 
 function resolveWindowIcon() {

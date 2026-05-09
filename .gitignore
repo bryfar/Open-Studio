@@ -49,3 +49,15 @@ Thumbs.db
 # Backup files
 *.bak
 *.tmp
+
+# IDE / local agent (no subir)
+.cursor/
+.agents/
+skills-lock.json
+
+# Bocetos locales no producto
+Bran Assets/
+
+# Copia generada del export estático web para empaquetar Electron (se recrea con `npm run build` en apps/desktop)
+apps/desktop/build/web-export/
+apps/desktop/web-export/

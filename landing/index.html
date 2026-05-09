@@ -1,591 +1,281 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="en" data-theme="dark">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Open Studio — Browser-based Video Editor</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;460;500;540;600;700&display=swap" rel="stylesheet">
-  <style>
-    /* ===== OPEN STUDIO DESIGN SYSTEM TOKENS ===== */
-    :root {
-      /* Dark Theme Colors */
-      --os-bg-primary: #0a0b0f;
-      --os-bg-secondary: #0f1117;
-      --os-bg-tertiary: #161922;
-      --os-bg-elevated: #1e2330;
-      --os-bg-card: #1a1a24;
-      --os-bg-hover: #252532;
-      
-      /* Accent Colors */
-      --os-accent-primary: #31b4f3;
-      --os-accent-secondary: #5f6fff;
-      --os-accent-tertiary: #9f8bff;
-      --os-accent-purple: #7c3aed;
-      --os-accent-purple-light: #a855f7;
-      
-      /* Text Colors */
-      --os-text-primary: #ffffff;
-      --os-text-secondary: #a0a0b0;
-      --os-text-muted: #7984a0;
-      
-      /* Border & Surface */
-      --os-border-light: #2a2a3a;
-      --os-border-default: #283046;
-      
-      /* Gradients */
-      --os-gradient-purple: linear-gradient(135deg, var(--os-accent-purple), var(--os-accent-purple-light));
-      --os-hero-gradient: radial-gradient(ellipse 90% 55% at 50% -5%, rgba(49, 180, 243, 0.15), transparent 52%),
-        linear-gradient(180deg, #090b12 0%, #06070d 100%);
-      
-      /* Superhuman Colors (for footer) */
-      --parchment-canvas: #f2f0eb;
-      --aubergine: #421d24;
-      --aubergine-deep: #4e242c;
-      --bone: #ffffff;
-      --fog: #e3e3e2;
-      --graphite: #666666;
-      --iris: #714cb6;
-      --indigo-glow: #353088;
-      
-      /* Spacing */
-      --spacing-4: 4px;
-      --spacing-8: 8px;
-      --spacing-12: 12px;
-      --spacing-16: 16px;
-      --spacing-20: 20px;
-      --spacing-24: 24px;
-      --spacing-32: 32px;
-      --spacing-36: 36px;
-      --spacing-48: 48px;
-      --spacing-64: 64px;
-      
-      /* Border Radius */
-      --radius-buttons: 8px;
-      --radius-cards: 16px;
-      --radius-cardslarge: 24px;
-      --radius-pills: 999px;
-      --radius-announcement: 16px;
-      
-      /* Typography */
-      --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    }
-    
-    /* ===== RESET & BASE ===== */
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    html{scroll-behavior:smooth}
-    body{font-family:var(--font-family);color:var(--os-text-primary);background:var(--os-bg-primary);line-height:1.5;-webkit-font-smoothing:antialiased}
-    a{text-decoration:none;color:inherit}
-    img{max-width:100%;height:auto}
-    
-    /* ===== TYPOGRAPHY ===== */
-    .font-display{font-family:var(--font-family)}
-    .text-display{font-size:64px;line-height:0.96;letter-spacing:-1.79px;font-weight:600}
-    .text-heading-lg{font-size:48px;line-height:1;letter-spacing:-1.3px;font-weight:600}
-    .text-heading{font-size:28px;line-height:1.2;letter-spacing:-0.62px;font-weight:600}
-    .text-heading-sm{font-size:22px;line-height:1.25;letter-spacing:-0.31px;font-weight:600}
-    .text-subheading{font-size:18px;line-height:1.3;letter-spacing:-0.14px;font-weight:460}
-    .text-body{font-size:16px;line-height:1.5;font-weight:460}
-    .text-body-sm{font-size:14px;line-height:1.5;font-weight:460}
-    .text-caption{font-size:12px;line-height:1.5;font-weight:500}
-    
-    /* ===== UTILITIES ===== */
-    .container{max-width:1200px;margin:0 auto;padding:0 32px}
-    .text-center{text-align:center}
-    .flex{display:flex}
-    .flex-col{flex-direction:column}
-    .items-center{align-items:center}
-    .justify-center{justify-content:center}
-    .justify-between{justify-content:space-between}
-    .gap-2{gap:8px}
-    .gap-3{gap:12px}
-    .gap-4{gap:16px}
-    .gap-6{gap:24px}
-    .gap-8{gap:32px}
-    .mb-2{margin-bottom:8px}
-    .mb-3{margin-bottom:12px}
-    .mb-4{margin-bottom:16px}
-    .mb-6{margin-bottom:24px}
-    .mb-8{margin-bottom:32px}
-    .mb-12{margin-bottom:48px}
-    .mt-6{margin-top:24px}
-    .mt-8{margin-top:32px}
-    .py-12{padding-top:48px;padding-bottom:48px}
-    .py-16{padding-top:64px;padding-bottom:64px}
-    .hidden{display:none}
-    @media(min-width:768px){.md-flex{display:flex}.md-grid{grid-template-columns:repeat(2,1fr)}.md-grid-3{grid-template-columns:repeat(3,1fr)}.md-hidden{display:none}.md-block{display:block}.md-text-left{text-align:left}}
-    @media(min-width:1024px){.lg-grid-3{grid-template-columns:repeat(3,1fr)}}
-    
-    /* ===== COLORS ===== */
-    .text-os-primary{color:var(--os-text-primary)}
-    .text-os-secondary{color:var(--os-text-secondary)}
-    .text-os-accent{color:var(--os-accent-primary)}
-    .text-iris{color:var(--iris)}
-    .bg-os-primary{background:var(--os-bg-primary)}
-    .bg-os-secondary{background:var(--os-bg-secondary)}
-    .bg-os-card{background:var(--os-bg-card)}
-    .bg-os-elevated{background:var(--os-bg-elevated)}
-    .bg-aubergine{background:var(--aubergine)}
-    
-    /* ===== BUTTONS ===== */
-    .btn{display:inline-flex;align-items:center;gap:8px;border-radius:var(--radius-buttons);padding:12px 24px;font-size:16px;font-weight:500;cursor:pointer;transition:all 0.2s ease}
-    .btn-primary{background:var(--os-gradient-purple);color:var(--os-text-primary);border:none}
-    .btn-primary:hover{box-shadow:0 0 20px rgba(124,58,237,0.4);transform:translateY(-2px)}
-    .btn-primary:focus{box-shadow:0 0 0 2px rgba(124,58,237,0.5)}
-    .btn-ghost{background:transparent;border:1px solid var(--os-accent-primary);color:var(--os-accent-primary)}
-    .btn-ghost:hover{background:rgba(49,180,243,0.1)}
-    .btn-signup{background:transparent;color:var(--os-text-secondary);border-radius:var(--radius-buttons);padding:6px 12px;font-size:14px;font-weight:500;border:1px solid var(--os-border-light)}
-    .btn-signup:hover{color:var(--os-text-primary);border-color:var(--os-accent-primary)}
-    .btn-sm{font-size:14px;padding:8px 16px}
-    
-    /* ===== ANIMATIONS ===== */
-    @keyframes fadeInUp{0%{opacity:0;transform:translateY(30px)}100%{opacity:1;transform:translateY(0)}}
-    @keyframes fadeSlideDown{0%{opacity:0;transform:translateY(-20px)}100%{opacity:1;transform:translateY(0)}}
-    @keyframes fadeSlideUp{0%{opacity:0;transform:translateY(20px)}100%{opacity:1;transform:translateY(0)}}
-    @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
-    @keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
-    @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
-    .animate-fade-in-up{opacity:0;animation:fadeInUp 0.8s ease forwards}
-    .animate-fade-down{opacity:0;animation:fadeSlideDown 0.5s ease forwards}
-    .animate-fade-up{opacity:0;animation:fadeSlideUp 0.5s ease forwards}
-    .animate-float{animation:float 6s ease-in-out infinite}
-    .delay-1{animation-delay:0.1s}.delay-2{animation-delay:0.2s}.delay-3{animation-delay:0.3s}.delay-4{animation-delay:0.4s}.delay-5{animation-delay:0.5s}.delay-6{animation-delay:0.6s}
-    
-    /* ===== ANNOUNCEMENT BANNER ===== */
-    .announcement{background:linear-gradient(90deg,var(--os-accent-purple),var(--os-accent-secondary));padding:12px 0}
-    .announcement-content{max-width:1200px;margin:0 auto;padding:0 32px;display:flex;align-items:center;justify-content:center;gap:8px}
-    .announcement span{font-size:14px;font-weight:500;color:var(--os-text-primary)}
-    .announcement a{color:var(--os-text-primary);text-decoration:underline;font-size:14px}
-    
-    /* ===== NAVIGATION ===== */
-    .nav{position:fixed;top:0;left:0;right:0;z-index:50;background:rgba(10,11,15,0.8);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--os-border-light)}
-    .nav.scrolled{background:rgba(10,11,15,0.95)}
-    .nav-container{max-width:1200px;margin:0 auto;padding:16px 32px;display:flex;align-items:center;justify-content:space-between}
-    .nav-logo{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:600;color:var(--os-text-primary)}
-    .logo-icon{width:36px;height:36px;border-radius:var(--radius-buttons);background:var(--os-gradient-purple);display:flex;align-items:center;justify-content:center}
-    .nav-links{display:none;gap:32px}
-    @media(min-width:768px){.nav-links{display:flex}}
-    .nav-links a{font-size:16px;font-weight:460;color:var(--os-text-secondary)}
-    .nav-links a:hover{color:var(--os-text-primary)}
-    .nav-actions{display:flex;align-items:center;gap:12px}
-    
-    /* ===== HERO ===== */
-    .hero{min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative;padding:120px 32px 80px;background:var(--os-hero-gradient);overflow:hidden}
-    .hero-bg{position:absolute;inset:0}
-    .hero-gradient{position:absolute;inset:0;background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(49,180,243,0.15) 0%, transparent 60%),radial-gradient(ellipse 60% 40% at 80% 60%, rgba(124,58,237,0.1) 0%, transparent 50%)}
-    .hero-spotlight-1{position:absolute;inset:0;background:radial-gradient(circle at 68% 50%, rgba(49,180,243,0.3) 0px, transparent 50%)}
-    .hero-spotlight-2{position:absolute;inset:0;background:radial-gradient(circle at 30% 80%, rgba(124,58,237,0.3) 0px, transparent 50%)}
-    .hero-spotlight-3{position:absolute;inset:0;background:radial-gradient(circle at 80% 30%, rgba(95,111,255,0.2) 0px, transparent 40%)}
-    .hero-content{position:relative;z-index:1;max-width:700px;text-align:center}
-    .hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,0.08);backdrop-filter:blur(12px);border-radius:var(--radius-pills);padding:8px 16px;margin-bottom:24px;border:1px solid var(--os-border-light)}
-    .hero-badge span{font-size:14px;font-weight:500;color:var(--os-text-secondary)}
-    .badge-dot{width:8px;height:8px;border-radius:50%;background:var(--os-accent-primary);animation:pulse 2s infinite}
-    .hero-title{font-size:64px;line-height:0.96;letter-spacing:-1.79px;font-weight:600;color:var(--os-text-primary);margin-bottom:24px}
-    .hero-subtitle{font-size:20px;font-weight:460;line-height:1.5;color:var(--os-text-secondary);margin-bottom:32px;letter-spacing:-0.16px}
-    .hero-buttons{display:flex;flex-direction:column;gap:12px;margin-bottom:48px}
-    @media(min-width:480px){.hero-buttons{flex-direction:row;justify-content:center}}
-    .hero-stats{display:flex;align-items:center;justify-content:center;gap:24px;flex-wrap:wrap}
-    .stat{display:flex;flex-direction:column;align-items:center;gap:2px}
-    .stat-number{font-size:24px;font-weight:600;color:var(--os-text-primary)}
-    .stat-label{font-size:12px;color:var(--os-text-muted);text-transform:uppercase;letter-spacing:0.05em}
-    .stat-divider{width:1px;height:30px;background:var(--os-border-light)}
-    
-    /* ===== GLASSMORPHIC PANELS ===== */
-    .glass-panel{background:rgba(255,255,255,0.05);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.08);color:var(--os-text-primary)}
-    .floating-panel{position:absolute;z-index:2;animation:float 6s ease-in-out infinite}
-    .floating-panel-1{top:25%;left:8%;border-radius:var(--radius-cardslarge);padding:16px;width:280px;animation-delay:0s;background:rgba(26,26,36,0.8);border:1px solid var(--os-border-light)}
-    .floating-panel-2{top:35%;right:8%;border-radius:var(--radius-pills);padding:12px 20px;animation-delay:1s;background:rgba(124,58,237,0.2);border:1px solid rgba(124,58,237,0.3)}
-    .floating-panel-3{bottom:25%;left:12%;border-radius:var(--radius-cardslarge);padding:16px;width:260px;animation-delay:2s;background:rgba(26,26,36,0.8);border:1px solid var(--os-border-light)}
-    .panel-header{display:flex;gap:6px;margin-bottom:12px}
-    .panel-dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.2)}
-    .panel-content{height:80px;background:rgba(255,255,255,0.05);border-radius:8px;border:1px solid var(--os-border-light)}
-    .panel-tags{display:flex;gap:8px;flex-wrap:wrap}
-    .panel-tag{background:rgba(49,180,243,0.15);padding:4px 12px;border-radius:var(--radius-pills);font-size:12px;font-weight:500;color:var(--os-accent-primary)}
-    
-    /* ===== SECTIONS ===== */
-    .section{padding:64px 32px}
-    .section-header{text-align:center;margin-bottom:48px}
-    .section-title{color:var(--os-text-primary)}
-    .section-subtitle{font-size:16px;color:var(--os-text-muted);max-width:500px;margin:16px auto 0}
-    
-    /* ===== HOW IT WORKS ===== */
-    .steps-grid{display:grid;grid-template-columns:1fr;gap:24px}
-    @media(min-width:768px){.steps-grid{grid-template-columns:repeat(3,1fr)}}
-    .step-card{background:var(--os-bg-card);border:1px solid var(--os-border-light);border-radius:var(--radius-cards);padding:24px;text-align:center;transition:all 0.2s ease}
-    .step-card:hover{border-color:var(--os-accent-primary);transform:translateY(-4px)}
-    .step-number{font-size:56px;font-weight:700;color:var(--os-border-light);line-height:1;margin-bottom:8px}
-    .step-icon{width:48px;height:48px;border-radius:var(--radius-buttons);background:rgba(49,180,243,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;color:var(--os-accent-primary)}
-    .step-title{font-size:20px;font-weight:600;color:var(--os-text-primary);margin-bottom:8px}
-    .step-description{font-size:14px;color:var(--os-text-muted)}
-    
-    /* ===== FEATURES ===== */
-    .features-grid{display:grid;grid-template-columns:1fr;gap:24px}
-    @media(min-width:768px){.features-grid{grid-template-columns:repeat(2,1fr)}}
-    @media(min-width:1024px){.features-grid{grid-template-columns:repeat(3,1fr)}}
-    .feature-card{background:var(--os-bg-card);border:1px solid var(--os-border-light);border-radius:var(--radius-cards);padding:24px;transition:all 0.2s ease}
-    .feature-card:hover{border-color:var(--os-accent-purple);transform:translateY(-4px)}
-    .feature-icon{width:48px;height:48px;border-radius:var(--radius-buttons);background:var(--os-gradient-purple);display:flex;align-items:center;justify-content:center;margin-bottom:16px;color:var(--os-text-primary)}
-    .feature-label{font-size:12px;font-weight:500;color:var(--os-accent-primary);margin-bottom:8px;display:flex;align-items:center;gap:6px}
-    .feature-title{font-size:20px;font-weight:600;color:var(--os-text-primary);margin-bottom:8px}
-    .feature-description{font-size:14px;color:var(--os-text-muted);margin-bottom:16px}
-    .feature-tags{display:flex;flex-wrap:wrap;gap:6px}
-    .feature-tag{background:var(--os-bg-tertiary);padding:4px 10px;border-radius:var(--radius-pills);font-size:12px;color:var(--os-text-secondary)}
-    
-    /* ===== MARQUEE ===== */
-    .marquee{background:var(--os-bg-secondary);padding:48px 0;overflow:hidden;border-top:1px solid var(--os-border-light);border-bottom:1px solid var(--os-border-light)}
-    .marquee-track{display:flex;width:fit-content;animation:marquee 25s linear infinite}
-    .marquee-track:hover{animation-play-state:paused}
-    .marquee-item{flex-shrink:0;width:280px;height:180px;margin:0 12px;border-radius:var(--radius-cards);overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.3);border:1px solid var(--os-border-light)}
-    @media(min-width:768px){.marquee-item{width:360px;height:220px}}
-    .marquee-item img{width:100%;height:100%;object-fit:cover}
-    
-    /* ===== TESTIMONIALS ===== */
-    .testimonials{background:var(--os-bg-primary)}
-    .testimonials-grid{display:grid;grid-template-columns:1fr;gap:24px}
-    @media(min-width:768px){.testimonials-grid{grid-template-columns:repeat(3,1fr)}}
-    .testimonial-card{background:var(--os-bg-card);border-radius:var(--radius-cards);padding:24px;box-shadow:none;border:1px solid var(--os-border-light)}
-    .testimonial-card:hover{border-color:var(--os-accent-purple)}
-    .testimonial-stars{display:flex;gap:2px;margin-bottom:12px}
-    .testimonial-stars svg{width:14px;height:14px;color:#fbbf24;fill:#fbbf24}
-    .testimonial-text{font-size:15px;line-height:1.6;color:var(--os-text-secondary);margin-bottom:16px}
-    .testimonial-author{display:flex;align-items:center;gap:12px}
-    .author-avatar{width:40px;height:40px;border-radius:50%;background:var(--os-gradient-purple)}
-    .author-name{font-size:14px;font-weight:600;color:var(--os-text-primary)}
-    .author-role{font-size:12px;color:var(--os-text-muted)}
-    
-    /* ===== CTA ===== */
-    .cta{background:var(--os-bg-secondary);padding:96px 32px;border-top:1px solid var(--os-border-light)}
-    .cta-content{max-width:600px;margin:0 auto;text-align:center}
-    .cta-title{color:var(--os-text-primary);margin-bottom:16px}
-    .cta-subtitle{font-size:16px;color:var(--os-text-muted);margin-bottom:32px}
-    .cta-note{font-size:13px;color:var(--os-text-muted);margin-top:16px}
-    
-    /* ===== FOOTER - Superhuman Style ===== */
-    /* Background #421d24, white text, 4 columns, 32px h-padding, 36px v-padding */
-    .footer{background:var(--aubergine);padding:36px 32px}
-    .footer-container{max-width:1200px;margin:0 auto}
-    .footer-main{display:flex;flex-direction:column;gap:32px}
-    @media(min-width:768px){.footer-main{flex-direction:row;justify-content:space-between;align-items:flex-start}}
-    .footer-brand-area{max-width:280px}
-    .footer-logo-link{display:flex;align-items:center;gap:8px;text-decoration:none}
-    .footer-logo-icon{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--iris),var(--indigo-glow));display:flex;align-items:center;justify-content:center}
-    .footer-logo-text{font-size:18px;font-weight:600;color:var(--bone)}
-    .footer-tagline{font-size:14px;color:rgba(255,255,255,0.6);margin-top:8px;line-height:1.5}
-    .footer-nav{display:flex;gap:48px;flex-wrap:wrap}
-    .footer-nav-col{display:flex;flex-direction:column;gap:12px}
-    .footer-nav-col h4{font-size:14px;font-weight:600;color:var(--bone);margin-bottom:4px}
-    .footer-nav-col a{font-size:14px;font-weight:460;color:rgba(255,255,255,0.6);text-decoration:none;transition:color 0.2s}
-    .footer-nav-col a:hover{color:var(--bone)}
-    .footer-copyright{max-width:1200px;margin:48px auto 0;padding-top:24px;border-top:1px solid rgba(255,255,255,0.1);display:flex;flex-direction:column;gap:8px;text-align:center;font-size:13px;color:rgba(255,255,255,0.4)}
-@media(min-width:768px){.footer-copyright{flex-direction:row;justify-content:space-between;text-align:left}}
-    
-    /* ===== RESPONSIVE ===== */
-    @media(max-width:768px){
-      .floating-panel{display:none}
-      .hero-title{font-size:40px;letter-spacing:-1px}
-      .text-display{font-size:40px}
-      .text-heading-lg{font-size:32px}
-    }
-  </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Open Studio · Open source video editor for the browser and desktop</title>
+  <meta name="description" content="Open Studio is an open source, MIT-licensed video editor with a multi-track timeline, AI-assisted shorts pipeline and a desktop app for Windows, macOS and Linux. Edit in the browser, export locally." />
+  <meta name="theme-color" content="#0e0e0f" media="(prefers-color-scheme: dark)" />
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+  <meta property="og:title" content="Open Studio · Open source video editor" />
+  <meta property="og:description" content="Multi-track timeline, AI shorts and a desktop app. Free, open source, MIT." />
+  <meta property="og:type" content="website" />
+  <link rel="canonical" href="https://openstudio.app/" />
+
+  <link rel="icon" type="image/svg+xml" href="./assets/brand/openstudio-mark.svg" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap"
+  />
+
+  <link rel="stylesheet" href="./styles.css" />
+
+  <noscript>
+    <style>
+      .split-target, .reveal, .reveal-children > * { visibility: visible !important; opacity: 1 !important; }
+    </style>
+  </noscript>
 </head>
 <body>
-  
-  <!-- Announcement Banner -->
-  <div class="announcement">
-    <div class="announcement-content">
-      <span>✨ Open Studio is free forever</span>
-      <a href="/dashboard">Start creating →</a>
+  <!-- ============================================================ -->
+  <!-- Announcement                                                  -->
+  <!-- ============================================================ -->
+  <div class="announce" role="region" aria-label="Announcement">
+    <div class="announce__inner">
+      <span class="announce__pill">v0.1</span>
+      <span>Open source, MIT-licensed and free forever.</span>
+      <a class="announce__link" href="https://github.com/bryfar/Open-Studio" target="_blank" rel="noopener">
+        Star on GitHub
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M5 12h14M13 6l6 6-6 6"/>
+        </svg>
+      </a>
     </div>
   </div>
 
-  <!-- Navigation -->
-  <nav class="nav" id="mainNav">
-    <div class="nav-container">
-      <a href="/" class="nav-logo">
-        <div class="logo-icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
-        </div>
-        <span>Open Studio</span>
+  <!-- ============================================================ -->
+  <!-- Nav                                                           -->
+  <!-- ============================================================ -->
+  <header class="nav" id="nav">
+    <div class="container nav__inner">
+      <a class="brand" href="/" aria-label="Open Studio home">
+        <img class="brand__lockup" src="./assets/brand/openstudio-lockup.svg" alt="Open Studio" />
+        <img class="brand__mark" src="./assets/brand/openstudio-mark.svg" alt="Open Studio" />
       </a>
-      <div class="nav-links">
-        <a href="#features">Features</a>
-        <a href="#how-it-works">How it works</a>
-        <a href="#testimonials">Testimonials</a>
-      </div>
-      <div class="nav-actions">
-        <a href="/dashboard" class="btn-signup">Log in</a>
-        <a href="/dashboard" class="btn btn-primary btn-sm">Sign up</a>
+
+      <nav class="nav__links" aria-label="Primary">
+        <a href="#editor">Editor</a>
+        <a href="#capabilities">Capabilities</a>
+        <a href="#architecture">Architecture</a>
+        <a href="#download">Download</a>
+        <a href="#open-source">Open source</a>
+      </nav>
+
+      <div class="nav__actions">
+        <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle color theme" title="Toggle color theme">
+          <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>
+          </svg>
+          <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="4"/>
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+          </svg>
+        </button>
+        <a class="btn btn--ghost btn--sm" href="https://github.com/bryfar/Open-Studio" target="_blank" rel="noopener">GitHub</a>
+        <a class="btn btn--primary btn--sm" href="/dashboard">Open the editor</a>
       </div>
     </div>
-  </nav>
+  </header>
 
-  <!-- Hero -->
+  <!-- ============================================================ -->
+  <!-- Hero                                                          -->
+  <!-- ============================================================ -->
   <section class="hero">
-    <div class="hero-bg">
-      <div class="hero-gradient"></div>
-      <div class="hero-spotlight-1"></div>
-      <div class="hero-spotlight-2"></div>
-      <div class="hero-spotlight-3"></div>
-      <div class="hero-spotlight-4"></div>
-    </div>
-    
-    <!-- Glassmorphic Floating Panels -->
-    <div class="floating-panel floating-panel-1 glass-panel animate-fade-down">
-      <div class="panel-header">
-        <span class="panel-dot"></span>
-        <span class="panel-dot"></span>
-        <span class="panel-dot"></span>
-      </div>
-      <div class="panel-content"></div>
-    </div>
-    
-    <div class="floating-panel floating-panel-2 glass-panel animate-fade-up delay-2">
-      <span class="panel-tag">✨ 60+ Effects</span>
-    </div>
-    
-    <div class="floating-panel floating-panel-3 glass-panel animate-fade-up delay-3">
-      <div class="panel-header">
-        <span class="panel-dot"></span>
-        <span class="panel-dot"></span>
-      </div>
-      <div class="panel-tags">
-        <span class="panel-tag">MP4</span>
-        <span class="panel-tag">WebM</span>
-        <span class="panel-tag">GIF</span>
-      </div>
-    </div>
-    
-    <div class="hero-content">
-      <div class="hero-badge glass-panel animate-fade-in-up">
-        <span class="badge-dot"></span>
-        <span>Browser-based video editor</span>
-      </div>
-      <h1 class="hero-title text-display animate-fade-in-up delay-1">
-        Superpowers for<br>your videos
+    <div class="hero__backdrop" aria-hidden="true"></div>
+    <div class="hero__grid" aria-hidden="true"></div>
+
+    <div class="container hero__inner">
+      <span class="hero__badge" data-hero-fade>
+        <span class="tag">New</span>
+        <span>Multi-track timeline · AI shorts · Desktop apps</span>
+      </span>
+
+      <h1 class="hero__title split-target" data-split="hero-title">
+        Edit something <em>real.</em>
       </h1>
-      <p class="hero-subtitle animate-fade-in-up delay-2">
-        Professional editing tools without the learning curve. Multi-track timeline, 
-        stunning effects, and instant export — all free.
+
+      <p class="hero__sub" data-hero-fade>
+        Open Studio is an open source video editor with a real multi-track timeline,
+        an AI-assisted shorts pipeline and a desktop app for Windows, macOS and Linux.
+        Edit in the browser, render locally, ship anywhere.
       </p>
-      <div class="hero-buttons animate-fade-in-up delay-3">
-        <a href="/dashboard" class="btn btn-primary">Start Editing Free →</a>
-        <a href="#features" class="btn btn-ghost">See features</a>
-      </div>
-      <div class="hero-stats animate-fade-in-up delay-4">
-        <div class="stat"><span class="stat-number">60+</span><span class="stat-label">Effects</span></div>
-        <div class="stat-divider"></div>
-        <div class="stat"><span class="stat-number">32+</span><span class="stat-label">Filters</span></div>
-        <div class="stat-divider"></div>
-        <div class="stat"><span class="stat-number">35+</span><span class="stat-label">Transitions</span></div>
-        <div class="stat-divider"></div>
-        <div class="stat"><span class="stat-number">100%</span><span class="stat-label">Free</span></div>
-      </div>
-    </div>
-  </section>
 
-  <!-- How It Works -->
-  <section id="how-it-works" class="section bg-os-secondary">
-    <div class="container">
-      <div class="section-header animate-fade-in-up">
-        <h2 class="section-title text-heading-lg">From import to export<br>in minutes</h2>
-        <p class="section-subtitle">No software to install. No subscriptions. Just create.</p>
+      <div class="hero__cta" data-hero-fade>
+        <a class="btn btn--primary btn--lg" href="/dashboard">
+          Open the editor
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+        <a class="btn btn--outline btn--lg" href="#download">Download desktop</a>
+        <a class="btn btn--ghost btn--lg" href="https://github.com/bryfar/Open-Studio" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" width="16" height="16"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56v-2c-3.2.7-3.88-1.54-3.88-1.54-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.75 1.18 1.75 1.18 1.02 1.75 2.68 1.24 3.34.95.1-.74.4-1.24.72-1.52-2.55-.29-5.24-1.27-5.24-5.66 0-1.25.45-2.27 1.18-3.07-.12-.29-.51-1.46.11-3.04 0 0 .96-.31 3.15 1.17a10.96 10.96 0 0 1 5.74 0c2.19-1.48 3.15-1.17 3.15-1.17.62 1.58.23 2.75.11 3.04.74.8 1.18 1.82 1.18 3.07 0 4.4-2.69 5.36-5.25 5.65.41.36.78 1.06.78 2.14v3.18c0 .31.21.68.8.56A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z"/></svg>
+          GitHub
+        </a>
       </div>
-      <div class="steps-grid">
-        <div class="step-card animate-fade-in-up delay-1">
-          <div class="step-number">01</div>
-          <div class="step-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          </div>
-          <h3 class="step-title">Import your media</h3>
-          <p class="step-description">Drag & drop videos, images, or audio. Or record your screen directly.</p>
-        </div>
-        <div class="step-card animate-fade-in-up delay-2">
-          <div class="step-number">02</div>
-          <div class="step-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
-          </div>
-          <h3 class="step-title">Edit with precision</h3>
-          <p class="step-description">Multi-track timeline with trimming, splitting, and keyframe animations.</p>
-        </div>
-        <div class="step-card animate-fade-in-up delay-3">
-          <div class="step-number">03</div>
-          <div class="step-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          </div>
-          <h3 class="step-title">Export instantly</h3>
-          <p class="step-description">MP4, WebM, or GIF. All processing happens locally in your browser.</p>
-        </div>
-      </div>
-    </div>
-  </section>
 
-  <!-- Features -->
-  <section id="features" class="section bg-os-primary">
-    <div class="container">
-      <div class="section-header animate-fade-in-up">
-        <h2 class="section-title text-heading-lg">Everything you need<br>to make magic</h2>
-        <p class="section-subtitle">Powerful features that rival professional software — but actually easy to use.</p>
-      </div>
-      <div class="features-grid">
-        <div class="feature-card animate-fade-in-up delay-1">
-          <div class="feature-label">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
-            Multi-Track
-          </div>
-          <h3 class="feature-title">Timeline</h3>
-          <p class="feature-description">Layer video, audio, and text tracks. Trim, split, and arrange with frame-perfect precision.</p>
-          <div class="feature-tags">
-            <span class="feature-tag">Video</span>
-            <span class="feature-tag">Audio</span>
-            <span class="feature-tag">Text</span>
-          </div>
-        </div>
-        <div class="feature-card animate-fade-in-up delay-2">
-          <div class="feature-label">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
-            Effects
-          </div>
-          <h3 class="feature-title">60+ Video Effects</h3>
-          <p class="feature-description">Blur, color correction, distortion, stylize, lighting, and noise. Professional-grade.</p>
-          <div class="feature-tags">
-            <span class="feature-tag">Gaussian</span>
-            <span class="feature-tag">RGB Split</span>
-            <span class="feature-tag">Glow</span>
-          </div>
-        </div>
-        <div class="feature-card animate-fade-in-up delay-3">
-          <div class="feature-label">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
-            Filters
-          </div>
-          <h3 class="feature-title">32+ Color Filters</h3>
-          <p class="feature-description">Cinematic, mood, vintage, and artistic filters. Transform footage with one click.</p>
-          <div class="feature-tags">
-            <span class="feature-tag">Cinematic</span>
-            <span class="feature-tag">Vintage</span>
-            <span class="feature-tag">Mood</span>
-          </div>
-        </div>
-        <div class="feature-card animate-fade-in-up delay-4">
-          <div class="feature-label">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
-            Transitions
-          </div>
-          <h3 class="feature-title">35+ Transitions</h3>
-          <p class="feature-description">Smooth cuts, dissolves, wipes, slides, and glitch effects.</p>
-          <div class="feature-tags">
-            <span class="feature-tag">Fade</span>
-            <span class="feature-tag">Slide</span>
-            <span class="feature-tag">Zoom</span>
-          </div>
-        </div>
-        <div class="feature-card animate-fade-in-up delay-5">
-          <div class="feature-label">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
-            Recording
-          </div>
-          <h3 class="feature-title">Screen Recording</h3>
-          <p class="feature-description">Record your screen, camera, or both. Perfect for tutorials and presentations.</p>
-          <div class="feature-tags">
-            <span class="feature-tag">Screen</span>
-            <span class="feature-tag">Webcam</span>
-            <span class="feature-tag">Audio</span>
-          </div>
-        </div>
-        <div class="feature-card animate-fade-in-up delay-6">
-          <div class="feature-label">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
-            Export
-          </div>
-          <h3 class="feature-title">Export to MP4</h3>
-          <p class="feature-description">Download in MP4, WebM, or GIF. Fast, private, and secure.</p>
-          <div class="feature-tags">
-            <span class="feature-tag">MP4</span>
-            <span class="feature-tag">WebM</span>
-            <span class="feature-tag">GIF</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
+      <!-- Editor preview frame (mirrors the real Open Studio app) -->
+      <div class="preview preview--hero" data-hero-preview aria-label="Open Studio editor preview">
+        <div class="editor-pro" role="img" aria-label="Open Studio editor with empty canvas, transport bar, INSERCION and PISTAS tabs and a video timeline">
 
-  <!-- Marquee -->
-  <section class="marquee">
-    <div class="marquee-track">
-      <div class="marquee-item"><img src="https://motionsites.ai/assets/hero-space-voyage-preview-eECLH3Yc.gif" alt="Project"></div>
-      <div class="marquee-item"><img src="https://motionsites.ai/assets/hero-portfolio-cosmic-preview-BpvWJ3Nc.gif" alt="Project"></div>
-      <div class="marquee-item"><img src="https://motionsites.ai/assets/hero-velorah-preview-CJNTtbpd.gif" alt="Project"></div>
-      <div class="marquee-item"><img src="https://motionsites.ai/assets/hero-asme-preview-B_nGDnTP.gif" alt="Project"></div>
-      <div class="marquee-item"><img src="https://motionsites.ai/assets/hero-transform-data-preview-Cx5OU29N.gif" alt="Project"></div>
-      <div class="marquee-item"><img src="https://motionsites.ai/assets/hero-aethera-preview-DknSlcTa.gif" alt="Project"></div>
-      <div class="marquee-item"><img src="https://motionsites.ai/assets/hero-orbit-web3-preview-BXt4OttD.gif" alt="Project"></div>
-      <div class="marquee-item"><img src="https://motionsites.ai/assets/hero-nexora-preview-cx5HmUgo.gif" alt="Project"></div>
-      <!-- Duplicate -->
-      <div class="marquee-item"><img src="https://motionsites.ai/assets/hero-space-voyage-preview-eECLH3Yc.gif" alt="Project"></div>
-      <div class="marquee-item"><img src="https://motionsites.ai/assets/hero-portfolio-cosmic-preview-BpvWJ3Nc.gif" alt="Project"></div>
-      <div class="marquee-item"><img src="https://motionsites.ai/assets/hero-velorah-preview-CJNTtbpd.gif" alt="Project"></div>
-      <div class="marquee-item"><img src="https://motionsites.ai/assets/hero-asme-preview-B_nGDnTP.gif" alt="Project"></div>
-      <div class="marquee-item"><img src="https://motionsites.ai/assets/hero-transform-data-preview-Cx5OU29N.gif" alt="Project"></div>
-      <div class="marquee-item"><img src="https://motionsites.ai/assets/hero-aethera-preview-DknSlcTa.gif" alt="Project"></div>
-      <div class="marquee-item"><img src="https://motionsites.ai/assets/hero-orbit-web3-preview-BXt4OttD.gif" alt="Project"></div>
-      <div class="marquee-item"><img src="https://motionsites.ai/assets/hero-nexora-preview-cx5HmUgo.gif" alt="Project"></div>
-    </div>
-  </section>
-
-  <!-- Testimonials -->
-  <section id="testimonials" class="section testimonials">
-    <div class="container">
-      <div class="section-header animate-fade-in-up">
-        <h2 class="section-title text-heading-lg">Loved by creators<br>everywhere</h2>
-      </div>
-      <div class="testimonials-grid">
-        <div class="testimonial-card animate-fade-in-up delay-1">
-          <div class="testimonial-stars">
-            <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
-            <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
-            <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
-            <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
-            <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
-          </div>
-          <p class="testimonial-text">"Open Studio transformed how I create content. It's fast, powerful, and completely free. I use it every day."</p>
-          <div class="testimonial-author">
-            <div class="author-avatar"></div>
-            <div>
-              <div class="author-name">Marcus Chen</div>
-              <div class="author-role">YouTube Creator</div>
+          <!-- Topbar -->
+          <div class="editor-pro__topbar">
+            <div class="editor-pro__topbar-left">
+              <button class="editor-pro__icon-btn" aria-hidden="true" tabindex="-1">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-7h-6v7H4a1 1 0 0 1-1-1z"/></svg>
+              </button>
+              <span class="editor-pro__brand">
+                <span class="editor-pro__brand-mark" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                </span>
+                <span class="editor-pro__brand-name">Open Studio</span>
+              </span>
+              <span class="editor-pro__pill is-strong">
+                New Project
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+              </span>
+              <span class="editor-pro__pill">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                Archivo
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+              </span>
+            </div>
+            <div></div>
+            <div class="editor-pro__topbar-right">
+              <span class="editor-pro__pill" data-rec>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="9"/></svg>
+                Record
+              </span>
+              <span class="editor-pro__pill">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>
+                Exportacion
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+              </span>
+              <span class="editor-pro__btn editor-pro__btn--primary">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>
+                Export
+              </span>
+              <span class="editor-pro__pill">
+                <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+                Mas
+              </span>
             </div>
           </div>
-        </div>
-        <div class="testimonial-card animate-fade-in-up delay-2">
-          <div class="testimonial-stars">
-            <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
-            <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
-            <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
-            <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
-            <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
-          </div>
-          <p class="testimonial-text">"As a beginner, I was intimidated by video editors. Open Studio changed that — I made my first video in 10 minutes."</p>
-          <div class="testimonial-author">
-            <div class="author-avatar" style="background:linear-gradient(135deg,#f093fb,#f5576c)"></div>
-            <div>
-              <div class="author-name">Sarah Williams</div>
-              <div class="author-role">Content Creator</div>
+
+          <!-- Canvas -->
+          <div class="editor-pro__canvas" data-canvas>
+            <button class="editor-pro__canvas-side is-left" aria-hidden="true" tabindex="-1">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+            </button>
+            <button class="editor-pro__canvas-side is-right" aria-hidden="true" tabindex="-1">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>
+            </button>
+
+            <!-- Empty state (shown initially) -->
+            <div class="editor-pro__empty" data-empty>
+              <span class="editor-pro__empty-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 7a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M16 9l5-3v12l-5-3z"/></svg>
+              </span>
+              <p class="editor-pro__empty-title">Anade clips de video a la linea de tiempo</p>
+              <p class="editor-pro__empty-sub">Arrastra medios a la biblioteca y haz clic para anadirlos al timeline</p>
+            </div>
+
+            <!-- Active stage (revealed after the empty state) -->
+            <div class="editor-pro__stage" data-stage aria-hidden="true"></div>
+            <div class="editor-pro__timecode" data-tc-canvas>00:00:00 / 00:24:00</div>
+
+            <!-- Animated cursor + ghost clip used by the demo timeline -->
+            <span class="editor-pro__ghost-clip" data-ghost>intro_4k.mov</span>
+            <span class="editor-pro__cursor" data-cursor aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 7-7 2-2 7z" stroke="#fff" stroke-width="0.8"/></svg>
+            </span>
+
+            <div class="editor-pro__canvas-tools">
+              <span class="editor-pro__pill">
+                Fit content
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+              </span>
+              <span class="editor-pro__icon-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 10V4h6M14 4h6v6M20 14v6h-6M10 20H4v-6"/></svg>
+              </span>
             </div>
           </div>
-        </div>
-        <div class="testimonial-card animate-fade-in-up delay-3">
-          <div class="testimonial-stars">
-            <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
-            <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
-            <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
-            <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
-            <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+
+          <!-- Transport -->
+          <div class="editor-pro__transport">
+            <div class="editor-pro__transport-left">
+              <span class="editor-pro__icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></span>
+              <span class="editor-pro__icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M14.7 6.3l-9 9M14.7 17.7l-9-9"/></svg></span>
+              <span class="editor-pro__icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="8" y="3" width="11" height="14" rx="2"/><rect x="5" y="7" width="11" height="14" rx="2"/></svg></span>
+              <span class="editor-pro__icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></span>
+              <span class="editor-pro__icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M11 5a3 3 0 0 1 6 0v6a3 3 0 1 1-6 0z"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span>
+              <span class="editor-pro__icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 21V4l9 5-9 5"/></svg></span>
+            </div>
+            <div class="editor-pro__transport-center">
+              <span class="editor-pro__icon-btn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 4l8 8-8 8zM4 4h2v16H4z"/></svg></span>
+              <span class="editor-pro__play" data-play aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5v14l11-7z"/></svg>
+              </span>
+              <span class="editor-pro__icon-btn"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12"/></svg></span>
+              <span class="editor-pro__icon-btn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 4l-8 8 8 8zM18 4h2v16h-2z"/></svg></span>
+              <span class="editor-pro__transport-time"><strong data-tc>00:00:00</strong> / 01:00:00</span>
+            </div>
+            <div class="editor-pro__transport-right">
+              <span class="editor-pro__pill">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 12l3 3 4-7 3 6 4-2"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+              </span>
+              <span class="editor-pro__zoom">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M8 11h6M11 8v6"/></svg>
+                <span class="editor-pro__zoom-track"></span>
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M8 11h6"/></svg>
+              </span>
+            </div>
           </div>
-          <p class="testimonial-text">"The screen recording feature is a game-changer. I record, edit, and export tutorials without leaving my browser."</p>
-          <div class="testimonial-author">
-            <div class="author-avatar" style="background:linear-gradient(135deg,#4facfe,#00f2fe)"></div>
-            <div>
-              <div class="author-name">James Rodriguez</div>
-              <div class="author-role">Tech Educator</div>
+
+          <!-- Tabs -->
+          <div class="editor-pro__tabs">
+            <span class="editor-pro__tab-label">Insercion</span>
+            <div class="editor-pro__tab-group">
+              <span class="editor-pro__tab" data-tab><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M3 7h4l2-2h6l2 2h4v12H3z"/></svg>Cam KF</span>
+              <span class="editor-pro__tab" data-tab><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 6h14M9 6v14"/></svg>Intro</span>
+              <span class="editor-pro__tab" data-tab><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 6h14M9 6v14"/></svg>Cierre</span>
+            </div>
+            <span class="editor-pro__tab-divider" aria-hidden="true"></span>
+            <span class="editor-pro__tab-label">Pistas</span>
+            <div class="editor-pro__tab-group">
+              <span class="editor-pro__tab is-active" data-tab><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="6" width="14" height="12" rx="2"/><path d="M17 10l4-2v8l-4-2"/></svg>Video</span>
+              <span class="editor-pro__tab" data-tab><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>Audio</span>
+              <span class="editor-pro__tab" data-tab><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 6h14M12 6v14"/></svg>Texto</span>
+              <span class="editor-pro__tab" data-tab><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>Fondo</span>
+            </div>
+          </div>
+
+          <!-- Timeline -->
+          <div class="editor-pro__timeline">
+            <div class="editor-pro__timeline-row">
+              <div></div>
+              <div class="editor-pro__ruler" data-ruler>
+                <span class="editor-pro__ruler-mark" style="left:0%">0:00</span>
+                <span class="editor-pro__ruler-mark" style="left:25%">0:05</span>
+                <span class="editor-pro__ruler-mark" style="left:50%">0:10</span>
+                <span class="editor-pro__ruler-mark" style="left:75%">0:15</span>
+                <span class="editor-pro__ruler-mark" style="left:96%">0:20</span>
+              </div>
+            </div>
+            <div class="editor-pro__timeline-row">
+              <div class="editor-pro__track-head">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 1 1 8 0v4"/></svg>
+                <span class="editor-pro__track-dot" aria-hidden="true"></span>
+                <span class="editor-pro__track-name">Video Track 1</span>
+              </div>
+              <div class="editor-pro__lane" data-lane>
+                <span class="editor-pro__clip" data-clip style="left:6%;width:36%">intro_4k.mov</span>
+                <span class="editor-pro__clip" data-clip style="left:46%;width:48%">b_roll_city.mp4</span>
+                <span class="editor-pro__playhead" data-playhead style="left:6%"></span>
+              </div>
             </div>
           </div>
         </div>
@@ -593,98 +283,502 @@
     </div>
   </section>
 
-  <!-- CTA -->
-  <section class="cta">
-    <div class="cta-content animate-fade-in-up">
-      <h2 class="cta-title text-heading-lg">Ready to create<br>something amazing?</h2>
-      <p class="cta-subtitle">Join thousands of creators making videos with Open Studio.</p>
-      <a href="/dashboard" class="btn btn-primary">Start Editing — It's Free →</a>
-      <p class="cta-note">No downloads. No credit card. No limits.</p>
+  <!-- ============================================================ -->
+  <!-- Showcase row (createanything-style small thumbnails)          -->
+  <!-- ============================================================ -->
+  <section class="section section--tight">
+    <div class="container">
+      <div class="section-head section-head--center">
+        <span class="section-eyebrow"><span class="dot"></span>Made with Open Studio</span>
+        <h2 class="section-title">Edits, shorts and screen demos.</h2>
+      </div>
+
+      <div class="showcase reveal-batch">
+        <article class="showcase__card">
+          <div class="showcase__thumb" style="--sc-c1:#4a5160;--sc-c2:#0e0e0f"></div>
+          <div class="showcase__meta"><strong>Launch trailer</strong><span>00:42</span></div>
+        </article>
+        <article class="showcase__card">
+          <div class="showcase__thumb" style="--sc-c1:#6d4aa2;--sc-c2:#1a1133"></div>
+          <div class="showcase__meta"><strong>Vertical short</strong><span>00:18</span></div>
+        </article>
+        <article class="showcase__card">
+          <div class="showcase__thumb" style="--sc-c1:#1f7a4d;--sc-c2:#0e1f17"></div>
+          <div class="showcase__meta"><strong>Tutorial clip</strong><span>02:10</span></div>
+        </article>
+        <article class="showcase__card">
+          <div class="showcase__thumb" style="--sc-c1:#fbbf24;--sc-c2:#3f2a07"></div>
+          <div class="showcase__meta"><strong>Reaction edit</strong><span>00:35</span></div>
+        </article>
+        <article class="showcase__card">
+          <div class="showcase__thumb" style="--sc-c1:#22d3ee;--sc-c2:#0e2735"></div>
+          <div class="showcase__meta"><strong>Product demo</strong><span>01:24</span></div>
+        </article>
+        <article class="showcase__card">
+          <div class="showcase__thumb" style="--sc-c1:#f87171;--sc-c2:#3a0e0e"></div>
+          <div class="showcase__meta"><strong>Ad cutdown</strong><span>00:30</span></div>
+        </article>
+        <article class="showcase__card">
+          <div class="showcase__thumb" style="--sc-c1:#94a3b8;--sc-c2:#1f242c"></div>
+          <div class="showcase__meta"><strong>Vlog episode</strong><span>06:48</span></div>
+        </article>
+        <article class="showcase__card">
+          <div class="showcase__thumb" style="--sc-c1:#a3e635;--sc-c2:#1f2a0a"></div>
+          <div class="showcase__meta"><strong>Clip generator</strong><span>9:16</span></div>
+        </article>
+      </div>
     </div>
   </section>
 
-  <!-- Footer - Superhuman Style: 4 columns, Aubergine bg -->
+  <!-- ============================================================ -->
+  <!-- Pillars                                                       -->
+  <!-- ============================================================ -->
+  <section class="section">
+    <div class="container">
+      <div class="section-head">
+        <span class="section-eyebrow"><span class="dot"></span>What you get</span>
+        <h2 class="section-title">Three products, <span class="accent">one project file.</span></h2>
+        <p class="section-subtitle">A precise editor, a shorts pipeline and a desktop app, all sharing the same project model and the same minimal UI.</p>
+      </div>
+
+      <div class="pillars reveal-batch">
+        <article class="pillar">
+          <span class="pillar__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="6" width="18" height="4" rx="1"/><rect x="3" y="14" width="12" height="4" rx="1"/></svg>
+          </span>
+          <h3 class="pillar__title">Multi-track editor</h3>
+          <p class="pillar__desc">Video, audio, text and image lanes with split, trim, ripple, slip and snap. Frame-accurate playhead, keyframes and an inspector for every clip.</p>
+          <div class="pillar__meta">
+            <span class="chip">timeline</span>
+            <span class="chip">keyframes</span>
+            <span class="chip">scopes</span>
+          </div>
+        </article>
+
+        <article class="pillar">
+          <span class="pillar__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg>
+          </span>
+          <h3 class="pillar__title">AI Shorts pipeline</h3>
+          <p class="pillar__desc">FastAPI service with a Redis-backed queue analyzes long videos and proposes vertical shorts you can edit, caption and publish from the same project.</p>
+          <div class="pillar__meta">
+            <span class="chip">FastAPI</span>
+            <span class="chip">queue</span>
+            <span class="chip">9:16</span>
+          </div>
+        </article>
+
+        <article class="pillar">
+          <span class="pillar__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 22h8"/></svg>
+          </span>
+          <h3 class="pillar__title">Desktop app</h3>
+          <p class="pillar__desc">Electron build with context isolation and a controlled IPC bridge. Open projects offline, persist locally, ship signed installers per OS.</p>
+          <div class="pillar__meta">
+            <span class="chip">Electron 37</span>
+            <span class="chip">offline</span>
+            <span class="chip">signed</span>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- Editor showcase (real screenshot with animated annotations)   -->
+  <!-- ============================================================ -->
+  <section class="section block-invert" id="editor">
+    <div class="container">
+      <div class="section-head">
+        <span class="section-eyebrow"><span class="dot"></span>The actual app</span>
+        <h2 class="section-title">This is the editor,<br/><span class="accent">not a render.</span></h2>
+        <p class="section-subtitle">A direct screenshot of Open Studio. Topbar, transport, INSERCION and PISTAS tabs and a real multi-track timeline live in the same window.</p>
+      </div>
+
+      <figure class="screenshot" data-screenshot aria-label="Open Studio editor screenshot with annotations">
+        <img class="screenshot__img" src="./assets/screenshots/editor-empty.png" alt="Open Studio editor showing empty canvas, transport bar, INSERCION and PISTAS tabs and a video track" />
+
+        <div class="screenshot__overlay" aria-hidden="true">
+          <div class="annotation" data-annotation style="top: 4%; left: 16%;">
+            <span class="annotation__pin"></span>
+            <span class="annotation__label">Project &amp; file menus</span>
+          </div>
+          <div class="annotation annotation--right" data-annotation style="top: 4%; right: 8%;">
+            <span class="annotation__pin"></span>
+            <span class="annotation__label">Record &middot; Export</span>
+          </div>
+          <div class="annotation" data-annotation style="top: 36%; left: 47%;">
+            <span class="annotation__pin"></span>
+            <span class="annotation__label">Empty canvas, ready for media</span>
+          </div>
+          <div class="annotation annotation--right" data-annotation style="top: 70%; right: 6%;">
+            <span class="annotation__pin"></span>
+            <span class="annotation__label">Transport &middot; timecode &middot; zoom</span>
+          </div>
+          <div class="annotation" data-annotation style="top: 80%; left: 4%;">
+            <span class="annotation__pin"></span>
+            <span class="annotation__label">INSERCION &middot; PISTAS tabs</span>
+          </div>
+          <div class="annotation" data-annotation style="bottom: 4%; left: 18%;">
+            <span class="annotation__pin"></span>
+            <span class="annotation__label">Multi-track timeline</span>
+          </div>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- Capabilities                                                  -->
+  <!-- ============================================================ -->
+  <section class="section" id="capabilities">
+    <div class="container">
+      <div class="section-head">
+        <span class="section-eyebrow"><span class="dot"></span>Capabilities</span>
+        <h2 class="section-title">Every panel <em>that lives</em> inside the editor.</h2>
+        <p class="section-subtitle">Open Studio ships the modules a real NLE workflow needs. Each one consumes the same tokens and shared UI primitives.</p>
+      </div>
+
+      <div class="modules reveal-batch">
+        <article class="module"><header class="module__head"><span class="module__name">Timeline</span><span class="module__kind">Editor</span></header><p class="module__desc">Multi-track lanes, frame-accurate playhead, snap, split at playhead, trim in/out, ripple and selection groups.</p></article>
+        <article class="module"><header class="module__head"><span class="module__name">Properties &amp; Keyframes</span><span class="module__kind">Editor</span></header><p class="module__desc">Inspector for transform, opacity and effects with keyframe tracks and easing curves per parameter.</p></article>
+        <article class="module"><header class="module__head"><span class="module__name">Effects &amp; Transitions</span><span class="module__kind">Editor</span></header><p class="module__desc">Blur, color, distortion, stylize and lighting presets with cross-clip transitions and live preview.</p></article>
+        <article class="module"><header class="module__head"><span class="module__name">Audio Pro</span><span class="module__kind">Editor</span></header><p class="module__desc">Master gain, buses and ducking configuration, ready to drive a deterministic mixdown on export.</p></article>
+        <article class="module"><header class="module__head"><span class="module__name">Color Scopes</span><span class="module__kind">Editor</span></header><p class="module__desc">Waveform, vectorscope and histogram surface in a dedicated panel for color decisions.</p></article>
+        <article class="module"><header class="module__head"><span class="module__name">Multicam &amp; Proxy</span><span class="module__kind">Editor</span></header><p class="module__desc">Angle selection and proxy workflow scaffolding for heavy footage on lighter machines.</p></article>
+        <article class="module"><header class="module__head"><span class="module__name">Subtitles</span><span class="module__kind">Editor</span></header><p class="module__desc">Caption clips on a dedicated track with quick-add at playhead and styling controls.</p></article>
+        <article class="module"><header class="module__head"><span class="module__name">Clip Generator</span><span class="module__kind">Shorts</span></header><p class="module__desc">Analyze long videos, propose short candidates and push them back into the editor as clips.</p></article>
+        <article class="module"><header class="module__head"><span class="module__name">AI Shorts</span><span class="module__kind">Shorts</span></header><p class="module__desc">Server pipeline for AI-assisted generation, queued through Redis with progress reporting.</p></article>
+        <article class="module"><header class="module__head"><span class="module__name">Screen Recording</span><span class="module__kind">Capture</span></header><p class="module__desc">Record screen, camera and audio in the browser, then drop the take straight into the timeline.</p></article>
+        <article class="module"><header class="module__head"><span class="module__name">Batch Render</span><span class="module__kind">Export</span></header><p class="module__desc">Queue multiple export jobs from the same project and watch their state from the UI.</p></article>
+        <article class="module"><header class="module__head"><span class="module__name">Export</span><span class="module__kind">Export</span></header><p class="module__desc">MP4, WebM and animated GIF via FFmpeg.wasm, plus single-frame image export from the playhead.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- Mockups: vertical shorts on phone                             -->
+  <!-- ============================================================ -->
+  <section class="section block-invert">
+    <div class="container">
+      <div class="section-head">
+        <span class="section-eyebrow"><span class="dot"></span>Vertical shorts</span>
+        <h2 class="section-title"><em>9:16</em> from the same project file.</h2>
+      </div>
+
+      <div class="mockups reveal">
+        <div class="phone" aria-hidden="true">
+          <div class="phone__screen">
+            <div class="phone__notch"></div>
+            <div class="phone__topbar">
+              <span>9:41</span>
+              <span>OS · short.mp4</span>
+            </div>
+            <div class="phone__short">
+              <div class="phone__caption">
+                <strong>Open Studio</strong>
+                <span>Cut from launch_trailer.ostudio · 00:00–00:18</span>
+              </div>
+              <div class="phone__bar"></div>
+            </div>
+            <div class="phone__dock">
+              <span></span><span></span><span></span><span></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="mockups__copy">
+          <h3>From a long take to a vertical cut, in one click.</h3>
+          <p>The Clip Generator analyses your master timeline and proposes 9:16 short candidates with smart framing. Edit, caption and export them without leaving the project, or queue them through the AI Shorts service.</p>
+          <div class="row">
+            <span class="chip">9:16</span>
+            <span class="chip">smart-frame</span>
+            <span class="chip">auto-caption</span>
+            <span class="chip">queue</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- Marquee                                                       -->
+  <!-- ============================================================ -->
+  <section class="marquee" aria-label="Surfaces inside Open Studio">
+    <div class="marquee__track">
+      <article class="marquee__card"><div class="marquee__thumb" style="--mq-c1:#4a5160;--mq-c2:#0e0e0f;"></div><div class="marquee__caption"><strong>Timeline</strong><span>features/editor</span></div></article>
+      <article class="marquee__card"><div class="marquee__thumb" style="--mq-c1:#1f7a4d;--mq-c2:#0e0e0f;"></div><div class="marquee__caption"><strong>Audio Pro</strong><span>features/editor</span></div></article>
+      <article class="marquee__card"><div class="marquee__thumb" style="--mq-c1:#6d4aa2;--mq-c2:#0e0e0f;"></div><div class="marquee__caption"><strong>Subtitles</strong><span>features/editor</span></div></article>
+      <article class="marquee__card"><div class="marquee__thumb" style="--mq-c1:#fbbf24;--mq-c2:#0e0e0f;"></div><div class="marquee__caption"><strong>Color Scopes</strong><span>features/editor</span></div></article>
+      <article class="marquee__card"><div class="marquee__thumb" style="--mq-c1:#22d3ee;--mq-c2:#0e0e0f;"></div><div class="marquee__caption"><strong>Clip Generator</strong><span>features/openshorts</span></div></article>
+      <article class="marquee__card"><div class="marquee__thumb" style="--mq-c1:#f87171;--mq-c2:#0e0e0f;"></div><div class="marquee__caption"><strong>AI Shorts</strong><span>features/openshorts</span></div></article>
+      <article class="marquee__card"><div class="marquee__thumb" style="--mq-c1:#94a3b8;--mq-c2:#0e0e0f;"></div><div class="marquee__caption"><strong>Multicam &amp; Proxy</strong><span>features/editor</span></div></article>
+      <article class="marquee__card"><div class="marquee__thumb" style="--mq-c1:#a3e635;--mq-c2:#0e0e0f;"></div><div class="marquee__caption"><strong>Batch Render</strong><span>features/editor</span></div></article>
+      <!-- duplicate set for seamless loop -->
+      <article class="marquee__card" aria-hidden="true"><div class="marquee__thumb" style="--mq-c1:#4a5160;--mq-c2:#0e0e0f;"></div><div class="marquee__caption"><strong>Timeline</strong><span>features/editor</span></div></article>
+      <article class="marquee__card" aria-hidden="true"><div class="marquee__thumb" style="--mq-c1:#1f7a4d;--mq-c2:#0e0e0f;"></div><div class="marquee__caption"><strong>Audio Pro</strong><span>features/editor</span></div></article>
+      <article class="marquee__card" aria-hidden="true"><div class="marquee__thumb" style="--mq-c1:#6d4aa2;--mq-c2:#0e0e0f;"></div><div class="marquee__caption"><strong>Subtitles</strong><span>features/editor</span></div></article>
+      <article class="marquee__card" aria-hidden="true"><div class="marquee__thumb" style="--mq-c1:#fbbf24;--mq-c2:#0e0e0f;"></div><div class="marquee__caption"><strong>Color Scopes</strong><span>features/editor</span></div></article>
+      <article class="marquee__card" aria-hidden="true"><div class="marquee__thumb" style="--mq-c1:#22d3ee;--mq-c2:#0e0e0f;"></div><div class="marquee__caption"><strong>Clip Generator</strong><span>features/openshorts</span></div></article>
+      <article class="marquee__card" aria-hidden="true"><div class="marquee__thumb" style="--mq-c1:#f87171;--mq-c2:#0e0e0f;"></div><div class="marquee__caption"><strong>AI Shorts</strong><span>features/openshorts</span></div></article>
+      <article class="marquee__card" aria-hidden="true"><div class="marquee__thumb" style="--mq-c1:#94a3b8;--mq-c2:#0e0e0f;"></div><div class="marquee__caption"><strong>Multicam &amp; Proxy</strong><span>features/editor</span></div></article>
+      <article class="marquee__card" aria-hidden="true"><div class="marquee__thumb" style="--mq-c1:#a3e635;--mq-c2:#0e0e0f;"></div><div class="marquee__caption"><strong>Batch Render</strong><span>features/editor</span></div></article>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- How it works                                                  -->
+  <!-- ============================================================ -->
+  <section class="section">
+    <div class="container">
+      <div class="section-head">
+        <span class="section-eyebrow"><span class="dot"></span>How it works</span>
+        <h2 class="section-title">From import to export, <em>in minutes.</em></h2>
+        <p class="section-subtitle">No installer required to start. Pick the runtime you want; the project file travels with you.</p>
+      </div>
+
+      <div class="steps reveal-batch">
+        <article class="step">
+          <h3 class="step__title">Bring your media in</h3>
+          <p class="step__desc">Drag and drop video, audio and images, or record your screen and camera straight into the asset library.</p>
+        </article>
+        <article class="step">
+          <h3 class="step__title">Edit on the timeline</h3>
+          <p class="step__desc">Stack tracks, trim and split, add transitions, color and effects, animate with keyframes, balance audio in the Audio Pro panel.</p>
+        </article>
+        <article class="step">
+          <h3 class="step__title">Render or queue</h3>
+          <p class="step__desc">Export MP4, WebM or GIF locally with FFmpeg.wasm, or send the project to the AI Shorts service for batch processing.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- Architecture                                                  -->
+  <!-- ============================================================ -->
+  <section class="section block-invert" id="architecture">
+    <div class="container">
+      <div class="section-head">
+        <span class="section-eyebrow"><span class="dot"></span>Architecture</span>
+        <h2 class="section-title">A monorepo, <em>three runtimes,</em><br/><span class="accent">one design system.</span></h2>
+        <p class="section-subtitle">Web, desktop and shorts service share the same project model and the editorial UI defined in <code>docs/OPEN-STUDIO-DESIGN-SYSTEM.md</code>.</p>
+      </div>
+
+      <div class="arch reveal-batch">
+        <article class="arch__node" style="background: var(--os-inv-surface); border-color: var(--os-inv-border);">
+          <header style="color: var(--os-inv-text-muted);"><span>apps/web</span></header>
+          <h3 style="color: var(--os-inv-text-primary);">Browser editor</h3>
+          <p style="color: var(--os-inv-text-muted);">Next.js App Router with feature-sliced architecture, Zustand stores, FFmpeg.wasm engine and the shared UI under <code>shared/components/ui</code>.</p>
+          <ul>
+            <li style="color: var(--os-inv-text-primary);">Next.js · React · TypeScript</li>
+            <li style="color: var(--os-inv-text-primary);">Tailwind v4 + semantic <code>--os-*</code> tokens</li>
+            <li style="color: var(--os-inv-text-primary);">FFmpeg.wasm export pipeline</li>
+            <li style="color: var(--os-inv-text-primary);">Zustand state for the editor store</li>
+          </ul>
+        </article>
+
+        <article class="arch__node" style="background: var(--os-inv-surface); border-color: var(--os-inv-border);">
+          <header style="color: var(--os-inv-text-muted);"><span>apps/desktop</span></header>
+          <h3 style="color: var(--os-inv-text-primary);">Electron app</h3>
+          <p style="color: var(--os-inv-text-muted);">Electron 37 with context isolation and a controlled IPC bridge. Wraps the same web build into signed installers per OS.</p>
+          <ul>
+            <li style="color: var(--os-inv-text-primary);">Windows installer (NSIS)</li>
+            <li style="color: var(--os-inv-text-primary);">macOS Intel + Apple Silicon DMG</li>
+            <li style="color: var(--os-inv-text-primary);">Linux AppImage and DEB</li>
+            <li style="color: var(--os-inv-text-primary);">Local project persistence</li>
+          </ul>
+        </article>
+
+        <article class="arch__node" style="background: var(--os-inv-surface); border-color: var(--os-inv-border);">
+          <header style="color: var(--os-inv-text-muted);"><span>apps/openstudio-shorts-service</span></header>
+          <h3 style="color: var(--os-inv-text-primary);">Shorts service</h3>
+          <p style="color: var(--os-inv-text-muted);">FastAPI app with a Redis-backed queue and a worker that runs the analyze/generate pipeline for the Clip Generator and AI Shorts panels.</p>
+          <ul>
+            <li style="color: var(--os-inv-text-primary);">FastAPI + RQ</li>
+            <li style="color: var(--os-inv-text-primary);">Async analyze and generate jobs</li>
+            <li style="color: var(--os-inv-text-primary);">Static artifacts mount</li>
+            <li style="color: var(--os-inv-text-primary);">Pluggable provider integrations</li>
+          </ul>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- Compared to                                                   -->
+  <!-- ============================================================ -->
+  <section class="section section--tight">
+    <div class="container">
+      <div class="section-head">
+        <span class="section-eyebrow"><span class="dot"></span>Compared to</span>
+        <h2 class="section-title">Where Open Studio <em>fits.</em></h2>
+        <p class="section-subtitle">Different editors, different trade-offs. Open Studio aims to combine the openness of Kdenlive with the ergonomics of a modern web app.</p>
+      </div>
+
+      <div class="compare reveal">
+        <table>
+          <thead>
+            <tr><th>Compared to</th><th>Open Studio advantage</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>CapCut</td><td>Open source, self-hosted, no account required, fully extensible.</td></tr>
+            <tr><td>Kdenlive</td><td>Runs in the browser, ships a cross-platform desktop app, modern editor UI.</td></tr>
+            <tr><td>DaVinci Resolve</td><td>Lightweight web interface, no install required to start, free without limits.</td></tr>
+            <tr><td>Generic online editors</td><td>Works offline on the desktop, local project storage, MIT-licensed.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- Download                                                      -->
+  <!-- ============================================================ -->
+  <section class="section" id="download">
+    <div class="container">
+      <div class="section-head">
+        <span class="section-eyebrow"><span class="dot"></span>Download</span>
+        <h2 class="section-title">Pick your platform.</h2>
+        <p class="section-subtitle">The desktop app wraps the same editor as the web. Per-OS artifacts are built and signed in CI.</p>
+      </div>
+
+      <div class="download reveal-batch">
+        <article class="dl-card">
+          <div class="dl-card__os">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 5.5 10.5 4.4v7.5H3zM10.5 12.7v7.5L3 19V12.7zM11.4 4.3 21 3v8.9h-9.6zm0 8.4H21V21l-9.6-1.3z"/></svg>
+            Windows
+          </div>
+          <div class="dl-card__meta">.exe installer · ~158 MB</div>
+          <a class="btn btn--primary dl-card__btn" href="https://github.com/bryfar/Open-Studio/releases/latest/download/@openstudiodesktop.Setup.0.1.0.exe">Download</a>
+        </article>
+
+        <article class="dl-card">
+          <div class="dl-card__os">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.4 1.6c-1 .1-2.2.7-2.9 1.5-.7.7-1.2 1.8-1.1 2.9 1.1.1 2.2-.6 2.9-1.4.7-.8 1.2-1.9 1.1-3zm3.6 16.5c-.6 1.4-1.4 2.7-2.5 2.7-1 0-1.4-.6-2.6-.6-1.2 0-1.6.6-2.6.6-1.2 0-2-1.3-2.6-2.6-1.4-2.6-2.4-7.4 1-9.7.9-.6 2.1-.7 3-.7 1 0 2 .7 2.7.7.7 0 1.6-.7 2.7-.7.4 0 1.6.1 2.5 1.1-.1.1-2.2 1.3-2.2 3.9 0 3 2.6 4 2.6 4z"/></svg>
+            macOS · Intel
+          </div>
+          <div class="dl-card__meta">.dmg disk image · ~212 MB</div>
+          <a class="btn btn--primary dl-card__btn" href="https://github.com/bryfar/Open-Studio/releases/latest/download/@openstudiodesktop-0.1.0.dmg">Download</a>
+        </article>
+
+        <article class="dl-card">
+          <div class="dl-card__os">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.4 1.6c-1 .1-2.2.7-2.9 1.5-.7.7-1.2 1.8-1.1 2.9 1.1.1 2.2-.6 2.9-1.4.7-.8 1.2-1.9 1.1-3zm3.6 16.5c-.6 1.4-1.4 2.7-2.5 2.7-1 0-1.4-.6-2.6-.6-1.2 0-1.6.6-2.6.6-1.2 0-2-1.3-2.6-2.6-1.4-2.6-2.4-7.4 1-9.7.9-.6 2.1-.7 3-.7 1 0 2 .7 2.7.7.7 0 1.6-.7 2.7-.7.4 0 1.6.1 2.5 1.1-.1.1-2.2 1.3-2.2 3.9 0 3 2.6 4 2.6 4z"/></svg>
+            macOS · Apple Silicon
+          </div>
+          <div class="dl-card__meta">.dmg for M1/M2/M3 · ~208 MB</div>
+          <a class="btn btn--primary dl-card__btn" href="https://github.com/bryfar/Open-Studio/releases/latest/download/@openstudiodesktop-0.1.0-arm64.dmg">Download</a>
+        </article>
+
+        <article class="dl-card">
+          <div class="dl-card__os">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2c-3 0-4 4-4 7 0 1 .2 2 .5 3-2 1.5-3.5 4-3.5 6 0 1 .3 2 1 3l-1 1c-.5.5 0 1 .5 1H19c.5 0 1-.5.5-1l-1-1c.7-1 1-2 1-3 0-2-1.5-4.5-3.5-6 .3-1 .5-2 .5-3 0-3-1-7-4-7zm-2 5c.5 0 1 .5 1 1s-.5 1-1 1-1-.5-1-1 .5-1 1-1zm4 0c.5 0 1 .5 1 1s-.5 1-1 1-1-.5-1-1 .5-1 1-1z"/></svg>
+            Linux
+          </div>
+          <div class="dl-card__meta">AppImage · DEB available</div>
+          <a class="btn btn--primary dl-card__btn" href="https://github.com/bryfar/Open-Studio/releases/latest/download/OpenStudio-0.1.0-x86_64.AppImage">Download</a>
+        </article>
+      </div>
+
+      <p style="text-align:center;margin-top:24px;font-size:13px;color:var(--os-text-muted);">
+        All artifacts and history live on
+        <a href="https://github.com/bryfar/Open-Studio/releases" target="_blank" rel="noopener" style="color:var(--os-text-primary);text-decoration:underline;text-underline-offset:3px;">GitHub Releases</a>.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- Open source CTA                                               -->
+  <!-- ============================================================ -->
+  <section class="cta section" id="open-source">
+    <div class="container cta__inner reveal">
+      <span class="section-eyebrow"><span class="dot"></span>Open source</span>
+      <h2 class="cta__title"><em>Free forever.</em><br/><span style="font-style:normal;font-family:var(--os-font-sans);font-weight:500;">Yours to fork.</span></h2>
+      <p class="cta__sub">Open Studio is MIT-licensed and built in the open. Read the architecture docs, follow the contributor guide and ship a feature this week.</p>
+      <div class="cta__buttons">
+        <a class="btn btn--primary btn--lg" href="https://github.com/bryfar/Open-Studio" target="_blank" rel="noopener">Star on GitHub</a>
+        <a class="btn btn--outline btn--lg" href="https://github.com/bryfar/Open-Studio/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">Contributing guide</a>
+        <a class="btn btn--ghost btn--lg" href="https://github.com/bryfar/Open-Studio/blob/main/docs/OPEN-STUDIO-DESIGN-SYSTEM.md" target="_blank" rel="noopener">Design system</a>
+      </div>
+      <p class="cta__note">No account · No telemetry · Local-first export</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- Big italic closer                                             -->
+  <!-- ============================================================ -->
+  <section class="closer" id="closer">
+    <div class="container closer__inner">
+      <span class="closer__eyebrow">Open Studio · 2026</span>
+      <span class="closer__word" id="closer-word" aria-label="Edit anything">
+        <span class="roman">Edit</span> <em>anything.</em>
+      </span>
+      <p class="closer__sub">From the timeline you trust to the desktop app you control. Open the editor and ship a video this week.</p>
+      <div class="closer__cta">
+        <a class="btn btn--primary btn--lg" href="/dashboard">Open the editor</a>
+        <a class="btn btn--outline btn--lg" href="#download">Download desktop</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- Footer                                                        -->
+  <!-- ============================================================ -->
   <footer class="footer">
-    <div class="footer-container">
-      <div class="footer-main">
-        <!-- Brand - Top Left -->
-        <div class="footer-brand-area">
-          <a href="/" class="footer-logo-link">
-            <div class="footer-logo-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
-            </div>
-            <span class="footer-logo-text">Open Studio</span>
+    <div class="container footer__inner">
+      <div class="footer__top">
+        <div class="footer__brand">
+          <a class="brand" href="/">
+            <img class="brand__lockup" src="./assets/brand/openstudio-lockup.svg" alt="Open Studio" />
           </a>
-          <p class="footer-tagline">Professional video editing in your browser.</p>
+          <p>Open source video editor for the browser and the desktop. Built by the community, MIT-licensed, no telemetry.</p>
         </div>
-        
-        <!-- 4 Column Links -->
-        <nav class="footer-nav">
-          <div class="footer-nav-col">
-            <h4>Product</h4>
-            <a href="#features">Features</a>
-            <a href="#how-it-works">How it works</a>
-            <a href="/dashboard">Editor</a>
-          </div>
-          <div class="footer-nav-col">
-            <h4>Resources</h4>
-            <a href="#">Documentation</a>
-            <a href="#">Keyboard Shortcuts</a>
-            <a href="#">API</a>
-          </div>
-          <div class="footer-nav-col">
-            <h4>Company</h4>
-            <a href="#">About</a>
-            <a href="#">Careers</a>
-            <a href="#">Blog</a>
-          </div>
-          <div class="footer-nav-col">
-            <h4>Connect</h4>
-            <a href="#">Twitter</a>
-            <a href="#">GitHub</a>
-            <a href="#">Discord</a>
-          </div>
-        </nav>
+
+        <div class="footer__col">
+          <h4>Product</h4>
+          <a href="#editor">Editor</a>
+          <a href="#capabilities">Capabilities</a>
+          <a href="#architecture">Architecture</a>
+          <a href="#download">Download</a>
+        </div>
+
+        <div class="footer__col">
+          <h4>Docs</h4>
+          <a href="https://github.com/bryfar/Open-Studio/blob/main/docs/OPEN-STUDIO-DESIGN-SYSTEM.md" target="_blank" rel="noopener">Design system</a>
+          <a href="https://github.com/bryfar/Open-Studio/blob/main/docs/EDITOR_ARCHITECTURE.md" target="_blank" rel="noopener">Editor architecture</a>
+          <a href="https://github.com/bryfar/Open-Studio/blob/main/docs/WEB_FEATURE_STRUCTURE.md" target="_blank" rel="noopener">Feature structure</a>
+          <a href="https://github.com/bryfar/Open-Studio/blob/main/docs/kdenlive-parity-matrix.md" target="_blank" rel="noopener">Parity matrix</a>
+        </div>
+
+        <div class="footer__col">
+          <h4>Project</h4>
+          <a href="https://github.com/bryfar/Open-Studio" target="_blank" rel="noopener">Repository</a>
+          <a href="https://github.com/bryfar/Open-Studio/releases" target="_blank" rel="noopener">Releases</a>
+          <a href="https://github.com/bryfar/Open-Studio/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">Contributing</a>
+          <a href="https://github.com/bryfar/Open-Studio/blob/main/SECURITY.md" target="_blank" rel="noopener">Security</a>
+        </div>
+
+        <div class="footer__col">
+          <h4>Community</h4>
+          <a href="https://github.com/bryfar/Open-Studio/discussions" target="_blank" rel="noopener">Discussions</a>
+          <a href="https://github.com/bryfar/Open-Studio/blob/main/CODE_OF_CONDUCT.md" target="_blank" rel="noopener">Code of Conduct</a>
+          <a href="https://github.com/bryfar/Open-Studio/blob/main/GOVERNANCE.md" target="_blank" rel="noopener">Governance</a>
+          <a href="https://github.com/bryfar/Open-Studio/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>
+        </div>
       </div>
-      
-      <!-- Bottom -->
-      <div class="footer-copyright">
-        <span>© 2024 Open Studio. Built with Next.js & Tailwind CSS.</span>
-        <span>San Francisco, CA</span>
+
+      <div class="footer__bottom">
+        <span>© <span id="year">2026</span> Open Studio · MIT License</span>
+        <span>Built with Next.js, Electron, FastAPI and FFmpeg.wasm</span>
       </div>
     </div>
   </footer>
 
-  <!-- Scripts -->
-  <script>
-    // Nav scroll
-    const nav = document.getElementById('mainNav');
-    window.addEventListener('scroll', () => {
-      if (window.scrollY > 50) nav.classList.add('scrolled');
-      else nav.classList.remove('scrolled');
-    });
-
-    // Intersection Observer
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.style.opacity = '1';
-          entry.target.style.transform = 'translateY(0)';
-          observer.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
-
-    document.querySelectorAll('.animate-fade-in-up').forEach(el => observer.observe(el));
-
-    // Smooth scroll
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-      anchor.addEventListener('click', function(e) {
-        e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
-        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      });
-    });
-  </script>
+  <!-- GSAP via CDN: core + ScrollTrigger + SplitText (all free, MIT). -->
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/SplitText.min.js" defer></script>
+  <script src="./main.js" defer></script>
 </body>
 </html>

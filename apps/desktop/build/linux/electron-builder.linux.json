@@ -2,6 +2,13 @@
   "directories": {
     "output": "dist/linux"
   },
+  "extraResources": [
+    {
+      "from": "build/web-export",
+      "to": "web-out",
+      "filter": ["**/*"]
+    }
+  ],
   "linux": {
     "artifactName": "OpenStudio-${version}-${arch}.${ext}",
     "executableName": "openstudio-desktop",

@@ -7,4 +7,5 @@ contextBridge.exposeInMainWorld('openStudioDesktop', {
   storageDel: (key) => ipcRenderer.invoke('desktop:storage:del', key),
   saveBytes: (payload) => ipcRenderer.invoke('desktop:file:save-bytes', payload),
   saveText: (payload) => ipcRenderer.invoke('desktop:file:save-text', payload),
+  openExternal: (url) => ipcRenderer.invoke('desktop:shell:open-external', url),
 });

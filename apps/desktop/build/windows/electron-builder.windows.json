@@ -2,6 +2,13 @@
   "directories": {
     "output": "dist/windows"
   },
+  "extraResources": [
+    {
+      "from": "build/web-export",
+      "to": "web-out",
+      "filter": ["**/*"]
+    }
+  ],
   "win": {
     "signAndEditExecutable": false,
     "target": [

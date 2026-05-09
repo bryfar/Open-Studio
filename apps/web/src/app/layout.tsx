@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import {
   Bebas_Neue,
   Fira_Code,
@@ -11,7 +12,7 @@ import {
   Space_Grotesk,
 } from "next/font/google";
 import "@/styles/globals.css";
-import { getLocale } from "@/shared/i18n";
+import { getLocale, LocaleProvider, LOCALE_COOKIE_NAME, parseLocale } from "@/shared/i18n";
 
 export const metadata: Metadata = {
   title: "Open Studio",
@@ -33,15 +34,18 @@ const bebas = Bebas_Neue({ subsets: ["latin"], weight: ["400"], variable: "--fon
 const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], weight: ["400", "500", "700"], variable: "--font-space-grotesk" });
 const firaCode = Fira_Code({ subsets: ["latin"], weight: ["400", "500", "700"], variable: "--font-fira-code" });
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const locale = getLocale();
+  const cookieStore = await cookies();
+  const fromCookie = parseLocale(cookieStore.get(LOCALE_COOKIE_NAME)?.value);
+  const htmlLang = fromCookie ?? getLocale();
+
   return (
     <html
-      lang={locale}
+      lang={htmlLang}
       className="h-full"
       data-theme="dark"
       suppressHydrationWarning
@@ -50,7 +54,7 @@ export default function RootLayout({
         className={`${inter.variable} ${instrumentSerif.variable} ${poppins.variable} ${montserrat.variable} ${oswald.variable} ${playfair.variable} ${bebas.variable} ${spaceGrotesk.variable} ${firaCode.variable} h-full min-h-0 overflow-hidden antialiased`}
         suppressHydrationWarning
       >
-        {children}
+        <LocaleProvider initialLocale={htmlLang}>{children}</LocaleProvider>
       </body>
     </html>
   );
