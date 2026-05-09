@@ -65,6 +65,20 @@ Release checklist:
 | 3 | Minimum quality checks: `npm run lint` and `npm run e2e` |
 | 4 | Desktop release via semver tags (`v*`) with per-OS artifacts |
 
+## 📥 Download
+
+### Desktop App
+
+| Platform | Download | Description |
+|---|---|---|
+| **Windows** | [<img src="https://img.shields.io/badge/Download-Installer-0078D4?logo=windows" />](https://github.com/bryfar/Open-Studio/releases/latest/download/@openstudiodesktop.Setup.0.1.0.exe) | `.exe` installer (158 MB) |
+| **macOS (Intel)** | [<img src="https://img.shields.io/badge/Download-DMG-000000?logo=apple" />](https://github.com/bryfar/Open-Studio/releases/latest/download/@openstudiodesktop-0.1.0.dmg) | `.dmg` disk image (212 MB) |
+| **macOS (Apple Silicon)** | [<img src="https://img.shields.io/badge/Download-DMG-000000?logo=apple" />](https://github.com/bryfar/Open-Studio/releases/latest/download/@openstudiodesktop-0.1.0-arm64.dmg) | `.dmg` for M1/M2/M3 (208 MB) |
+| **Linux (AppImage)** | [<img src="https://img.shields.io/badge/Download-AppImage-EE4F2A?logo=linux" />](https://github.com/bryfar/Open-Studio/releases/latest/download/OpenStudio-0.1.0-x86_64.AppImage) | Portable (221 MB) |
+| **Linux (Ubuntu/Debian)** | [<img src="https://img.shields.io/badge/Download-DEB-EE4F2A?logo=linux" />](https://github.com/bryfar/Open-Studio/releases/latest/download/OpenStudio-0.1.0-amd64.deb) | `.deb` package (162 MB) |
+
+Or browse all releases: **[📦 GitHub Releases](https://github.com/bryfar/Open-Studio/releases)**
+
 ## 🧭 Understand Fast
 
 1. [`docs/WEB_FEATURE_STRUCTURE.md`](./docs/WEB_FEATURE_STRUCTURE.md)
