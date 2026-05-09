@@ -1,8 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { X } from 'lucide-react';
 import type { Project, SocialExportPlatform } from '@/shared/types';
 import { Button } from '@/shared/components/ui/Button';
+import { cn } from '@/shared/utils';
 import { BUILTIN_TEMPLATES } from '@/core/lib/templates';
 import {
   buildProjectFromWizard,
@@ -36,6 +38,16 @@ const BACKGROUND_PRESETS: { color: string; label: string }[] = [
   { color: '#0f172a', label: 'Pizarra' },
   { color: '#ffffff', label: 'Blanco' },
 ];
+
+const labelClass =
+  'mb-1.5 block text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--os-text-muted)]';
+const legendClass =
+  'mb-2 text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--os-text-muted)]';
+const hintClass = 'text-[11px] leading-relaxed text-[var(--os-text-muted)]';
+const rowChoiceBase =
+  'inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 transition-colors duration-[var(--os-duration-fast)] has-[:focus-visible]:shadow-[var(--os-focus-ring)]';
+const aspectCardBase =
+  'flex cursor-pointer flex-col rounded-lg border px-2.5 py-2.5 text-left transition-colors duration-[var(--os-duration-fast)] has-[:focus-visible]:shadow-[var(--os-focus-ring)]';
 
 function defaultWizardValues(): NewProjectWizardValues {
   return {
@@ -164,7 +176,7 @@ export function NewProjectDialog({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-[6px]"
       role="presentation"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget && !submitting) onOpenChange(false);
@@ -175,29 +187,25 @@ export function NewProjectDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl border border-[#2a3348] bg-[#0f1522] shadow-xl"
+        className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-2xl border border-[var(--os-border-default)] bg-[var(--os-media-card-bg)] shadow-[0_8px_30px_rgba(0,0,0,0.35),0_1px_0_rgba(255,255,255,0.04)_inset]"
       >
-        <form onSubmit={handleSubmit} className="p-5 flex flex-col gap-4">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <h2 id={titleId} className="text-base font-semibold text-[#eef3ff]">
-                {title}
-              </h2>
-            </div>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5 p-6">
+          <div className="flex items-start justify-between gap-3 border-b border-[var(--os-border-default)] pb-4">
+            <h2 id={titleId} className="text-lg font-semibold tracking-tight text-[var(--os-text-primary)]">
+              {title}
+            </h2>
             <button
               type="button"
-              className="shrink-0 rounded-lg p-1.5 text-[#90a2c8] hover:bg-[#1a2438] hover:text-[#eef3ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/50"
+              className="shrink-0 rounded-[var(--os-button-radius)] p-2 text-[var(--os-text-muted)] transition-colors duration-[var(--os-duration-fast)] hover:bg-[var(--os-bg-hover)] hover:text-[var(--os-text-primary)] focus-visible:shadow-[var(--os-focus-ring)] focus-visible:outline-none"
               onClick={() => !submitting && onOpenChange(false)}
               aria-label="Cerrar"
             >
-              <span aria-hidden className="text-lg leading-none">
-                ×
-              </span>
+              <X size={18} strokeWidth={2} aria-hidden />
             </button>
           </div>
 
-          <div className="pt-[10px]">
-            <label htmlFor="new-project-name" className="block text-xs font-medium text-[#b9c7e8] mb-1">
+          <div>
+            <label htmlFor="new-project-name" className={labelClass}>
               Nombre del proyecto
             </label>
             <input
@@ -212,44 +220,56 @@ export function NewProjectDialog({
             />
           </div>
 
-          <fieldset className="border-0 p-0 m-0">
-            <legend className="text-xs font-medium text-[#b9c7e8] mb-2">Origen</legend>
+          <fieldset className="m-0 border-0 p-0">
+            <legend className={legendClass}>Origen</legend>
             <div className="flex flex-wrap gap-2">
-              <label className="inline-flex items-center gap-2 rounded-lg border border-[#2a3348] bg-[#121827] px-3 py-2 cursor-pointer has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-sky-400/50">
+              <label
+                className={cn(
+                  rowChoiceBase,
+                  values.startMode === 'blank'
+                    ? 'border-[var(--os-border-accent)] bg-[var(--os-timeline-selection)] shadow-[0_0_0_1px_rgba(255,255,255,0.06)_inset]'
+                    : 'border-[var(--os-border-default)] bg-[var(--os-surface-1)] hover:bg-[var(--os-bg-hover)]'
+                )}
+              >
                 <input
                   type="radio"
                   name="startMode"
                   checked={values.startMode === 'blank'}
                   onChange={() => setStartMode('blank')}
-                  className="accent-sky-500"
+                  className="accent-[var(--os-accent-primary)]"
                 />
-                <span className="text-xs text-[#dce6ff]">En blanco</span>
+                <span className="text-xs font-medium text-[var(--os-text-primary)]">En blanco</span>
               </label>
-              <label className="inline-flex items-center gap-2 rounded-lg border border-[#2a3348] bg-[#121827] px-3 py-2 cursor-pointer has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-sky-400/50">
+              <label
+                className={cn(
+                  rowChoiceBase,
+                  values.startMode === 'template'
+                    ? 'border-[var(--os-border-accent)] bg-[var(--os-timeline-selection)] shadow-[0_0_0_1px_rgba(255,255,255,0.06)_inset]'
+                    : 'border-[var(--os-border-default)] bg-[var(--os-surface-1)] hover:bg-[var(--os-bg-hover)]'
+                )}
+              >
                 <input
                   type="radio"
                   name="startMode"
                   checked={values.startMode === 'template'}
                   onChange={() => setStartMode('template')}
-                  className="accent-sky-500"
+                  className="accent-[var(--os-accent-primary)]"
                 />
-                <span className="text-xs text-[#dce6ff]">Plantilla</span>
+                <span className="text-xs font-medium text-[var(--os-text-primary)]">Plantilla</span>
               </label>
             </div>
           </fieldset>
 
           {templateMode && (
-            <div>
-              <label htmlFor="new-project-template" className="block text-xs font-medium text-[#b9c7e8] mb-1">
+            <div className="rounded-xl border border-[var(--os-border-default)] bg-[var(--os-surface-1)]/50 p-4">
+              <label htmlFor="new-project-template" className={labelClass}>
                 Plantilla
               </label>
               <select
                 id="new-project-template"
                 className="ui-select"
                 value={values.templateId ?? ''}
-                onChange={(e) =>
-                  setValues((v) => ({ ...v, templateId: e.target.value || null }))
-                }
+                onChange={(e) => setValues((v) => ({ ...v, templateId: e.target.value || null }))}
               >
                 {BUILTIN_TEMPLATES.map((tpl) => (
                   <option key={tpl.id} value={tpl.id}>
@@ -257,41 +277,43 @@ export function NewProjectDialog({
                   </option>
                 ))}
               </select>
-              {selectedTemplate && (
-                <p className="text-[11px] text-[#7f8db0] mt-2" aria-live="polite">
+              {selectedTemplate ? (
+                <p className={cn(hintClass, 'mt-2')} aria-live="polite">
                   {selectedTemplate.description}
                 </p>
-              )}
-              <p className="text-[11px] text-[#6c7a9a] mt-2">
-                Las plantillas están pensadas para lienzo <strong className="font-medium text-[#9eb0d6]">16:9</strong>{' '}
-                (1920×1080). El formato se fija automáticamente.
+              ) : null}
+              <p className={cn(hintClass, 'mt-2')}>
+                Las plantillas usan lienzo{' '}
+                <strong className="font-medium text-[var(--os-text-secondary)]">16:9</strong> (1920×1080). El formato se
+                fija automáticamente.
               </p>
             </div>
           )}
 
-          <fieldset className="border-0 p-0 m-0" disabled={templateMode || socialLocksCanvas}>
-            <legend className="text-xs font-medium text-[#b9c7e8] mb-2">
+          <fieldset className="m-0 border-0 p-0" disabled={templateMode || socialLocksCanvas}>
+            <legend className={legendClass}>
               Formato del lienzo
-              {templateMode && (
-                <span className="sr-only">(bloqueado en modo plantilla)</span>
-              )}
+              {templateMode ? <span className="sr-only">(bloqueado en modo plantilla)</span> : null}
             </legend>
-            {socialLocksCanvas && (
-              <p className="text-[11px] text-[#8fa0c5] mb-2">
+            {socialLocksCanvas ? (
+              <p className={cn(hintClass, 'mb-2')}>
                 El tamaño del lienzo lo define el preset de redes (resolución recomendada).
               </p>
-            )}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            ) : null}
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {ASPECT_OPTIONS.map((opt) => {
                 const checked = values.aspect === opt.id;
+                const locked = templateMode || socialLocksCanvas;
                 return (
                   <label
                     key={opt.id}
-                    className={`flex flex-col rounded-lg border px-2 py-2 cursor-pointer text-left transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-sky-400/50 ${
+                    className={cn(
+                      aspectCardBase,
                       checked
-                        ? 'border-sky-400 bg-sky-400/10'
-                        : 'border-[#2a3348] bg-[#121827] opacity-100'
-                    } ${templateMode || socialLocksCanvas ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        ? 'border-[var(--os-border-accent)] bg-[var(--os-timeline-selection)] shadow-[0_0_0_1px_rgba(255,255,255,0.06)_inset]'
+                        : 'border-[var(--os-border-default)] bg-[var(--os-surface-1)] hover:bg-[var(--os-bg-hover)]',
+                      locked && 'cursor-not-allowed opacity-50'
+                    )}
                   >
                     <input
                       type="radio"
@@ -299,31 +321,26 @@ export function NewProjectDialog({
                       className="sr-only"
                       checked={checked}
                       onChange={() => setValues((v) => ({ ...v, aspect: opt.id }))}
-                      disabled={templateMode || socialLocksCanvas}
+                      disabled={locked}
                     />
-                    <span className="text-xs font-semibold text-[#eef3ff]">{opt.label}</span>
-                    <span className="text-[10px] text-[#7f8db0] leading-tight mt-0.5">{opt.hint}</span>
+                    <span className="text-xs font-semibold text-[var(--os-text-primary)]">{opt.label}</span>
+                    <span className="mt-0.5 text-[10px] leading-tight text-[var(--os-text-muted)]">{opt.hint}</span>
                   </label>
                 );
               })}
             </div>
           </fieldset>
 
-          <fieldset className="border-0 p-0 m-0">
-            <legend className="text-xs font-medium text-[#b9c7e8] mb-2">
-              Optimizar para redes (MP4)
-            </legend>
-            <p className="text-[11px] text-[#6c7a9a] mb-2">
+          <fieldset className="m-0 border-0 p-0">
+            <legend className={legendClass}>Optimizar para redes (MP4)</legend>
+            <p className={cn(hintClass, 'mb-3')}>
               {templateMode
                 ? 'Opcional. El lienzo de la plantilla sigue en 16:9; al exportar MP4 se usarán bitrate y resolución del preset.'
                 : 'Opcional. Si eliges una red, el lienzo usará resolución y FPS del formato de publicación.'}
             </p>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-              <div className="flex-1 min-w-0">
-                <label
-                  htmlFor="new-project-social-platform"
-                  className="block text-xs font-medium text-[#b9c7e8] mb-1"
-                >
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+              <div className="min-w-0 flex-1">
+                <label htmlFor="new-project-social-platform" className={labelClass}>
                   Plataforma
                 </label>
                 <select
@@ -352,12 +369,9 @@ export function NewProjectDialog({
                   ))}
                 </select>
               </div>
-              {values.socialExport && (
-                <div className="flex-1 min-w-0">
-                  <label
-                    htmlFor="new-project-social-variant"
-                    className="block text-xs font-medium text-[#b9c7e8] mb-1"
-                  >
+              {values.socialExport ? (
+                <div className="min-w-0 flex-1">
+                  <label htmlFor="new-project-social-variant" className={labelClass}>
                     Formato de publicación
                   </label>
                   <select
@@ -385,13 +399,13 @@ export function NewProjectDialog({
                     ))}
                   </select>
                 </div>
-              )}
+              ) : null}
             </div>
           </fieldset>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label htmlFor="new-project-fps" className="block text-xs font-medium text-[#b9c7e8] mb-1">
+              <label htmlFor="new-project-fps" className={labelClass}>
                 FPS
               </label>
               <select
@@ -414,7 +428,7 @@ export function NewProjectDialog({
               </select>
             </div>
             <div>
-              <label htmlFor="new-project-duration" className="block text-xs font-medium text-[#b9c7e8] mb-1">
+              <label htmlFor="new-project-duration" className={labelClass}>
                 Duración inicial (timeline)
               </label>
               <select
@@ -437,17 +451,21 @@ export function NewProjectDialog({
             </div>
           </div>
 
-          <fieldset className="border-0 p-0 m-0">
-            <legend className="text-xs font-medium text-[#b9c7e8] mb-2">Fondo de escena</legend>
+          <fieldset className="m-0 border-0 p-0">
+            <legend className={legendClass}>Fondo de escena</legend>
             <div className="flex flex-wrap gap-2">
               {BACKGROUND_PRESETS.map((bg) => {
                 const checked = values.sceneBackground === bg.color;
                 return (
                   <label
                     key={bg.color}
-                    className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs cursor-pointer has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-sky-400/50 ${
-                      checked ? 'border-sky-400 bg-sky-400/10 text-white' : 'border-[#2a3348] text-[#b9c7e8]'
-                    }`}
+                    className={cn(
+                      rowChoiceBase,
+                      'rounded-full py-1.5 text-xs',
+                      checked
+                        ? 'border-[var(--os-border-accent)] bg-[var(--os-timeline-selection)] text-[var(--os-text-primary)] shadow-[0_0_0_1px_rgba(255,255,255,0.06)_inset]'
+                        : 'border-[var(--os-border-default)] bg-[var(--os-surface-1)] text-[var(--os-text-secondary)] hover:bg-[var(--os-bg-hover)]'
+                    )}
                   >
                     <input
                       type="radio"
@@ -457,7 +475,7 @@ export function NewProjectDialog({
                       onChange={() => setValues((v) => ({ ...v, sceneBackground: bg.color }))}
                     />
                     <span
-                      className="h-3 w-3 rounded-full border border-white/20 shrink-0"
+                      className="h-3 w-3 shrink-0 rounded-full border border-[var(--os-border-default)]"
                       style={{ backgroundColor: bg.color }}
                       aria-hidden
                     />
@@ -468,13 +486,13 @@ export function NewProjectDialog({
             </div>
           </fieldset>
 
-          {error && (
-            <p className="text-xs text-red-300" role="alert">
+          {error ? (
+            <p className="text-xs text-[var(--os-error)]" role="alert">
               {error}
             </p>
-          )}
+          ) : null}
 
-          <div className="flex justify-end gap-2 pt-[10px] border-t border-[#1c2436]">
+          <div className="flex justify-end gap-2 border-t border-[var(--os-border-default)] pt-4">
             <Button type="button" variant="ghost" size="sm" disabled={submitting} onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>

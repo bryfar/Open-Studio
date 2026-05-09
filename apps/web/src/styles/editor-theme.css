@@ -1,0 +1,270 @@
+/* Open Studio - Editor Theme
+ * Requires `tokens.css` to be imported earlier (see `globals.css`). */
+
+/* ==================== EDITOR WORKBENCH ==================== */
+.editor-workbench {
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 90% 55% at 50% -5%, color-mix(in srgb, var(--os-accent-primary) 12%, transparent), transparent 52%),
+    linear-gradient(180deg, var(--os-bg-subtle) 0%, var(--os-bg-canvas) 100%);
+}
+
+/* ==================== EDITOR SIDE PANEL ==================== */
+.editor-side-panel {
+  border-radius: var(--os-radius-lg);
+  border: 1px solid var(--os-border-default);
+  background: var(--os-panel-bg, linear-gradient(165deg, rgba(16, 21, 33, 0.98) 0%, rgba(10, 13, 20, 0.99) 55%, rgba(8, 10, 16, 1) 100%));
+  box-shadow: var(--os-shadow-sm), var(--os-shadow-inset);
+  overflow: hidden;
+}
+
+.editor-panel-fill {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.editor-stage-column {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.625rem;
+  min-height: 0;
+  min-width: 0;
+}
+
+/* ==================== PREVIEW CANVAS ==================== */
+.editor-preview-chrome {
+  width: 100%;
+  height: 100%;
+  flex: 1;
+  min-height: 0;
+  border-radius: var(--os-radius-lg);
+  border: 1px solid var(--os-border-default);
+  background: linear-gradient(160deg, var(--os-surface-1) 0%, var(--os-bg-canvas) 100%);
+  box-shadow:
+    0 12px 48px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  overflow: hidden;
+}
+
+.editor-preview-chrome--toolbar {
+  flex: 0 0 auto;
+  height: fit-content;
+  min-height: 0;
+}
+
+/* ==================== TIMELINE ==================== */
+.editor-timeline-shell {
+  border-radius: var(--os-radius-lg);
+  border: 1px solid var(--os-border-default);
+  background: linear-gradient(180deg, var(--os-bg-panel) 0%, var(--os-timeline-bg) 100%);
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+/* ==================== HEADER ==================== */
+.editor-header {
+  position: relative;
+  z-index: 100;
+  overflow: visible;
+  isolation: isolate;
+  height: var(--os-header-height, 56px);
+  background: var(--os-header-bg, rgba(10, 13, 20, 0.88));
+  backdrop-filter: var(--os-header-backdrop, blur(10px));
+  border-bottom: 1px solid var(--os-header-border, rgba(255, 255, 255, 0.06));
+}
+
+/* Menús y panel de exportación del header por encima del workbench */
+.editor-header [role='menu'],
+.editor-header [role='dialog'] {
+  z-index: 110;
+}
+
+/* ==================== RESIZE HANDLE ==================== */
+.editor-resize-handle {
+  touch-action: none;
+  border-radius: var(--os-radius-xs);
+  background: linear-gradient(180deg, var(--os-surface-2) 0%, var(--os-bg-panel) 100%);
+  border: 1px solid var(--os-border-default);
+  box-shadow: var(--os-shadow-inset);
+}
+
+.editor-resize-handle:hover {
+  border-color: color-mix(in srgb, var(--os-accent-primary) 45%, var(--os-border-default));
+  background: linear-gradient(180deg, var(--os-bg-hover) 0%, var(--os-bg-panel-2) 100%);
+}
+
+.editor-resize-handle:focus-visible {
+  outline: none;
+  box-shadow: var(--os-focus-ring);
+}
+
+/* ==================== CHECKERBOARD ==================== */
+.checkerboard {
+  background-color: var(--os-surface-1);
+}
+
+/* ==================== Z-INDEX ==================== */
+.z-base { z-index: 0; }
+.z-below { z-index: -1; }
+.z-content { z-index: 10; }
+.z-player { z-index: 20; }
+.z-dropdown { z-index: var(--os-z-dropdown); }
+.z-popover { z-index: 300; }
+.z-overlay { z-index: var(--os-z-overlay); }
+.z-dialog { z-index: var(--os-z-dialog); }
+.z-modal { z-index: 500; }
+.z-toast { z-index: var(--os-z-toast); }
+.z-tooltip { z-index: var(--os-z-tooltip); }
+.z-max { z-index: 9999; }
+
+/* ==================== TIMELINE SPECIFIC ==================== */
+.timeline-dropdown,
+.timeline-popover,
+.timeline-menu,
+.timeline-tooltip {
+  z-index: 300 !important;
+  position: relative;
+}
+
+.popover-above-canvas {
+  z-index: 500 !important;
+}
+
+.track-menu,
+.clip-menu,
+.clip-options-popover {
+  z-index: 250 !important;
+}
+
+/* ==================== UTILIDADES ==================== */
+.os-surface-panel {
+  background: linear-gradient(180deg, var(--os-surface-1) 0%, var(--os-bg-subtle) 100%);
+  border: 1px solid var(--os-border-default);
+  border-radius: var(--os-radius-md);
+}
+
+.os-surface-elevated {
+  background: linear-gradient(180deg, var(--os-surface-2) 0%, var(--os-surface-1) 100%);
+  border: 1px solid var(--os-border-default);
+  border-radius: var(--os-radius-lg);
+}
+
+.os-panel {
+  border-radius: var(--os-panel-radius, var(--os-radius-lg));
+  border: 1px solid var(--os-border-default);
+  background: var(--os-panel-bg, linear-gradient(165deg, rgba(16, 21, 33, 0.98) 0%, rgba(10, 13, 20, 0.99) 55%, rgba(8, 10, 16, 1) 100%));
+  box-shadow: var(--os-shadow-sm), var(--os-shadow-inset);
+  overflow: hidden;
+}
+
+.os-input {
+  height: var(--os-input-height, 36px);
+  width: 100%;
+  border-radius: var(--os-input-radius, var(--os-radius-md));
+  border: 1px solid var(--os-input-border, var(--os-border-default));
+  background: var(--os-input-bg, var(--os-surface-1));
+  color: var(--os-input-fg, var(--os-text-primary));
+  padding: 0 10px;
+  font-size: var(--os-text-sm, 12px);
+}
+
+.os-chip {
+  border: 1px solid var(--os-border-default);
+  background: var(--os-surface-1);
+  color: var(--os-text-secondary);
+  border-radius: var(--os-radius-pill);
+  font-size: var(--os-text-xs, 11px);
+  padding: 6px 10px;
+}
+
+.editor-chip {
+  border: 1px solid var(--os-border-strong);
+  background: var(--os-surface-1);
+  color: var(--os-text-secondary);
+  border-radius: var(--os-radius-pill);
+  font-size: 10px;
+  line-height: 1;
+  padding: 5px 8px;
+}
+
+.editor-chip:hover {
+  border-color: rgba(49, 180, 243, 0.45);
+  color: var(--os-text-primary);
+  background: var(--os-bg-hover);
+}
+
+/* Oculta barra de scroll (anula `scrollbar-width: thin` del selector * en globals) */
+.os-scrollbar-none {
+  scrollbar-width: none;
+  scrollbar-color: transparent transparent;
+  -ms-overflow-style: none;
+}
+.os-scrollbar-none::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+/* Barra de scroll fina y discreta (panel propiedades del editor) */
+.os-scrollbar-minimal {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--os-text-muted) 32%, transparent) transparent;
+}
+.os-scrollbar-minimal::-webkit-scrollbar {
+  width: 5px;
+}
+.os-scrollbar-minimal::-webkit-scrollbar-track {
+  background: transparent;
+}
+.os-scrollbar-minimal::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--os-text-muted) 35%, transparent);
+  border-radius: 9999px;
+}
+.os-scrollbar-minimal::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--os-text-muted) 55%, transparent);
+}
+
+/* Sliders nativos en paneles laterales del editor (alineado con --os-accent-primary) */
+.editor-panel-range {
+  accent-color: var(--os-accent-primary);
+  height: 6px;
+}
+
+/* ==================== UI COMPONENTS ==================== */
+.ui-input,
+.ui-select {
+  height: var(--os-input-height, 36px);
+  width: 100%;
+  border-radius: var(--os-input-radius, var(--os-radius-md));
+  border: 1px solid var(--os-border-default);
+  background: var(--os-surface-1);
+  color: var(--os-text-primary);
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.ui-input::placeholder {
+  color: var(--os-text-muted);
+}
+
+.ui-input:focus,
+.ui-select:focus {
+  outline: none;
+  border-color: var(--os-border-accent);
+  box-shadow: var(--os-focus-ring);
+}
+
+.ui-chip {
+  border: 1px solid var(--os-border-default);
+  background: var(--os-surface-1);
+  color: var(--os-text-secondary);
+  border-radius: var(--os-radius-pill);
+  font-size: 11px;
+  line-height: 1;
+  padding: 6px 10px;
+}

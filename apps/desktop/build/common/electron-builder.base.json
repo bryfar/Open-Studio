@@ -1,6 +1,7 @@
 {
   "appId": "com.openstudio.desktop",
   "productName": "Open Studio",
+  "icon": "build/icon.png",
   "directories": {
     "output": "dist/common"
   },

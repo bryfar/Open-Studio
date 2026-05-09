@@ -1,31 +1,40 @@
 'use client';
 
-import { forwardRef, ButtonHTMLAttributes } from 'react';
+import { forwardRef, type ButtonHTMLAttributes } from 'react';
 import { cn } from '@/shared/utils';
 
+export type ButtonVariant = 'default' | 'primary' | 'secondary' | 'ghost' | 'danger';
+export type ButtonSize = 'sm' | 'md' | 'lg' | 'icon';
+
+const variantClasses: Record<ButtonVariant, string> = {
+  default: 'border-[var(--os-border-default)] bg-[var(--os-surface-1)] text-[var(--os-text-primary)] hover:bg-[var(--os-bg-hover)]',
+  primary: 'border-transparent bg-[var(--os-accent-primary)] text-[var(--os-text-inverse)] hover:bg-[var(--os-button-primary-bg-hover)]',
+  secondary: 'border-[var(--os-border-default)] bg-[var(--os-surface-2)] text-[var(--os-text-primary)] hover:bg-[var(--os-bg-hover)]',
+  ghost: 'border-transparent bg-transparent text-[var(--os-text-secondary)] hover:bg-[var(--os-bg-hover)] hover:text-[var(--os-text-primary)]',
+  danger: 'border-[rgba(239,68,68,0.28)] bg-[rgba(239,68,68,0.12)] text-[#ffb3b3] hover:bg-[rgba(239,68,68,0.18)]',
+};
+
+const sizeClasses: Record<ButtonSize, string> = {
+  sm: 'h-8 px-2.5 text-[11px]',
+  md: 'h-9 px-3.5 text-[12px]',
+  lg: 'h-10 px-4 text-[13px]',
+  icon: 'h-9 w-9 p-0',
+};
+
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'default' | 'primary' | 'secondary' | 'ghost' | 'danger';
-  size?: 'sm' | 'md' | 'lg' | 'icon';
+  variant?: ButtonVariant;
+  size?: ButtonSize;
 }
 
-const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'default', size = 'md', children, ...props }, ref) => {
     return (
       <button
         ref={ref}
         className={cn(
-          'inline-flex items-center justify-center rounded-[var(--radius-md)] font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50 disabled:pointer-events-none disabled:opacity-50',
-          {
-            'bg-[var(--bg-tertiary)] text-[var(--text-primary)] border border-[var(--border-default)] hover:bg-[var(--bg-elevated)]': variant === 'default',
-            'bg-[var(--accent-primary)] text-white hover:brightness-110 shadow-[0_0_0_1px_rgba(255,255,255,0.08)_inset]': variant === 'primary',
-            'bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border-default)] hover:brightness-110': variant === 'secondary',
-            'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] border border-transparent': variant === 'ghost',
-            'bg-red-600 text-white hover:bg-red-700': variant === 'danger',
-            'h-8 px-3 text-xs': size === 'sm',
-            'h-10 px-4 text-sm': size === 'md',
-            'h-12 px-6 text-base': size === 'lg',
-            'h-9 w-9 rounded-full': size === 'icon',
-          },
+          'inline-flex items-center justify-center gap-2 rounded-[var(--os-button-radius)] border font-medium transition-colors duration-[var(--os-duration-fast)] outline-none disabled:pointer-events-none disabled:opacity-50 focus-visible:shadow-[var(--os-focus-ring)]',
+          variantClasses[variant],
+          sizeClasses[size],
           className
         )}
         {...props}
@@ -37,5 +46,3 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 );
 
 Button.displayName = 'Button';
-
-export { Button };

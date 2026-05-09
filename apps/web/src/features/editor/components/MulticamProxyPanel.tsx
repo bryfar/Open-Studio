@@ -4,6 +4,8 @@ import { Button } from '@/shared/components/ui/Button';
 import { useEditorStore } from '@/features/editor/store/editorStore';
 import { buildProxyForMedia } from '@/features/editor/lib/proxyWorkflow';
 import type { Project } from '@/shared/types';
+import { cn } from '@/shared/utils';
+import { ep } from '@/features/editor/components/editorPanelUi';
 
 const defaultMulticam: NonNullable<Project['multicam']> = {
   enabled: false,
@@ -87,25 +89,63 @@ export function MulticamProxyPanel({ onNotice }: { onNotice?: (msg: string) => v
   };
 
   return (
-    <div className="space-y-3 text-xs text-zinc-300">
-      <label className="flex items-center gap-2"><input type="checkbox" checked={multicam.enabled} onChange={(e)=>patch({...multicam, enabled:e.target.checked})}/> Multicam mode</label>
-      <p className="text-[11px] text-zinc-500">Fuentes detectadas: {cameraSources}</p>
+    <div className={ep.root}>
+      <label className={ep.checkboxRow}>
+        <input
+          type="checkbox"
+          checked={multicam.enabled}
+          onChange={(e) => patch({ ...multicam, enabled: e.target.checked })}
+        />
+        Multicam mode
+      </label>
+      <p className={ep.hint}>Fuentes detectadas: {cameraSources}</p>
       <div className="grid grid-cols-4 gap-1">
-        {[1,2,3,4].map((n)=>(
-          <button key={n} className={`rounded border px-2 py-1 ${multicam.activeAngle===n?'border-sky-400 bg-sky-500/20':'border-zinc-700 bg-zinc-900'}`} onClick={()=>patch({...multicam, activeAngle:n})}>
+        {[1, 2, 3, 4].map((n) => (
+          <button
+            key={n}
+            type="button"
+            className={cn(
+              'rounded-lg border px-2 py-1.5 text-[11px] font-medium',
+              multicam.activeAngle === n ? ep.segOn : ep.segOff
+            )}
+            onClick={() => patch({ ...multicam, activeAngle: n })}
+          >
             Cam {n}
           </button>
         ))}
       </div>
-      <label className="flex items-center gap-2"><input type="checkbox" checked={multicam.proxyEnabled} onChange={(e)=>patch({...multicam, proxyEnabled:e.target.checked})}/> Proxy workflow</label>
-      <input type="range" min={0.2} max={1} step={0.1} value={multicam.proxyScale} onChange={(e)=>patch({...multicam, proxyScale:Number(e.target.value)})} className="w-full"/>
-      <p className="text-[11px] text-zinc-500">Proxies listos: {proxyReadyCount}/{cameraSources}</p>
-      <Button type="button" variant="secondary" className="w-full text-[11px]" onClick={() => void generateProxies()}>Generar proxies</Button>
-      <Button type="button" variant="secondary" className="w-full text-[11px]" onClick={syncFromMediaMetadata}>Sincronizar offsets de cámara</Button>
-      <Button type="button" variant="ghost" className="w-full text-[11px]" onClick={insertAngleCut}>Insertar angle cut en playhead</Button>
-      <div className="rounded border border-zinc-700 bg-zinc-900/50 p-2 text-[11px] text-zinc-400">
-        <p>Cámara activa: Cam {multicam.activeAngle}</p>
-        <p>Cortes: {multicam.angleCuts?.length ?? 0}</p>
+      <label className={ep.checkboxRow}>
+        <input
+          type="checkbox"
+          checked={multicam.proxyEnabled}
+          onChange={(e) => patch({ ...multicam, proxyEnabled: e.target.checked })}
+        />
+        Proxy workflow
+      </label>
+      <input
+        type="range"
+        min={0.2}
+        max={1}
+        step={0.1}
+        value={multicam.proxyScale}
+        onChange={(e) => patch({ ...multicam, proxyScale: Number(e.target.value) })}
+        className={ep.range}
+      />
+      <p className={ep.hint}>
+        Proxies listos: {proxyReadyCount}/{cameraSources}
+      </p>
+      <Button type="button" variant="secondary" className="w-full text-[11px]" onClick={() => void generateProxies()}>
+        Generar proxies
+      </Button>
+      <Button type="button" variant="secondary" className="w-full text-[11px]" onClick={syncFromMediaMetadata}>
+        Sincronizar offsets de cámara
+      </Button>
+      <Button type="button" variant="ghost" className="w-full text-[11px]" onClick={insertAngleCut}>
+        Insertar angle cut en playhead
+      </Button>
+      <div className={ep.card}>
+        <p className="text-[11px] text-[var(--os-text-secondary)]">Cámara activa: Cam {multicam.activeAngle}</p>
+        <p className="text-[11px] text-[var(--os-text-muted)]">Cortes: {multicam.angleCuts?.length ?? 0}</p>
       </div>
     </div>
   );

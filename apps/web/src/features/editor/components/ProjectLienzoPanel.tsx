@@ -3,10 +3,12 @@
 import type { BackgroundStyle, Project } from '@/shared/types';
 import { DEFAULT_PRO_EDITOR } from '@/shared/types';
 import { Slider } from '@/shared/components/ui/Slider';
+import { cn } from '@/shared/utils';
 import {
   getDimensionsForAspect,
   type ProjectAspectFormat,
 } from '@/features/editor/lib/projectFactory';
+import { ep } from '@/features/editor/components/editorPanelUi';
 
 export type ProjectLienzoPanelProps = {
   project: Project;
@@ -41,16 +43,14 @@ export function ProjectLienzoPanel({
   };
 
   return (
-    <div className="space-y-4 border-b border-zinc-800 bg-gradient-to-b from-zinc-950/95 to-zinc-900/80 p-3">
-      <div className="space-y-2 rounded-lg border border-amber-500/25 bg-amber-500/[0.06] px-3 py-2">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-200/90">
-          Reencuadre del lienzo
-        </p>
-        <p className="text-[10px] leading-snug text-zinc-500">
+    <div className={cn(ep.root, 'border-b border-[var(--os-border-default)] bg-[var(--os-bg-app)]/50 p-3')}>
+      <div className={ep.callout}>
+        <p className={ep.calloutTitle}>Reencuadre del lienzo</p>
+        <p className={ep.calloutBody}>
           Un clic para 16:9, vertical (Shorts/Reels), cuadrado o 4:5. Equivale a «reframe para plataforma»; el
           encabezado también puede aplicar presets por red social.
         </p>
-        <div className="grid grid-cols-2 gap-1.5">
+        <div className="mt-2 grid grid-cols-2 gap-1.5">
           {(
             [
               ['16:9', '16:9' as const],
@@ -62,33 +62,35 @@ export function ProjectLienzoPanel({
             <button
               key={format}
               type="button"
-              className="rounded-md border border-zinc-600 bg-zinc-800/90 py-1.5 text-[11px] font-medium text-zinc-200 hover:border-amber-500/50 hover:bg-zinc-800"
+              className={cn(
+                'rounded-md border py-1.5 text-[11px] font-medium transition-colors',
+                'border-[var(--os-border-default)] bg-[var(--os-surface-1)] text-[var(--os-text-primary)]',
+                'hover:border-[var(--os-border-accent)]/50 hover:bg-[var(--os-bg-hover)]'
+              )}
               onClick={() => applyCanvasAspect(format)}
             >
               {label}
             </button>
           ))}
         </div>
-        <p className="text-[10px] text-zinc-600">
+        <p className="mt-2 text-[10px] text-[var(--os-text-muted)]">
           Tamaño actual: {project.width}×{project.height}px
         </p>
       </div>
 
-      <div className="rounded-lg border border-sky-500/35 bg-sky-500/[0.07] px-3 py-2">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-sky-400">
-          Lienzo · Cámara
-        </p>
-        <p className="mt-1 text-[10px] leading-snug text-zinc-500">
+      <div className={ep.callout}>
+        <p className={ep.calloutTitle}>Lienzo · Cámara</p>
+        <p className={ep.calloutBody}>
           Blur, marco de dispositivo y cámara por defecto del proyecto. El{' '}
-          <span className="text-zinc-400">zoom tutorial</span> y el{' '}
-          <span className="text-zinc-400">cursor</span> están en la barra lateral izquierda (icono pantalla → Zoom /
-          Cursor).
+          <span className="text-[var(--os-text-primary)]">zoom tutorial</span> y el{' '}
+          <span className="text-[var(--os-text-primary)]">cursor</span> están en la barra lateral izquierda (icono
+          pantalla → Zoom / Cursor).
         </p>
       </div>
 
       <div className="space-y-3">
-        <h4 className="text-xs font-medium text-zinc-400">Canvas Style</h4>
-        <label className="text-xs text-zinc-500">Background Blur</label>
+        <h4 className={ep.sectionTitle}>Canvas Style</h4>
+        <label className={ep.label}>Background Blur</label>
         <Slider
           value={resolvedCanvasBackground?.blur ?? project.background?.blur ?? 0}
           min={0}
@@ -97,9 +99,9 @@ export function ProjectLienzoPanel({
           onChange={(v) => patchSceneBackground({ blur: v })}
           label="px"
         />
-        <label className="text-xs text-zinc-500">Device Frame</label>
+        <label className={ep.label}>Device Frame</label>
         <select
-          className="w-full rounded border border-zinc-700 bg-zinc-800 px-2 py-1 text-xs text-zinc-200"
+          className={ep.select}
           value={project.deviceFrame?.type ?? 'none'}
           onChange={(e) =>
             updateProjectStyle({
@@ -125,9 +127,9 @@ export function ProjectLienzoPanel({
         </select>
       </div>
 
-      <div className="space-y-3 border-t border-zinc-800 pt-3">
-        <h4 className="text-xs font-medium text-zinc-400">Camera</h4>
-        <label className="text-xs text-zinc-500">Default Zoom</label>
+      <div className="space-y-3 border-t border-[var(--os-border-default)] pt-3">
+        <h4 className={ep.sectionTitle}>Camera</h4>
+        <label className={ep.label}>Default Zoom</label>
         <Slider
           value={project.camera?.defaultZoom ?? 1}
           min={0.5}
@@ -148,7 +150,7 @@ export function ProjectLienzoPanel({
           }
           label="x"
         />
-        <label className="text-xs text-zinc-500">Default Tilt X</label>
+        <label className={ep.label}>Default Tilt X</label>
         <Slider
           value={project.camera?.defaultTiltX ?? 0}
           min={-30}
@@ -169,7 +171,7 @@ export function ProjectLienzoPanel({
           }
           label="deg"
         />
-        <label className="text-xs text-zinc-500">Default Tilt Y</label>
+        <label className={ep.label}>Default Tilt Y</label>
         <Slider
           value={project.camera?.defaultTiltY ?? 0}
           min={-30}
@@ -192,13 +194,13 @@ export function ProjectLienzoPanel({
         />
       </div>
 
-      <div className="space-y-3 border-t border-zinc-800 pt-3">
-        <h4 className="text-xs font-medium text-zinc-400">Herramientas pro (Premiere / DaVinci)</h4>
-        <p className="text-[10px] leading-snug text-zinc-500">
+      <div className="space-y-3 border-t border-[var(--os-border-default)] pt-3">
+        <h4 className={ep.sectionTitle}>Herramientas pro (Premiere / DaVinci)</h4>
+        <p className={ep.hint}>
           Guías de seguridad para títulos y acción, y snap del cabezal a fotogramas enteros al mover el tiempo en el
           timeline.
         </p>
-        <label className="flex cursor-pointer items-center gap-2 text-[11px] text-zinc-300">
+        <label className={ep.checkboxRow}>
           <input
             type="checkbox"
             checked={project.proEditor?.showTitleSafe ?? DEFAULT_PRO_EDITOR.showTitleSafe}
@@ -214,7 +216,7 @@ export function ProjectLienzoPanel({
           />
           Title safe (~10 % desde bordes)
         </label>
-        <label className="flex cursor-pointer items-center gap-2 text-[11px] text-zinc-300">
+        <label className={ep.checkboxRow}>
           <input
             type="checkbox"
             checked={project.proEditor?.showActionSafe ?? DEFAULT_PRO_EDITOR.showActionSafe}
@@ -230,7 +232,7 @@ export function ProjectLienzoPanel({
           />
           Action safe (~5 % desde bordes)
         </label>
-        <label className="flex cursor-pointer items-center gap-2 text-[11px] text-zinc-300">
+        <label className={ep.checkboxRow}>
           <input
             type="checkbox"
             checked={

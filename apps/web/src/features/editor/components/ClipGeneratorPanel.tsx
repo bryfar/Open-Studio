@@ -4,6 +4,8 @@ import { useMemo, useState } from 'react';
 import { useEditorStore } from '@/features/editor/store/editorStore';
 import { Button } from '@/shared/components/ui/Button';
 import { ShortFormClipsPanel } from '@/features/editor/components/ShortFormClipsPanel';
+import { cn } from '@/shared/utils';
+import { ep } from '@/features/editor/components/editorPanelUi';
 
 type ClipStatus = 'idle' | 'processing' | 'complete' | 'error';
 
@@ -35,26 +37,19 @@ export function ClipGeneratorPanel({ onNotice }: { onNotice?: (msg: string) => v
   }
 
   return (
-    <div className="space-y-3 text-xs text-zinc-300">
+    <div className={ep.root}>
       {status === 'idle' && (
         <>
-          <div className="rounded-lg border border-sky-500/30 bg-sky-500/[0.08] px-3 py-2">
-            <p className="text-[11px] font-semibold text-sky-200">Create Viral Shorts</p>
-            <p className="mt-1 text-[11px] text-sky-100/85">
-              Estilo OpenShorts: sube video largo, detecta momentos y genera clips verticales.
-            </p>
-          </div>
-
-          <div className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-3 space-y-2">
-            <label className="text-[10px] uppercase tracking-wide text-zinc-500">Source URL (opcional)</label>
+          <div className={ep.card}>
+            <label className={ep.label}>Source URL (opcional)</label>
             <input
               value={sourceUrl}
               onChange={(e) => setSourceUrl(e.target.value)}
               placeholder="https://youtube.com/watch?v=..."
-              className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-zinc-200"
+              className={ep.field}
             />
-            <p className="text-[11px] text-zinc-500">
-              Videos en biblioteca: <span className="text-zinc-300">{videoCount}</span>
+            <p className="text-[11px] text-[var(--os-text-muted)]">
+              Videos en biblioteca: <span className="text-[var(--os-text-primary)]">{videoCount}</span>
             </p>
           </div>
 
@@ -64,11 +59,7 @@ export function ClipGeneratorPanel({ onNotice }: { onNotice?: (msg: string) => v
                 key={p}
                 type="button"
                 onClick={() => setPlatform(p)}
-                className={`flex-1 rounded-lg border px-2 py-2 text-[11px] ${
-                  platform === p
-                    ? 'border-sky-400 bg-sky-500/20 text-sky-100'
-                    : 'border-zinc-700 bg-zinc-900 text-zinc-400'
-                }`}
+                className={cn('flex-1 rounded-lg border px-2 py-2 text-[11px]', platform === p ? ep.segOn : ep.segOff)}
               >
                 {p.toUpperCase()}
               </button>
@@ -83,22 +74,22 @@ export function ClipGeneratorPanel({ onNotice }: { onNotice?: (msg: string) => v
 
       {(status === 'processing' || status === 'complete' || status === 'error') && (
         <div className="space-y-3">
-          <div className="rounded-lg border border-zinc-700 bg-zinc-900/60 p-3">
-            <div className="flex items-center justify-between">
-              <p className="text-[11px] font-semibold text-zinc-200">Live Analysis</p>
-              <span className="rounded-full border border-zinc-600 px-2 py-0.5 text-[10px] text-zinc-300">
+          <div className={ep.card}>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[11px] font-semibold text-[var(--os-text-primary)]">Live Analysis</p>
+              <span className="shrink-0 rounded-full border border-[var(--os-border-default)] px-2 py-0.5 text-[10px] text-[var(--os-text-secondary)]">
                 {status.toUpperCase()}
               </span>
             </div>
-            <div className="mt-2 space-y-1 text-[11px] text-zinc-400">
+            <div className="mt-2 space-y-1 text-[11px] text-[var(--os-text-muted)]">
               {logs.map((line, i) => (
                 <p key={`${line}-${i}`}>{line}</p>
               ))}
             </div>
           </div>
 
-          <div className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-2">
-            <p className="mb-2 text-[11px] text-zinc-400">
+          <div className={ep.card}>
+            <p className="mb-2 text-[11px] text-[var(--os-text-secondary)]">
               Segment editor (clip timings, queue and timeline injection)
             </p>
             <ShortFormClipsPanel onNotice={onNotice} />

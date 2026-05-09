@@ -5,16 +5,16 @@ import { cn } from '@/shared/utils';
 
 export type InputProps = InputHTMLAttributes<HTMLInputElement>;
 
-const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ className, type, ...props }, ref) => {
+export const Input = forwardRef<HTMLInputElement, InputProps>(
+  ({ className, type = 'text', ...props }, ref) => {
     return (
       <input
+        ref={ref}
         type={type}
         className={cn(
-          'flex h-9 w-full rounded-[var(--radius-md)] border border-[var(--border-default)] bg-[var(--bg-tertiary)] px-3 py-1 text-sm text-[var(--text-primary)] shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-[var(--text-muted)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent-primary)] disabled:cursor-not-allowed disabled:opacity-50',
+          'h-[var(--os-input-height)] w-full rounded-[var(--os-input-radius)] border border-[var(--os-input-border)] bg-[var(--os-input-bg)] px-2.5 text-[var(--os-text-sm)] text-[var(--os-input-fg)] outline-none placeholder:text-[var(--os-input-placeholder)] focus:border-[var(--os-border-accent)] focus-visible:shadow-[var(--os-focus-ring)]',
           className
         )}
-        ref={ref}
         {...props}
       />
     );
@@ -22,5 +22,3 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
 );
 
 Input.displayName = 'Input';
-
-export { Input };

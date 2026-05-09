@@ -1,0 +1,11 @@
+<svg width="120" height="32" viewBox="0 0 120 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="28" height="28" rx="6" fill="url(#logoGradient)"/>
+  <path d="M10 8L20 16L10 24V8Z" fill="white"/>
+  <text x="34" y="21" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="white">Open Studio</text>
+  <defs>
+    <linearGradient id="logoGradient" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3B82F6"/>
+      <stop offset="1" stop-color="#06B6D4"/>
+    </linearGradient>
+  </defs>
+</svg>

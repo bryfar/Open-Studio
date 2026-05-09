@@ -1,0 +1,233 @@
+/* Open Studio Design Tokens - Solo variables, sin clases */
+:root {
+  /* --- FUNDACIONAL --- */
+  --os-font-sans: 'Inter', 'Inter Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --os-font-serif: 'Instrument Serif', Georgia, serif;
+  --os-font-mono: 'ui-monospace', 'SFMono-Regular', 'Menlo', monospace;
+
+  --os-text-xs: 11px;
+  --os-text-sm: 12px;
+  --os-text-md: 14px;
+  --os-text-lg: 16px;
+  --os-text-xl: 18px;
+  --os-text-2xl: 24px;
+  --os-text-3xl: 28px;
+  --os-text-4xl: 40px;
+
+  --os-leading-tight: 1.2;
+  --os-leading-normal: 1.4;
+  --os-leading-relaxed: 1.55;
+
+  --os-weight-regular: 400;
+  --os-weight-medium: 500;
+  --os-weight-semibold: 600;
+  --os-weight-bold: 700;
+
+  --os-space-1: 4px;
+  --os-space-2: 8px;
+  --os-space-3: 12px;
+  --os-space-4: 16px;
+  --os-space-5: 20px;
+  --os-space-6: 24px;
+  --os-space-7: 32px;
+  --os-space-8: 40px;
+  --os-space-9: 48px;
+  --os-space-10: 64px;
+
+  --os-radius-xs: 6px;
+  --os-radius-sm: 8px;
+  --os-radius-md: 10px;
+  --os-radius-lg: 14px;
+  --os-radius-xl: 18px;
+  --os-radius-pill: 999px;
+
+  --os-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.16);
+  --os-shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.24);
+  --os-shadow-md: 0 10px 30px rgba(0, 0, 0, 0.34);
+  --os-shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+
+  --os-duration-fast: 120ms;
+  --os-duration-base: 180ms;
+  --os-duration-slow: 260ms;
+  --os-ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --os-ease-emphasized: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --os-z-base: 0;
+  --os-z-dropdown: 1000;
+  --os-z-sticky: 1100;
+  --os-z-overlay: 1200;
+  --os-z-dialog: 1300;
+  --os-z-toast: 1400;
+  --os-z-tooltip: 1500;
+
+  /* --- SEMÁNTICO (Dark) --- */
+  --os-bg-app: #0a0b0f;
+  --os-bg-subtle: #0f1117;
+  --os-bg-canvas: #06070d;
+  --os-bg-elevated: #161922;
+  --os-bg-panel: #101521;
+  --os-bg-panel-2: #121827;
+  --os-bg-hover: #1a2235;
+  --os-bg-active: #202a40;
+
+  --os-surface-1: #101421;
+  --os-surface-2: #141a2a;
+  --os-surface-3: #1e2330;
+
+  --os-border-default: #283046;
+  --os-border-strong: #33405d;
+  --os-border-accent: #31b4f3;
+
+  --os-text-primary: #eef2ff;
+  --os-text-secondary: #aeb7cc;
+  --os-text-muted: #7984a0;
+  --os-text-disabled: #5c6579;
+  --os-text-inverse: #081019;
+
+  --os-accent-primary: #31b4f3;
+  --os-accent-secondary: #5f6fff;
+  --os-accent-tertiary: #9f8bff;
+
+  --os-button-primary-bg: #31b4f3;
+  --os-button-primary-bg-hover: #5bc3f6;
+  --os-button-primary-fg: #081019;
+  --os-button-radius: var(--os-radius-sm);
+  --os-button-secondary-bg: var(--os-surface-1);
+  --os-button-secondary-bg-hover: var(--os-bg-hover);
+  --os-button-secondary-fg: var(--os-text-primary);
+  --os-button-ghost-fg: var(--os-text-secondary);
+  --os-button-danger-fg: #ffb3b3;
+
+  --os-input-border: var(--os-border-default);
+  --os-input-bg: var(--os-surface-1);
+  --os-input-fg: var(--os-text-primary);
+  --os-input-placeholder: var(--os-text-muted);
+
+  --os-slider-track-bg: #23304a;
+  --os-slider-range-bg: var(--os-accent-primary);
+  --os-slider-thumb-bg: var(--os-accent-primary);
+  --os-slider-thumb-border: #d9edff;
+
+  --os-panel-bg: linear-gradient(165deg, rgba(16, 21, 33, 0.98) 0%, rgba(10, 13, 20, 0.99) 55%, rgba(8, 10, 16, 1) 100%);
+  --os-panel-shadow: var(--os-shadow-sm), var(--os-shadow-inset);
+  --os-panel-padding: 16px;
+
+  --os-header-bg: rgba(10, 13, 20, 0.88);
+  --os-header-border: rgba(255, 255, 255, 0.06);
+  --os-header-backdrop: blur(10px);
+
+  --os-canvas-bg: #06070d;
+  --os-canvas-frame-bg: #0d111b;
+  --os-canvas-frame-border: var(--os-border-default);
+  --os-canvas-toolbar-height: 44px;
+
+  --os-media-card-bg: #0f1522;
+  --os-media-card-bg-hover: #151d2d;
+  --os-media-card-border: var(--os-border-default);
+
+  /* Convenience aliases used by legacy utility classes */
+  --os-accent: var(--os-accent-primary);
+  --os-accent-hover: var(--os-button-primary-bg-hover);
+  --os-border-light: var(--os-border-default);
+
+  --os-success: #22c55e;
+  --os-warning: #f59e0b;
+  --os-error: #ef4444;
+
+  --os-focus-ring: 0 0 0 1px rgba(49, 180, 243, 0.35);
+  --os-selection: rgba(49, 180, 243, 0.35);
+
+  /* --- TIMELINE --- */
+  --os-timeline-bg: #0c1018;
+  --os-timeline-grid: rgba(255, 255, 255, 0.04);
+  --os-timeline-ruler: #aeb7cc;
+  --os-timeline-track-bg: #0f1522;
+  --os-timeline-track-border: #202a3d;
+  --os-timeline-playhead: #31b4f3;
+  --os-timeline-selection: rgba(49, 180, 243, 0.18);
+
+  --os-clip-video: #35b7f5;
+  --os-clip-audio: #7fd0ff;
+  --os-clip-text: #a98cff;
+  --os-clip-image: #59d6a9;
+  --os-clip-background: #5a6578;
+
+  /* --- COMPONENT --- */
+  --os-button-height-sm: 32px;
+  --os-button-height-md: 36px;
+  --os-button-height-lg: 42px;
+  --os-input-height: 36px;
+  --os-input-radius: 10px;
+  --os-panel-radius: 14px;
+  --os-header-height: 56px;
+  --os-slider-track-height: 4px;
+  --os-slider-thumb-size: 14px;
+}
+
+/* Alias para compatibilidad */
+:root {
+  --bg-primary: var(--os-bg-app);
+  --bg-secondary: var(--os-bg-subtle);
+  --bg-tertiary: var(--os-bg-elevated);
+  --bg-elevated: var(--os-surface-3);
+
+  --text-primary: var(--os-text-primary);
+  --text-secondary: var(--os-text-secondary);
+  --text-muted: var(--os-text-muted);
+
+  --border-default: var(--os-border-default);
+  --border-active: var(--os-border-accent);
+
+  --accent-primary: var(--os-accent-primary);
+  --accent-secondary: var(--os-accent-secondary);
+  --accent-tertiary: var(--os-accent-tertiary);
+
+  --radius-sm: var(--os-radius-sm);
+  --radius-md: var(--os-radius-md);
+  --radius-lg: var(--os-radius-lg);
+}
+
+/*
+ * Design system v1.0 — nombres canónicos apuntando a la paleta actual.
+ * Sin `data-theme` en <html>, el aspecto no cambia. Ver `themes.css` para paleta editorial opt-in.
+ */
+:root {
+  --os-bg-base: var(--os-bg-app);
+  --os-surface: var(--os-surface-1);
+  --os-surface-alt: var(--os-surface-2);
+  --os-border-focus: var(--os-border-accent);
+  --os-accent-on: var(--os-button-primary-fg);
+  --os-ring: rgba(49, 180, 243, 0.35);
+  --os-overlay: rgba(0, 0, 0, 0.56);
+  --os-success-soft: rgba(34, 197, 94, 0.14);
+  --os-warning-soft: rgba(245, 158, 11, 0.14);
+  --os-error-soft: rgba(239, 68, 68, 0.14);
+  --os-timeline-track: var(--os-timeline-track-bg);
+  --os-timeline-clip-video: var(--os-clip-video);
+  --os-timeline-clip-audio: var(--os-clip-audio);
+  --os-timeline-clip-text: var(--os-clip-text);
+  --os-timeline-clip-selected: var(--os-timeline-playhead);
+  --os-toolbar-bg: var(--os-header-bg);
+  --os-border-width: 1px;
+  --os-ease-emphasis: var(--os-ease-emphasized);
+  --os-font-size-xs: var(--os-text-xs);
+  --os-font-size-sm: var(--os-text-sm);
+  --os-font-size-md: var(--os-text-md);
+  --os-font-size-lg: var(--os-text-lg);
+  --os-font-size-xl: var(--os-text-xl);
+  --os-font-size-2xl: var(--os-text-2xl);
+  --os-font-size-3xl: var(--os-text-3xl);
+  --os-line-height-xs: calc(var(--os-text-xs) * var(--os-leading-tight));
+  --os-line-height-sm: calc(var(--os-text-sm) * var(--os-leading-normal));
+  --os-line-height-md: calc(var(--os-text-md) * var(--os-leading-normal));
+  --os-line-height-lg: calc(var(--os-text-lg) * var(--os-leading-normal));
+  --os-line-height-xl: calc(var(--os-text-xl) * var(--os-leading-normal));
+  --os-line-height-2xl: calc(var(--os-text-2xl) * var(--os-leading-tight));
+  --os-line-height-3xl: calc(var(--os-text-3xl) * var(--os-leading-tight));
+  --os-font-weight-regular: var(--os-weight-regular);
+  --os-font-weight-medium: var(--os-weight-medium);
+  --os-font-weight-semibold: var(--os-weight-semibold);
+  --os-font-weight-bold: var(--os-weight-bold);
+  --os-letter-spacing-tight: -0.02em;
+  --os-letter-spacing-normal: 0;
+}

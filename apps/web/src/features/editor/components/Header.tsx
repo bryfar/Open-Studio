@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { Home, MoreHorizontal } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { Button } from '@/shared/components/ui/Button';
 import { icons } from '@/shared/components/icons';
@@ -31,11 +32,33 @@ import { renderCompositedWebM } from '@/features/editor/lib/exportCompositor';
 import { SOCIAL_VARIANTS_BY_PLATFORM, resolveSocialProfile } from '@/features/editor/lib/socialExport';
 import { exportProjectBridge, importProjectBridge } from '@/features/editor/lib/interchange';
 import { saveBlobWithPlatform, saveTextWithPlatform } from '@/shared/platform/fileSave';
+import { cn } from '@/shared/utils';
 
 /** «none» = export genérico; el resto coincide con `SocialExportPlatform` en el proyecto. */
 type SocialPlatform = 'none' | SocialExportPlatform;
 
+/** Mismo aspecto «pill» para todos los disparadores de menú del header. */
+const HDR_DROP_TRIGGER =
+  'h-8 shrink-0 gap-1 rounded-[var(--os-radius-md)] border border-[var(--os-border-default)]/80 bg-[var(--os-surface-1)]/45 px-2.5 text-[var(--os-text-primary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] hover:bg-[var(--os-bg-hover)]/50';
+
+/** Superficie común de paneles (listas y diálogo de exportación). */
+const HDR_DROP_PANEL =
+  'absolute z-[110] min-w-[13rem] max-w-[min(calc(100vw-2rem),18rem)] top-[calc(100%+6px)] rounded-lg border border-[var(--os-border-default)] bg-[var(--os-media-card-bg)] shadow-xl';
+
+const hdrDropPanelAlign = (side: 'start' | 'end') => (side === 'start' ? 'left-0' : 'right-0');
+
+const HDR_MENU_ITEM =
+  'flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-[var(--os-text-primary)] hover:bg-[var(--os-bg-hover)]';
+
+const hdrChevron = (open: boolean) =>
+  cn('shrink-0 text-[var(--os-text-secondary)] transition-transform', open && 'rotate-180');
+
 export function Header() {
+  const exportFieldId = useId();
+  const selPlatformId = `${exportFieldId}-platform`;
+  const selPresetId = `${exportFieldId}-preset`;
+  const selFileId = `${exportFieldId}-file`;
+
   const router = useRouter();
   const searchParams = useSearchParams();
   const urlProjectId = searchParams.get('projectId');
@@ -57,8 +80,14 @@ export function Header() {
   const [showRecordingSetup, setShowRecordingSetup] = useState(false);
   const [showNewProjectDialog, setShowNewProjectDialog] = useState(false);
   const [exportFormat, setExportFormat] = useState<'mp4' | 'webm' | 'gif' | 'png' | 'webp' | 'jpg' | 'avif'>('mp4');
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+  const [fileMenuOpen, setFileMenuOpen] = useState(false);
+  const [exportOptionsOpen, setExportOptionsOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const interchangeInputRef = useRef<HTMLInputElement>(null);
+  const moreMenuRef = useRef<HTMLDivElement>(null);
+  const fileMenuRef = useRef<HTMLDivElement>(null);
+  const exportMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!projectMenuOpen) return;
@@ -72,16 +101,61 @@ export function Header() {
   }, [projectMenuOpen]);
 
   useEffect(() => {
-    if (!showShortcuts && !showRecordingSetup) return;
+    if (!moreMenuOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (moreMenuRef.current && !moreMenuRef.current.contains(e.target as Node)) {
+        setMoreMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [moreMenuOpen]);
+
+  useEffect(() => {
+    if (!fileMenuOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (fileMenuRef.current && !fileMenuRef.current.contains(e.target as Node)) {
+        setFileMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [fileMenuOpen]);
+
+  useEffect(() => {
+    if (!exportOptionsOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target as Node)) {
+        setExportOptionsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [exportOptionsOpen]);
+
+  useEffect(() => {
+    if (
+      !showShortcuts &&
+      !showRecordingSetup &&
+      !fileMenuOpen &&
+      !moreMenuOpen &&
+      !exportOptionsOpen &&
+      !projectMenuOpen
+    )
+      return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setShowShortcuts(false);
         setShowRecordingSetup(false);
+        setFileMenuOpen(false);
+        setMoreMenuOpen(false);
+        setExportOptionsOpen(false);
+        setProjectMenuOpen(false);
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [showShortcuts, showRecordingSetup]);
+  }, [showShortcuts, showRecordingSetup, fileMenuOpen, moreMenuOpen, exportOptionsOpen, projectMenuOpen]);
 
   const socialPlatform: SocialPlatform = project?.socialExport?.platform ?? 'none';
   const socialVariantId =
@@ -93,6 +167,33 @@ export function Header() {
 
   const socialVariants =
     socialPlatform !== 'none' ? SOCIAL_VARIANTS_BY_PLATFORM[socialPlatform] : [];
+
+  const socialPlatformShortLabel =
+    socialPlatform === 'none'
+      ? 'Genérico'
+      : (
+          {
+            tiktok: 'TikTok',
+            facebook: 'Facebook',
+            instagram: 'Instagram',
+            youtube: 'YouTube',
+            linkedin: 'LinkedIn',
+            x: 'X',
+          } as Record<SocialExportPlatform, string>
+        )[socialPlatform];
+  const presetShortLabel =
+    socialPlatform === 'none'
+      ? ''
+      : (socialVariants.find((v) => v.id === socialVariantId)?.label ?? '');
+  const exportConfigTitle = [
+    `Tipo: ${exportFormat.toUpperCase()}`,
+    `Plataforma: ${socialPlatformShortLabel}`,
+    presetShortLabel ? `Preset: ${presetShortLabel}` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+
+  const exportPanelId = `${exportFieldId}-export-panel`;
 
   const handleNewProject = () => {
     setShowNewProjectDialog(true);
@@ -432,23 +533,36 @@ export function Header() {
   };
 
   return (
-    <header className="relative z-10 flex h-[52px] shrink-0 items-center justify-between border-b border-[var(--border-default)] bg-gradient-to-b from-[#141a26] via-[#0f131c] to-[#0a0d12] px-4 shadow-[0_4px_28px_rgba(0,0,0,0.35)] backdrop-blur-[2px]">
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-md bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center">
-            <icons.play className="text-white" size={12} />
-          </div>
-          <span className="text-white font-semibold text-sm tracking-tight">Open Studio</span>
+    <header className="editor-header relative z-[100] flex h-[52px] shrink-0 items-center gap-3 overflow-visible border-b border-[var(--os-border-default)] px-4 shadow-[0_4px_28px_rgba(0,0,0,0.35)]">
+      <div className="flex min-w-0 shrink-0 items-center gap-3">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="shrink-0 text-[var(--os-text-secondary)] hover:text-[var(--os-text-primary)]"
+          onClick={goToDashboard}
+          aria-label="Ir al inicio"
+        >
+          <Home size={18} strokeWidth={2} aria-hidden />
+        </Button>
+        <div className="h-5 w-px shrink-0 bg-[var(--os-border-default)]" aria-hidden />
+
+        <div className="flex shrink-0 items-center gap-2">
+          <img
+            src="/logotipo.svg?v=3"
+            alt="Open Studio"
+            className="h-7 w-auto max-w-[200px] object-contain object-left"
+          />
         </div>
 
-        <div className="h-5 w-px bg-[#2a3348]" />
+        <div className="h-5 w-px shrink-0 bg-[var(--os-border-default)]" aria-hidden />
 
-        <div className="relative flex min-w-0 max-w-[220px] items-center gap-0.5" ref={projectMenuRef}>
+        <div className="relative flex min-w-0 max-w-[220px] shrink-0 flex-col" ref={projectMenuRef}>
           {editingProjectName && project ? (
             <input
               ref={projectNameInputRef}
               type="text"
-              className="min-w-0 flex-1 rounded-md border border-[#2a3348] bg-[#0f1522] px-2 py-1 text-xs font-medium text-[#dce6ff] outline-none focus:ring-1 focus:ring-sky-400"
+              className="h-8 min-w-0 w-full rounded-[var(--os-radius-md)] border border-[var(--os-border-default)]/80 bg-[var(--os-media-card-bg)] px-2 text-xs font-medium text-[var(--os-text-primary)] outline-none focus-visible:border-[var(--os-border-accent)] focus-visible:shadow-[var(--os-focus-ring)]"
               value={projectNameDraft}
               onChange={(e) => setProjectNameDraft(e.target.value)}
               onBlur={() => void commitProjectNameEdit()}
@@ -464,11 +578,11 @@ export function Header() {
               aria-label="Nombre del proyecto"
             />
           ) : (
-            <>
+            <div className={cn('flex min-w-0 items-stretch overflow-hidden', HDR_DROP_TRIGGER, 'p-0')}>
               <span
                 role="button"
                 tabIndex={0}
-                className="min-w-0 flex-1 cursor-text truncate rounded-md px-2 py-1 text-left text-xs font-medium text-[#dce6ff] hover:bg-[#1a2235] outline-none focus-visible:ring-1 focus-visible:ring-sky-400"
+                className="flex min-w-0 flex-1 cursor-text items-center truncate border-0 bg-transparent px-2 text-left text-xs font-medium text-[var(--os-text-primary)] outline-none hover:bg-[var(--os-bg-hover)]/40 focus-visible:shadow-[var(--os-focus-ring)]"
                 title="Doble clic para renombrar"
                 onDoubleClick={(e) => {
                   e.preventDefault();
@@ -485,44 +599,39 @@ export function Header() {
               </span>
               <button
                 type="button"
-                className="shrink-0 rounded-md px-1 py-1 text-[#dce6ff] hover:bg-[#1a2235] disabled:opacity-40"
+                className="flex shrink-0 items-center justify-center border-l border-[var(--os-border-default)]/50 px-2 text-[var(--os-text-primary)] outline-none hover:bg-[var(--os-bg-hover)]/40 focus-visible:shadow-[var(--os-focus-ring)] disabled:opacity-40"
                 onClick={() => setProjectMenuOpen((o) => !o)}
                 disabled={!project}
                 aria-label="Menú del proyecto"
                 aria-expanded={projectMenuOpen}
               >
-                <icons.chevronDown size={14} className="text-[#8fa0c5]" />
+                <icons.chevronDown size={14} className={hdrChevron(projectMenuOpen)} />
               </button>
-            </>
+            </div>
           )}
           {projectMenuOpen && !editingProjectName && project && (
             <div
-              className="absolute left-0 top-[calc(100%+4px)] z-40 w-52 rounded-lg border border-[#2a3348] bg-[#0f1522] py-1 shadow-xl"
+              className={cn(HDR_DROP_PANEL, hdrDropPanelAlign('start'), 'py-1')}
               role="menu"
             >
               <button
                 type="button"
                 role="menuitem"
-                className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-[#dce6ff] hover:bg-[#1a2438]"
+                className={HDR_MENU_ITEM}
                 onClick={goToDashboard}
               >
-                <icons.layoutGrid size={14} className="text-[#8fa0c5]" />
+                <icons.layoutGrid size={14} className="text-[var(--os-text-secondary)]" />
                 Mis proyectos
               </button>
-              <button
-                type="button"
-                role="menuitem"
-                className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-[#dce6ff] hover:bg-[#1a2438]"
-                onClick={beginProjectNameEdit}
-              >
-                <icons.pencil size={14} className="text-[#8fa0c5]" />
+              <button type="button" role="menuitem" className={HDR_MENU_ITEM} onClick={beginProjectNameEdit}>
+                <icons.pencil size={14} className="text-[var(--os-text-secondary)]" />
                 Renombrar…
               </button>
               <button
                 type="button"
                 role="menuitem"
                 disabled={!urlProjectId}
-                className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-red-300 hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-40"
+                className={cn(HDR_MENU_ITEM, 'text-red-300 hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-40')}
                 onClick={handleDeleteFromMenu}
               >
                 <icons.trash size={14} />
@@ -532,158 +641,323 @@ export function Header() {
           )}
         </div>
 
-        <div className="h-5 w-px bg-[#2a3348]" />
+        <div className="h-5 w-px shrink-0 bg-[var(--os-border-default)]" aria-hidden />
 
-        <div className="flex items-center gap-1">
+        <div className="relative shrink-0" ref={fileMenuRef}>
           <Button
+            type="button"
             variant="ghost"
             size="sm"
-            onClick={handleNewProject}
-            aria-label="Nuevo proyecto: abrir asistente de configuración"
+            className={HDR_DROP_TRIGGER}
+            aria-expanded={fileMenuOpen}
+            aria-haspopup="menu"
+            aria-label="Archivo: nuevo proyecto, importar multimedia o guardar"
+            onClick={() => setFileMenuOpen((o) => !o)}
           >
-            <icons.plus size={16} aria-hidden />
-            <span className="ml-1 text-xs">Nuevo</span>
+            <icons.folder size={16} aria-hidden />
+            <span className="text-xs">Archivo</span>
+            <icons.chevronDown size={14} className={hdrChevron(fileMenuOpen)} aria-hidden />
           </Button>
-          <Button variant="ghost" size="sm" onClick={handleImportMedia}>
-            <icons.folder size={16} />
-            <span className="ml-1 text-xs">Import</span>
-          </Button>
-          <Button variant="ghost" size="sm" onClick={handleSave} disabled={!project || isSaving}>
-            <icons.save size={16} />
-            <span className="ml-1 text-xs">{isSaving ? 'Saving...' : 'Save'}</span>
-          </Button>
+          {fileMenuOpen && (
+            <div
+              className={cn(HDR_DROP_PANEL, hdrDropPanelAlign('start'), 'py-1')}
+              role="menu"
+              aria-label="Acciones de archivo"
+            >
+              <button
+                type="button"
+                role="menuitem"
+                className={HDR_MENU_ITEM}
+                onClick={() => {
+                  setFileMenuOpen(false);
+                  handleNewProject();
+                }}
+              >
+                <icons.plus size={14} className="text-[var(--os-text-secondary)]" aria-hidden />
+                Nuevo proyecto…
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                className={HDR_MENU_ITEM}
+                onClick={() => {
+                  setFileMenuOpen(false);
+                  handleImportMedia();
+                }}
+              >
+                <icons.folder size={14} className="text-[var(--os-text-secondary)]" aria-hidden />
+                Importar multimedia…
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                disabled={!project || isSaving}
+                className={cn(HDR_MENU_ITEM, 'disabled:cursor-not-allowed disabled:opacity-40')}
+                onClick={() => {
+                  setFileMenuOpen(false);
+                  void handleSave();
+                }}
+              >
+                <icons.save size={14} className="text-[var(--os-text-secondary)]" aria-hidden />
+                {isSaving ? 'Guardando…' : 'Guardar'}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2 py-0.5">
         <Button
           variant={isRecording ? 'danger' : 'secondary'}
           size="sm"
           onClick={() => (isRecording ? handleRecord() : setShowRecordingSetup(true))}
+          className="h-8 shrink-0"
         >
-          <icons.screen size={16} />
-          <span className="ml-1">{isRecording ? 'Stop' : 'Record'}</span>
+          <icons.screen size={16} aria-hidden />
+          <span className="ml-1 text-xs">{isRecording ? 'Stop' : 'Record'}</span>
         </Button>
-        <select
-          className="ui-select w-fit"
-          value={socialPlatform}
-          onChange={(e) => {
-            const next = e.target.value as SocialPlatform;
-            if (next === 'none') {
-              dispatch({ type: 'UPDATE_PROJECT', payload: { socialExport: undefined } });
-              return;
-            }
-            const firstId = SOCIAL_VARIANTS_BY_PLATFORM[next][0]?.id ?? 'vertical';
-            if (exportFormat !== 'mp4') setExportFormat('mp4');
-            const profile = resolveSocialProfile(next, firstId);
-            if (!profile) return;
-            dispatch({
-              type: 'UPDATE_PROJECT',
-              payload: {
-                socialExport: { platform: next, variantId: firstId },
-                width: profile.width,
-                height: profile.height,
-                fps: profile.fps,
-              },
-            });
-          }}
-          title="Plataforma de destino para optimizar el MP4"
-        >
-          <option value="none">Sin optimizar</option>
-          <option value="tiktok">TikTok</option>
-          <option value="facebook">Facebook</option>
-          <option value="instagram">Instagram</option>
-          <option value="youtube">YouTube</option>
-          <option value="linkedin">LinkedIn</option>
-          <option value="x">X</option>
-        </select>
-        <select
-          className="ui-select min-w-[168px] max-w-[220px]"
-          value={socialPlatform === 'none' ? '' : socialVariantId}
-          disabled={socialPlatform === 'none'}
-          onChange={(e) => {
-            const id = e.target.value;
-            if (socialPlatform === 'none') return;
-            const profile = resolveSocialProfile(socialPlatform, id);
-            if (!profile) return;
-            dispatch({
-              type: 'UPDATE_PROJECT',
-              payload: {
-                socialExport: { platform: socialPlatform, variantId: id },
-                width: profile.width,
-                height: profile.height,
-                fps: profile.fps,
-              },
-            });
-          }}
-          title="Formato de publicación (relación de aspecto)"
-        >
-          {socialPlatform === 'none' ? (
-            <option value="">Formato…</option>
-          ) : (
-            socialVariants.map((v) => (
-              <option key={v.id} value={v.id} title={v.label}>
-                {v.label}
-              </option>
-            ))
-          )}
-        </select>
-        <select
-          className="ui-select w-[88px]"
-          value={exportFormat}
-          onChange={(e) => {
-            const nextFormat = e.target.value as
-              | 'mp4'
-              | 'webm'
-              | 'gif'
-              | 'png'
-              | 'webp'
-              | 'jpg'
-              | 'avif';
-            setExportFormat(nextFormat);
-            if (nextFormat !== 'mp4' && socialPlatform !== 'none') {
-              dispatch({ type: 'UPDATE_PROJECT', payload: { socialExport: undefined } });
-            }
-          }}
-        >
-          <option value="mp4">MP4</option>
-          <option value="webm">WebM</option>
-          <option value="gif">GIF</option>
-          <option value="png">PNG</option>
-          <option value="webp">WEBP</option>
-          <option value="jpg">JPG</option>
-          <option value="avif">AVIF</option>
-        </select>
 
-        <Button variant="primary" size="sm" onClick={handleExport} disabled={isExporting}>
-          <icons.download size={16} />
+        <div className="relative shrink-0" ref={exportMenuRef}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className={cn(HDR_DROP_TRIGGER, 'max-w-[11rem]')}
+            aria-expanded={exportOptionsOpen}
+            aria-haspopup="dialog"
+            aria-controls={exportPanelId}
+            title={exportConfigTitle}
+            aria-label={`Exportación: ${exportConfigTitle}. Abrir opciones.`}
+            onClick={() => setExportOptionsOpen((o) => !o)}
+          >
+            <icons.layers size={16} aria-hidden />
+            <span className="min-w-0 flex-1 truncate text-left text-xs">Exportación</span>
+            <icons.chevronDown size={14} className={hdrChevron(exportOptionsOpen)} aria-hidden />
+          </Button>
+          {exportOptionsOpen && (
+            <div
+              id={exportPanelId}
+              role="dialog"
+              aria-label="Opciones de exportación"
+              className={cn(HDR_DROP_PANEL, hdrDropPanelAlign('end'), 'p-3')}
+            >
+              <p className="mb-3 text-[11px] leading-snug text-[var(--os-text-muted)]">
+                {socialPlatform === 'none'
+                  ? 'Export genérico: elige formato. Presets de red solo con MP4.'
+                  : 'Preset de red: ajusta tamaño y FPS del proyecto (MP4).'}
+              </p>
+              <fieldset className="m-0 min-w-0 space-y-3 border-0 p-0">
+                <legend className="sr-only">Opciones de exportación</legend>
+                <div className="flex min-w-0 flex-col gap-1">
+                  <label
+                    htmlFor={selPlatformId}
+                    className="text-[11px] font-medium leading-none text-[var(--os-text-secondary)]"
+                  >
+                    Plataforma
+                  </label>
+                  <select
+                    id={selPlatformId}
+                    className="ui-select h-8 w-full min-w-0 py-0 text-xs"
+                    value={socialPlatform}
+                    onChange={(e) => {
+                      const next = e.target.value as SocialPlatform;
+                      if (next === 'none') {
+                        dispatch({ type: 'UPDATE_PROJECT', payload: { socialExport: undefined } });
+                        return;
+                      }
+                      const firstId = SOCIAL_VARIANTS_BY_PLATFORM[next][0]?.id ?? 'vertical';
+                      if (exportFormat !== 'mp4') setExportFormat('mp4');
+                      const profile = resolveSocialProfile(next, firstId);
+                      if (!profile) return;
+                      dispatch({
+                        type: 'UPDATE_PROJECT',
+                        payload: {
+                          socialExport: { platform: next, variantId: firstId },
+                          width: profile.width,
+                          height: profile.height,
+                          fps: profile.fps,
+                        },
+                      });
+                    }}
+                    title="Destino para dimensiones recomendadas (solo con MP4)"
+                  >
+                    <option value="none">Sin optimizar</option>
+                    <option value="tiktok">TikTok</option>
+                    <option value="facebook">Facebook</option>
+                    <option value="instagram">Instagram</option>
+                    <option value="youtube">YouTube</option>
+                    <option value="linkedin">LinkedIn</option>
+                    <option value="x">X</option>
+                  </select>
+                </div>
+                <div className="flex min-w-0 flex-col gap-1">
+                  <label
+                    htmlFor={selPresetId}
+                    className={cn(
+                      'text-[11px] font-medium leading-none',
+                      socialPlatform === 'none'
+                        ? 'text-[var(--os-text-muted)]'
+                        : 'text-[var(--os-text-secondary)]'
+                    )}
+                  >
+                    Preset de formato
+                  </label>
+                  <select
+                    id={selPresetId}
+                    className="ui-select h-8 w-full min-w-0 py-0 text-xs disabled:cursor-not-allowed disabled:opacity-45"
+                    value={socialPlatform === 'none' ? '' : socialVariantId}
+                    disabled={socialPlatform === 'none'}
+                    aria-disabled={socialPlatform === 'none'}
+                    onChange={(e) => {
+                      const id = e.target.value;
+                      if (socialPlatform === 'none') return;
+                      const profile = resolveSocialProfile(socialPlatform, id);
+                      if (!profile) return;
+                      dispatch({
+                        type: 'UPDATE_PROJECT',
+                        payload: {
+                          socialExport: { platform: socialPlatform, variantId: id },
+                          width: profile.width,
+                          height: profile.height,
+                          fps: profile.fps,
+                        },
+                      });
+                    }}
+                    title="Relación de aspecto y resolución del preset"
+                  >
+                    {socialPlatform === 'none' ? (
+                      <option value="">Elige plataforma primero</option>
+                    ) : (
+                      socialVariants.map((v) => (
+                        <option key={v.id} value={v.id} title={v.label}>
+                          {v.label}
+                        </option>
+                      ))
+                    )}
+                  </select>
+                </div>
+                <div className="flex min-w-0 flex-col gap-1">
+                  <label
+                    htmlFor={selFileId}
+                    className="text-[11px] font-medium leading-none text-[var(--os-text-secondary)]"
+                  >
+                    Tipo de archivo
+                  </label>
+                  <select
+                    id={selFileId}
+                    className="ui-select h-8 w-full min-w-0 py-0 text-xs"
+                    value={exportFormat}
+                    onChange={(e) => {
+                      const nextFormat = e.target.value as
+                        | 'mp4'
+                        | 'webm'
+                        | 'gif'
+                        | 'png'
+                        | 'webp'
+                        | 'jpg'
+                        | 'avif';
+                      setExportFormat(nextFormat);
+                      if (nextFormat !== 'mp4' && socialPlatform !== 'none') {
+                        dispatch({ type: 'UPDATE_PROJECT', payload: { socialExport: undefined } });
+                      }
+                    }}
+                    title="Contenedor o imagen de salida"
+                  >
+                    <option value="mp4">MP4</option>
+                    <option value="webm">WebM</option>
+                    <option value="gif">GIF</option>
+                    <option value="png">PNG</option>
+                    <option value="webp">WEBP</option>
+                    <option value="jpg">JPG</option>
+                    <option value="avif">AVIF</option>
+                  </select>
+                </div>
+              </fieldset>
+            </div>
+          )}
+        </div>
+
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={() => {
+            setExportOptionsOpen(false);
+            void handleExport();
+          }}
+          disabled={isExporting}
+          className="h-8 min-w-[6.5rem] shrink-0 px-3"
+        >
+          <icons.download size={16} aria-hidden />
           <span className="ml-1">
             {isExporting
               ? exportProgress !== null
-                ? `Exporting... ${exportProgress}%`
-                : 'Exporting...'
+                ? `${exportProgress}%`
+                : '…'
               : 'Export'}
           </span>
         </Button>
-        <Button variant="ghost" size="sm" onClick={handleExportInterchange} disabled={!project || isExporting}>
-          <icons.folder size={14} />
-          <span className="ml-1 text-xs">OTIO/MLT</span>
-        </Button>
-        <Button variant="ghost" size="sm" onClick={() => interchangeInputRef.current?.click()} disabled={!project || isExporting}>
-          <icons.upload size={14} />
-          <span className="ml-1 text-xs">Import OTIO/MLT</span>
-        </Button>
+      </div>
 
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 rounded-lg border border-[#2a3348] bg-[#111827] px-3 text-[#dce7ff] hover:bg-[#1a2438]"
-          title="Abrir guía de atajos"
-          onClick={() => setShowShortcuts(true)}
-        >
-          <icons.keyboard size={14} />
-          <span className="ml-1 text-xs">Atajos</span>
-        </Button>
+      <div className="flex shrink-0 items-center gap-2">
+          <div className="relative shrink-0" ref={moreMenuRef}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className={HDR_DROP_TRIGGER}
+              aria-expanded={moreMenuOpen}
+              aria-haspopup="menu"
+              aria-label="Más opciones: intercambio y atajos"
+              onClick={() => setMoreMenuOpen((o) => !o)}
+            >
+              <MoreHorizontal size={16} strokeWidth={2} className="shrink-0 text-[var(--os-text-secondary)]" aria-hidden />
+              <span className="text-xs">Más</span>
+              <icons.chevronDown size={14} className={hdrChevron(moreMenuOpen)} aria-hidden />
+            </Button>
+            {moreMenuOpen && (
+              <div className={cn(HDR_DROP_PANEL, hdrDropPanelAlign('end'), 'py-1')} role="menu">
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={cn(HDR_MENU_ITEM, 'disabled:cursor-not-allowed disabled:opacity-40')}
+                  disabled={!project || isExporting}
+                  onClick={() => {
+                    setMoreMenuOpen(false);
+                    void handleExportInterchange();
+                  }}
+                >
+                  <icons.folder size={14} className="text-[var(--os-text-secondary)]" aria-hidden />
+                  Exportar OTIO/MLT
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={cn(HDR_MENU_ITEM, 'disabled:cursor-not-allowed disabled:opacity-40')}
+                  disabled={!project || isExporting}
+                  onClick={() => {
+                    setMoreMenuOpen(false);
+                    interchangeInputRef.current?.click();
+                  }}
+                >
+                  <icons.upload size={14} className="text-[var(--os-text-secondary)]" aria-hidden />
+                  Importar OTIO/MLT
+                </button>
+                <div className="my-0.5 h-px bg-[var(--os-border-default)]/80" role="separator" />
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={HDR_MENU_ITEM}
+                  onClick={() => {
+                    setMoreMenuOpen(false);
+                    setShowShortcuts(true);
+                  }}
+                >
+                  <icons.keyboard size={14} className="text-[var(--os-text-secondary)]" aria-hidden />
+                  Atajos de teclado
+                </button>
+              </div>
+            )}
+          </div>
       </div>
 
       <input
@@ -704,7 +978,7 @@ export function Header() {
 
       {exportMessage && (
         <div className="absolute inset-x-0 top-14 flex justify-center pointer-events-none">
-          <div className="bg-[#0f1522]/95 border border-[#2a3348] rounded-[10px] px-3 py-1 text-xs text-[#d8e4ff] pointer-events-auto shadow-lg">
+          <div className="bg-[var(--os-media-card-bg)]/95 border border-[var(--os-border-default)] rounded-[10px] px-3 py-1 text-xs text-[var(--os-text-primary)] pointer-events-auto shadow-lg">
             {exportMessage}
           </div>
         </div>
@@ -719,24 +993,24 @@ export function Header() {
               if (e.target === e.currentTarget) setShowShortcuts(false);
             }}
           >
-            <div className="my-auto w-full max-w-5xl overflow-hidden rounded-xl border border-[#2a3348] bg-[#0f1522] shadow-xl">
+            <div className="my-auto w-full max-w-5xl overflow-hidden rounded-xl border border-[var(--os-border-default)] bg-[var(--os-media-card-bg)] shadow-xl">
               <div className="mb-3 flex items-center justify-between">
-                <h2 className="px-4 pt-4 text-lg font-semibold text-[#eef3ff]">Atajos de teclado</h2>
+                <h2 className="px-4 pt-4 text-lg font-semibold text-[var(--os-text-primary)]">Atajos de teclado</h2>
                 <button
-                  className="mr-4 mt-4 text-[#8fa0c5] hover:text-[#eaf2ff]"
+                  className="mr-4 mt-4 text-[var(--os-text-secondary)] hover:text-[var(--os-text-primary)]"
                   onClick={() => setShowShortcuts(false)}
                 >
                   <icons.close size={16} />
                 </button>
               </div>
               <div className="px-4 pb-4">
-                <div className="overflow-hidden rounded-lg border border-[#2a3348]">
-                  <div className="grid grid-cols-3 border-b border-[#2a3348] bg-[#121a29] px-3 py-2 text-xs font-semibold text-[#b6c6ea]">
+                <div className="overflow-hidden rounded-lg border border-[var(--os-border-default)]">
+                  <div className="grid grid-cols-3 border-b border-[var(--os-border-default)] bg-[var(--os-surface-2)] px-3 py-2 text-xs font-semibold text-[var(--os-text-secondary)]">
                     <span>Comandos</span>
                     <span>Windows</span>
                     <span>macOS</span>
                   </div>
-                  <div className="divide-y divide-[#202a40] text-xs text-[#d6e4ff]">
+                  <div className="divide-y divide-[var(--os-border-default)] text-xs text-[var(--os-text-primary)]">
                     {[
                       ['Reproducir / Pausar', 'Espacio', 'Espacio'],
                       ['Detener y volver al inicio', 'K', 'K'],
@@ -752,8 +1026,8 @@ export function Header() {
                     ].map(([label, win, mac]) => (
                       <div key={label} className="grid grid-cols-3 px-3 py-2">
                         <span>{label}</span>
-                        <span className="font-mono text-[#95a9d8]">{win}</span>
-                        <span className="font-mono text-[#95a9d8]">{mac}</span>
+                        <span className="font-mono text-[var(--os-text-secondary)]">{win}</span>
+                        <span className="font-mono text-[var(--os-text-secondary)]">{mac}</span>
                       </div>
                     ))}
                   </div>
@@ -770,34 +1044,34 @@ export function Header() {
             if (e.target === e.currentTarget) setShowRecordingSetup(false);
           }}
         >
-          <div className="w-full max-w-2xl rounded-xl border border-[#2a3348] bg-[#0f1522] p-4">
+          <div className="w-full max-w-2xl rounded-xl border border-[var(--os-border-default)] bg-[var(--os-media-card-bg)] p-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm text-[#eef3ff] font-semibold">Recording Setup</h3>
-              <button className="text-[#90a2c8]" onClick={() => setShowRecordingSetup(false)}>
+              <h3 className="text-sm text-[var(--os-text-primary)] font-semibold">Recording Setup</h3>
+              <button className="text-[var(--os-text-secondary)]" onClick={() => setShowRecordingSetup(false)}>
                 <icons.close size={16} />
               </button>
             </div>
-            <p className="text-xs text-[#7f8db0] mt-1">
+            <p className="text-xs text-[var(--os-text-muted)] mt-1">
               Configure your capture before sharing the screen.
             </p>
             <div className="mt-4 grid grid-cols-2 gap-3">
               <button
-                className="rounded-xl border border-[#2a3348] bg-[#121827] p-3 text-left"
+                className="rounded-xl border border-[var(--os-border-default)] bg-[var(--os-bg-panel-2)] p-3 text-left"
                 onClick={() => setRecordingCamera((v) => !v)}
               >
-                <p className="text-xs text-[#dce6ff]">Camera</p>
-                <p className="text-[11px] text-[#8190b1]">{recordingCamera ? 'On' : 'Off'}</p>
+                <p className="text-xs text-[var(--os-text-primary)]">Camera</p>
+                <p className="text-[11px] text-[var(--os-text-muted)]">{recordingCamera ? 'On' : 'Off'}</p>
               </button>
               <button
-                className="rounded-xl border border-[#2a3348] bg-[#121827] p-3 text-left"
+                className="rounded-xl border border-[var(--os-border-default)] bg-[var(--os-bg-panel-2)] p-3 text-left"
                 onClick={() => setRecordingMic((v) => !v)}
               >
-                <p className="text-xs text-[#dce6ff]">Microphone</p>
-                <p className="text-[11px] text-[#8190b1]">{recordingMic ? 'On' : 'Off'}</p>
+                <p className="text-xs text-[var(--os-text-primary)]">Microphone</p>
+                <p className="text-[11px] text-[var(--os-text-muted)]">{recordingMic ? 'On' : 'Off'}</p>
               </button>
             </div>
             <div className="mt-3">
-              <label className="text-xs text-[#90a2c8]">System Audio</label>
+              <label className="text-xs text-[var(--os-text-secondary)]">System Audio</label>
               <select
                 className="mt-1 ui-select"
                 value={recordingAudio}

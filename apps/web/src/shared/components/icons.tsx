@@ -44,6 +44,7 @@ import {
   Repeat,
   Flag,
 } from 'lucide-react';
+import { SVG_ASSETS } from '@/shared/components/ui/icons-data';
 
 export const icons = {
   video: Video,
@@ -90,5 +91,12 @@ export const icons = {
   crop: Crop,
   repeat: Repeat,
   flag: Flag,
+
+  /* Open Studio Brand Assets */
+  flaticon: 'flaticon',
+  brandGroup6: 'group6',
+  brandGroup7: 'group7',
 };
+
+export type IconName = keyof typeof icons;
 

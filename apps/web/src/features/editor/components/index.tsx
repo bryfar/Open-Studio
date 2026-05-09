@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Header } from './Header';
 import { Canvas } from './Canvas';
 import { Timeline } from './Timeline';
@@ -13,6 +14,29 @@ import { loadEditorState, loadProjectSnapshot, saveEditorState, saveProjectSnaps
 interface EditorProps {
   projectId?: string;
   mode?: string;
+}
+
+const STORAGE_LIBRARY_PANEL = 'openstudio.editor.libraryPanelOpen';
+const STORAGE_PROPERTIES_PANEL = 'openstudio.editor.propertiesPanelOpen';
+
+function readPanelPreference(key: string, defaultOpen: boolean): boolean {
+  if (typeof window === 'undefined') return defaultOpen;
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw === 'false') return false;
+    if (raw === 'true') return true;
+  } catch {
+    /* ignore */
+  }
+  return defaultOpen;
+}
+
+function writePanelPreference(key: string, open: boolean) {
+  try {
+    localStorage.setItem(key, open ? 'true' : 'false');
+  } catch {
+    /* ignore */
+  }
 }
 
 export function Editor({ projectId, mode }: EditorProps) {
@@ -55,6 +79,20 @@ export function Editor({ projectId, mode }: EditorProps) {
     startClientY: number;
     startTimelineHeight: number;
   } | null>(null);
+  const [libraryPanelOpen, setLibraryPanelOpen] = useState(() =>
+    readPanelPreference(STORAGE_LIBRARY_PANEL, true)
+  );
+  const [propertiesPanelOpen, setPropertiesPanelOpen] = useState(() =>
+    readPanelPreference(STORAGE_PROPERTIES_PANEL, true)
+  );
+
+  useEffect(() => {
+    writePanelPreference(STORAGE_LIBRARY_PANEL, libraryPanelOpen);
+  }, [libraryPanelOpen]);
+
+  useEffect(() => {
+    writePanelPreference(STORAGE_PROPERTIES_PANEL, propertiesPanelOpen);
+  }, [propertiesPanelOpen]);
 
   // Carga / recarga al cambiar projectId o al montar (local o snapshot por URL)
   useEffect(() => {
@@ -319,17 +357,31 @@ export function Editor({ projectId, mode }: EditorProps) {
   }, [timelineHeight, timelineCompact]);
 
   return (
-    <div className="h-screen flex flex-col bg-[var(--bg-primary)] text-[var(--text-primary)] antialiased">
+    <div className="flex h-screen min-h-0 flex-col bg-[var(--bg-primary)] text-[var(--text-primary)] antialiased">
       <Header />
       <div
         ref={layoutRef}
-        className="editor-workbench flex flex-1 min-h-0 overflow-hidden px-3 pb-3 pt-2.5 gap-3"
+        className="editor-workbench relative z-0 flex flex-1 min-h-0 gap-3 overflow-hidden px-3 pb-3 pt-2.5"
       >
-        <div className="editor-side-panel h-full min-h-0 w-[270px] min-w-[270px] max-w-[270px] shrink-0">
-          <AssetLibrary mode={mode} />
-        </div>
+        {libraryPanelOpen ? (
+          <div className="relative h-full min-h-0 w-[356px] min-w-[356px] max-w-[356px] shrink-0">
+            <div className="editor-side-panel h-full min-h-0 w-full overflow-hidden">
+              <AssetLibrary mode={mode} />
+            </div>
+            <button
+              type="button"
+              className="absolute right-2 top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--os-border-default)]/45 bg-[var(--os-media-card-bg)]/95 text-[var(--os-text-muted)] shadow-[0_2px_10px_rgba(0,0,0,0.28)] backdrop-blur-sm transition-colors hover:border-[var(--os-border-accent)]/40 hover:text-[var(--os-text-primary)]"
+              title="Ocultar biblioteca"
+              aria-label="Ocultar panel de biblioteca"
+              aria-expanded={true}
+              onClick={() => setLibraryPanelOpen(false)}
+            >
+              <ChevronLeft size={15} strokeWidth={2} aria-hidden />
+            </button>
+          </div>
+        ) : null}
 
-        <div className="editor-stage-column flex-1">
+        <div className="editor-stage-column relative z-0 min-h-0 min-w-0 flex-1">
           <Canvas />
 
           <button
@@ -359,16 +411,54 @@ export function Editor({ projectId, mode }: EditorProps) {
           </button>
 
           <div
-            className="editor-timeline-shell min-h-0 overflow-hidden transition-[height] duration-300 ease-out"
+            className="editor-timeline-shell relative z-20 min-h-0 overflow-hidden transition-[height] duration-300 ease-out"
             style={{ height: timelineHeight }}
           >
             <Timeline compact={timelineCompact} onToggleCompact={handleToggleTimelineCompact} />
           </div>
+          {!libraryPanelOpen ? (
+            <button
+              type="button"
+              className="pointer-events-auto absolute left-3 top-1/2 z-40 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--os-border-default)]/45 bg-[var(--os-bg-canvas)]/92 text-[var(--os-text-muted)] shadow-[0_2px_10px_rgba(0,0,0,0.28)] backdrop-blur-sm transition-colors hover:border-[var(--os-border-accent)]/40 hover:text-[var(--os-text-primary)]"
+              title="Mostrar biblioteca"
+              aria-label="Mostrar panel de biblioteca"
+              aria-expanded={false}
+              onClick={() => setLibraryPanelOpen(true)}
+            >
+              <ChevronRight size={15} strokeWidth={2} aria-hidden />
+            </button>
+          ) : null}
+          {!propertiesPanelOpen ? (
+            <button
+              type="button"
+              className="pointer-events-auto absolute right-3 top-1/2 z-40 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--os-border-default)]/45 bg-[var(--os-bg-canvas)]/92 text-[var(--os-text-muted)] shadow-[0_2px_10px_rgba(0,0,0,0.28)] backdrop-blur-sm transition-colors hover:border-[var(--os-border-accent)]/40 hover:text-[var(--os-text-primary)]"
+              title="Mostrar propiedades"
+              aria-label="Mostrar panel de propiedades"
+              aria-expanded={false}
+              onClick={() => setPropertiesPanelOpen(true)}
+            >
+              <ChevronLeft size={15} strokeWidth={2} aria-hidden />
+            </button>
+          ) : null}
         </div>
 
-        <div className="editor-side-panel h-full min-h-0 min-w-[300px] max-w-[420px] w-fit shrink-0">
-          <PropertiesPanel />
-        </div>
+        {propertiesPanelOpen ? (
+          <div className="relative h-full min-h-0 min-w-[300px] max-w-[420px] w-fit shrink-0">
+            <div className="editor-side-panel h-full min-h-0 w-full min-w-[300px] max-w-[420px] overflow-hidden">
+              <PropertiesPanel />
+            </div>
+            <button
+              type="button"
+              className="absolute left-2 top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--os-border-default)]/45 bg-[var(--os-media-card-bg)]/95 text-[var(--os-text-muted)] shadow-[0_2px_10px_rgba(0,0,0,0.28)] backdrop-blur-sm transition-colors hover:border-[var(--os-border-accent)]/40 hover:text-[var(--os-text-primary)]"
+              title="Ocultar propiedades"
+              aria-label="Ocultar panel de propiedades"
+              aria-expanded={true}
+              onClick={() => setPropertiesPanelOpen(false)}
+            >
+              <ChevronRight size={15} strokeWidth={2} aria-hidden />
+            </button>
+          </div>
+        ) : null}
       </div>
     </div>
   );

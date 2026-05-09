@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/shared/components/ui/Button';
 import { useEditorStore } from '@/features/editor/store/editorStore';
 import type { Project } from '@/shared/types';
+import { cn } from '@/shared/utils';
+import { ep } from '@/features/editor/components/editorPanelUi';
 
 const defaultAudioPro: NonNullable<Project['audioPro']> = {
   masterDb: 0,
@@ -29,7 +31,9 @@ export function AudioProPanel({ onNotice }: { onNotice?: (msg: string) => void }
   useEffect(() => {
     const video = document.querySelector('[data-openstudio-preview="video"]') as HTMLVideoElement | null;
     if (!video) return;
-    const ACtx = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    const ACtx =
+      window.AudioContext ||
+      (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!ACtx) return;
     const audioContext = new ACtx();
     let source: MediaElementAudioSourceNode | null = null;
@@ -65,10 +69,10 @@ export function AudioProPanel({ onNotice }: { onNotice?: (msg: string) => void }
   }, []);
 
   return (
-    <div className="space-y-3 text-xs text-zinc-300">
-      <p className="text-[11px] text-zinc-400">Audio Pro: buses, ducking y mezcla base.</p>
-      <div className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-2 space-y-2">
-        <label className="text-[10px] uppercase tracking-wide text-zinc-500">Master gain (dB)</label>
+    <div className={ep.root}>
+      <p className={ep.intro}>Audio Pro: buses, ducking y mezcla base.</p>
+      <div className={ep.card}>
+        <label className={ep.label}>Master gain (dB)</label>
         <input
           type="range"
           min={-24}
@@ -76,12 +80,12 @@ export function AudioProPanel({ onNotice }: { onNotice?: (msg: string) => void }
           step={1}
           value={audioPro.masterDb}
           onChange={(e) => patch({ ...audioPro, masterDb: Number(e.target.value) })}
-          className="w-full"
+          className={ep.range}
         />
-        <p className="text-[11px] text-zinc-400">{audioPro.masterDb} dB</p>
+        <p className="text-[11px] text-[var(--os-text-secondary)]">{audioPro.masterDb} dB</p>
       </div>
-      <div className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-2 space-y-2">
-        <label className="flex items-center gap-2">
+      <div className={ep.card}>
+        <label className={ep.checkboxRow}>
           <input
             type="checkbox"
             checked={audioPro.duckingEnabled}
@@ -89,7 +93,7 @@ export function AudioProPanel({ onNotice }: { onNotice?: (msg: string) => void }
           />
           Ducking automatico (voz sobre musica)
         </label>
-        <label className="text-[10px] uppercase tracking-wide text-zinc-500">Ducking amount</label>
+        <label className={cn(ep.label, 'mt-2')}>Ducking amount</label>
         <input
           type="range"
           min={-24}
@@ -97,20 +101,24 @@ export function AudioProPanel({ onNotice }: { onNotice?: (msg: string) => void }
           step={1}
           value={audioPro.duckingAmountDb}
           onChange={(e) => patch({ ...audioPro, duckingAmountDb: Number(e.target.value) })}
-          className="w-full"
+          className={ep.range}
         />
       </div>
       <div className="space-y-2">
-        <div className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-2">
-          <p className="text-[11px] text-zinc-200">Runtime meters</p>
+        <div className={ep.card}>
+          <p className="text-[11px] font-medium text-[var(--os-text-primary)]">Runtime meters</p>
           <div className="mt-2 space-y-1.5">
-            <div className="h-2 rounded bg-zinc-800"><div className="h-2 rounded bg-emerald-400" style={{ width: `${meterL}%` }} /></div>
-            <div className="h-2 rounded bg-zinc-800"><div className="h-2 rounded bg-sky-400" style={{ width: `${meterR}%` }} /></div>
+            <div className={ep.meterTrack}>
+              <div className={ep.meterFill} style={{ width: `${meterL}%` }} />
+            </div>
+            <div className={ep.meterTrack}>
+              <div className={ep.meterFillAlt} style={{ width: `${meterR}%` }} />
+            </div>
           </div>
         </div>
         {audioPro.buses.map((bus, idx) => (
-          <div key={bus.id} className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-2">
-            <p className="text-[11px] text-zinc-200">{bus.name}</p>
+          <div key={bus.id} className={ep.card}>
+            <p className="text-[11px] font-medium text-[var(--os-text-primary)]">{bus.name}</p>
             <input
               type="range"
               min={-24}
@@ -122,12 +130,17 @@ export function AudioProPanel({ onNotice }: { onNotice?: (msg: string) => void }
                 next[idx] = { ...next[idx], gainDb: Number(e.target.value) };
                 patch({ ...audioPro, buses: next });
               }}
-              className="w-full"
+              className={ep.range}
             />
           </div>
         ))}
       </div>
-      <Button type="button" variant="secondary" className="w-full text-[11px]" onClick={() => onNotice?.('Audio Pro configurado en proyecto.')}>
+      <Button
+        type="button"
+        variant="secondary"
+        className="w-full text-[11px]"
+        onClick={() => onNotice?.('Audio Pro configurado en proyecto.')}
+      >
         Aplicar configuracion Audio Pro
       </Button>
     </div>

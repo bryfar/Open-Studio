@@ -8,6 +8,16 @@ import {
   resolveArtifactUrl,
 } from '@/features/openshorts/lib/openshortsApi';
 import { Button } from '@/shared/components/ui/Button';
+import { StudioShell } from '@/shared/components/StudioShell';
+import {
+  EmptyLogPlaceholder,
+  FormField,
+  SegmentedOption,
+  controlClass,
+  openshortsGridClass,
+  openshortsHeroClass,
+  openshortsPanelClass,
+} from '@/features/openshorts/components/openshortsExperienceUi';
 
 export function ClipGeneratorExperience() {
   const [file, setFile] = useState<File | null>(null);
@@ -81,92 +91,137 @@ export function ClipGeneratorExperience() {
       case 'failed':
         return 'Falló';
       default:
-        return 'Idle';
+        return 'En espera';
     }
   }, [status]);
 
+  const platformLabels: Record<typeof platform, string> = {
+    youtube: 'YouTube',
+    instagram: 'Instagram',
+    tiktok: 'TikTok',
+  };
+
   return (
-    <main className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] p-6">
-      <div className="mx-auto max-w-6xl space-y-4">
-        <div className="rounded-2xl border border-[#24314b] bg-[#0d1422] p-5">
-          <h1 className="text-2xl font-semibold">Clip Generator</h1>
-          <p className="mt-1 text-sm text-[#9fb0d6]">
-            Sube video largo, analiza momentos virales y genera clips listos para Shorts.
-          </p>
-        </div>
+    <StudioShell activeNav="clip-generator">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-5">
+        <section className="rounded-2xl border border-[var(--os-border-default)] bg-[var(--os-bg-app)] p-4 text-[var(--os-text-primary)] shadow-[0_8px_30px_rgba(0,0,0,0.35)]">
+          <header className={openshortsHeroClass}>
+            <h1 className="text-2xl font-semibold tracking-tight text-[var(--os-text-primary)]">Clip Generator</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--os-text-secondary)]">
+              Sube un video largo, analiza momentos virales y genera clips listos para Shorts.
+            </p>
+          </header>
 
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.2fr_1fr]">
-          <section className="rounded-2xl border border-[#22304a] bg-[#0c1322] p-4 space-y-3">
-            <label className="block text-xs text-[#9fb0d6]">Video source</label>
-            <input
-              type="file"
-              accept="video/*"
-              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-              className="w-full rounded-lg border border-[#2a3348] bg-[#101827] px-2 py-2 text-xs"
-            />
-            <label className="block text-xs text-[#9fb0d6]">Gemini API key (opcional)</label>
-            <input
-              value={geminiKey}
-              onChange={(e) => setGeminiKey(e.target.value)}
-              placeholder="AIza..."
-              className="w-full rounded-lg border border-[#2a3348] bg-[#101827] px-2 py-2 text-xs"
-            />
-            <div className="grid grid-cols-3 gap-2">
-              {(['youtube', 'instagram', 'tiktok'] as const).map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => setPlatform(p)}
-                  className={`rounded-lg border px-2 py-2 text-[11px] ${
-                    platform === p
-                      ? 'border-sky-400 bg-sky-500/20 text-sky-100'
-                      : 'border-[#2a3348] bg-[#111827] text-[#9fb0d6]'
-                  }`}
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <Button type="button" variant="primary" className="flex-1" onClick={() => void handleAnalyze()}>
-                Analyze
-              </Button>
-              <Button type="button" variant="secondary" className="flex-1" onClick={() => void handleGenerate()} disabled={!jobId}>
-                Generate Clips
-              </Button>
-            </div>
-            {error ? <p className="text-xs text-red-300">{error}</p> : null}
-          </section>
+          <div className={`mt-5 ${openshortsGridClass}`}>
+            <section className={openshortsPanelClass}>
+              <FormField label="Video">
+                <label className="group flex cursor-pointer flex-col gap-2 rounded-[var(--os-input-radius)] border border-dashed border-[var(--os-border-default)] bg-[var(--os-surface-1)] px-4 py-4 transition-colors duration-[var(--os-duration-fast)] hover:border-[var(--os-border-accent)] hover:bg-[var(--os-bg-hover)]">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-md border border-[var(--os-border-default)] bg-[var(--os-surface-2)] px-2.5 py-1 text-[11px] font-medium text-[var(--os-text-primary)] group-hover:border-[var(--os-border-accent)]">
+                      Elegir archivo
+                    </span>
+                    <span className="text-xs text-[var(--os-text-secondary)]">
+                      {file ? file.name : 'Ningún archivo seleccionado'}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[var(--os-text-muted)]">MP4, MOV u otros formatos que acepte el navegador.</p>
+                  <input
+                    type="file"
+                    accept="video/*"
+                    className="sr-only"
+                    onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                  />
+                </label>
+              </FormField>
 
-          <section className="rounded-2xl border border-[#22304a] bg-[#0c1322] p-4">
-            <p className="text-xs text-[#9fb0d6]">Estado</p>
-            <p className="mt-1 text-sm font-semibold">{statusLabel}</p>
-            <div className="mt-3 h-64 overflow-auto rounded-lg border border-[#2a3348] bg-[#0a101c] p-2">
-              {logs.length === 0 ? (
-                <p className="text-xs text-[#7e8aa9]">Sin logs todavía.</p>
-              ) : (
-                <ul className="space-y-1">
-                  {logs.map((line, idx) => (
-                    <li key={`${line}-${idx}`} className="text-xs text-[#b9c7e6]">
-                      {line}
-                    </li>
+              <FormField label="Gemini API key (opcional)">
+                <input
+                  value={geminiKey}
+                  onChange={(e) => setGeminiKey(e.target.value)}
+                  placeholder="AIza…"
+                  className={controlClass}
+                  autoComplete="off"
+                />
+              </FormField>
+
+              <FormField label="Plataforma objetivo">
+                <div className="grid grid-cols-3 gap-2">
+                  {(['youtube', 'instagram', 'tiktok'] as const).map((p) => (
+                    <SegmentedOption key={p} active={platform === p} onClick={() => setPlatform(p)}>
+                      {platformLabels[p]}
+                    </SegmentedOption>
                   ))}
-                </ul>
-              )}
-            </div>
-            {artifacts.length > 0 ? (
-              <div className="mt-3 rounded-lg border border-[#2a3348] bg-[#0a101c] p-2 space-y-1">
-                <p className="text-xs text-[#9fb0d6]">Artifacts</p>
-                {artifacts.map((a) => (
-                  <a key={`${a.name}-${a.url}`} className="block text-xs text-sky-300 hover:underline" href={a.url} target="_blank" rel="noreferrer">
-                    {a.name}
-                  </a>
-                ))}
+                </div>
+              </FormField>
+
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Button type="button" variant="primary" className="w-full sm:col-span-1" onClick={() => void handleAnalyze()}>
+                  Analizar
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="w-full sm:col-span-1"
+                  onClick={() => void handleGenerate()}
+                  disabled={!jobId}
+                >
+                  Generar clips
+                </Button>
               </div>
-            ) : null}
-          </section>
-        </div>
+              {error ? <p className="text-xs text-[var(--os-error)]">{error}</p> : null}
+            </section>
+
+            <section className={`${openshortsPanelClass} min-h-0 lg:min-h-[28rem]`}>
+              <div>
+                <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--os-text-muted)]">Estado</span>
+                <p className="mt-2 text-lg font-semibold tracking-tight text-[var(--os-text-primary)]">{statusLabel}</p>
+                {jobId ? (
+                  <p className="mt-1.5 break-all font-mono text-[10px] leading-snug text-[var(--os-text-muted)]" title="Job ID">
+                    Job · {jobId}
+                  </p>
+                ) : null}
+              </div>
+              <div className="flex min-h-[14rem] flex-1 flex-col overflow-hidden rounded-xl border border-[var(--os-border-default)] bg-[var(--os-bg-canvas)]">
+                <div className="flex-1 overflow-auto p-3">
+                  {logs.length === 0 ? (
+                    <EmptyLogPlaceholder
+                      title="Sin actividad todavía"
+                      hint="Cuando ejecutes Analizar o Generar clips, el progreso del job aparecerá aquí."
+                    />
+                  ) : (
+                    <ul className="space-y-1.5 font-mono text-[11px] leading-relaxed text-[var(--os-text-secondary)]">
+                      {logs.map((line, idx) => (
+                        <li key={`${line}-${idx}`} className="break-words">
+                          {line}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+              {artifacts.length > 0 ? (
+                <div className="space-y-2 rounded-xl border border-[var(--os-border-default)] bg-[var(--os-bg-canvas)] p-3">
+                  <p className="text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--os-text-muted)]">Salidas</p>
+                  <ul className="space-y-1">
+                    {artifacts.map((a) => (
+                      <li key={`${a.name}-${a.url}`}>
+                        <a
+                          className="text-xs text-[var(--os-accent-primary)] underline-offset-2 hover:underline"
+                          href={a.url}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {a.name}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+            </section>
+          </div>
+        </section>
       </div>
-    </main>
+    </StudioShell>
   );
 }

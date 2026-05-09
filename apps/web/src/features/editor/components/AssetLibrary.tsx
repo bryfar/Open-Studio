@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useLayoutEffect } from 'react';
 import Image from 'next/image';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useEditorStore, createClip, createTrack } from '@/features/editor/store/editorStore';
 import { Button } from '@/shared/components/ui/Button';
 import { Slider } from '@/shared/components/ui/Slider';
@@ -70,34 +71,60 @@ type SectionType =
   | 'record'
   | 'upload';
 
-const LIBRARY_TOOL_SECTIONS: Array<[SectionType, string, keyof typeof icons]> = [
-  ['workflow', 'Estudio', 'workflow'],
-  ['ai-shorts', 'AI Shorts', 'workflow'],
-  ['audio-pro', 'Audio Pro', 'audio'],
-  ['timeline-pro', 'Timeline Pro', 'move'],
-  ['keyframes-pro', 'Graph', 'keyframe'],
-  ['scopes', 'Scopes', 'eye'],
-  ['multicam-proxy', 'Multicam', 'video'],
-  ['batch-render', 'Batch', 'repeat'],
-  ['multimedia', 'Multimedia', 'folder'],
-  ['templates', 'Plantillas', 'video'],
-  ['elements', 'Elementos', 'layers'],
-  ['videos', 'Videos', 'video'],
-  ['shorts', 'Shorts', 'cut'],
-  ['audio', 'Audio', 'audio'],
-  ['text', 'Texto', 'text'],
-  ['subtitles', 'Subtítulos', 'text'],
-  ['transcribe', 'Transcribir', 'audio'],
-  ['effects', 'Efectos', 'layers'],
-  ['motion', 'Motion', 'layers'],
-  ['lienzo', 'Zoom/Cursor', 'screen'],
-  ['transitions', 'Transiciones', 'move'],
-  ['filters', 'Filtros', 'eye'],
-  ['brandkit', 'Kit marca', 'layers'],
-  ['background', 'Background', 'layers'],
-  ['mockup', 'Mockup', 'maximize'],
-  ['record', 'Record', 'screen'],
-  ['upload', 'Upload', 'upload'],
+type LibraryNavItem = [SectionType, string, keyof typeof icons];
+
+/** Navegación lateral agrupada: menos desorden y mejor lectura en pantalla. */
+const LIBRARY_SIDE_GROUPS: { label: string; ariaLabel: string; sections: LibraryNavItem[] }[] = [
+  {
+    label: 'Estudio',
+    ariaLabel: 'Estudio y flujo de trabajo',
+    sections: [
+      ['workflow', 'Estudio', 'workflow'],
+      ['ai-shorts', 'AI Shorts', 'workflow'],
+      ['audio-pro', 'Audio Pro', 'audio'],
+      ['timeline-pro', 'Timeline Pro', 'move'],
+      ['keyframes-pro', 'Graph', 'keyframe'],
+      ['scopes', 'Scopes', 'eye'],
+      ['multicam-proxy', 'Multicam', 'video'],
+      ['batch-render', 'Batch', 'repeat'],
+    ],
+  },
+  {
+    label: 'Medios',
+    ariaLabel: 'Medios y texto',
+    sections: [
+      ['templates', 'Plantillas', 'video'],
+      ['elements', 'Elementos', 'layers'],
+      ['videos', 'Videos', 'video'],
+      ['shorts', 'Shorts', 'cut'],
+      ['audio', 'Audio', 'audio'],
+      ['text', 'Texto', 'text'],
+      ['subtitles', 'Subtítulos', 'text'],
+      ['transcribe', 'Transcribir', 'audio'],
+    ],
+  },
+  {
+    label: 'Estilo',
+    ariaLabel: 'Estilo y lienzo',
+    sections: [
+      ['effects', 'Efectos', 'layers'],
+      ['motion', 'Motion', 'layers'],
+      ['lienzo', 'Zoom/Cursor', 'screen'],
+      ['transitions', 'Transiciones', 'move'],
+      ['filters', 'Filtros', 'eye'],
+      ['brandkit', 'Kit marca', 'layers'],
+      ['background', 'Background', 'layers'],
+      ['mockup', 'Mockup', 'maximize'],
+    ],
+  },
+  {
+    label: 'Entrada',
+    ariaLabel: 'Captura e importación',
+    sections: [
+      ['record', 'Record', 'screen'],
+      ['upload', 'Upload', 'upload'],
+    ],
+  },
 ];
 
 const SECTION_LABELS: Record<SectionType, string> = {
@@ -147,7 +174,56 @@ export function AssetLibrary({ mode }: { mode?: string }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const backgroundImageInputRef = useRef<HTMLInputElement>(null);
   const elementImageInputRef = useRef<HTMLInputElement>(null);
+  const railScrollRef = useRef<HTMLDivElement>(null);
+  const [railScrollEdges, setRailScrollEdges] = useState({ canUp: false, canDown: false });
   const { mediaFiles, project, dispatch, selectedClipId, currentTime } = useEditorStore();
+
+  const syncRailScrollEdges = useCallback(() => {
+    const el = railScrollRef.current;
+    if (!el) return;
+    const { scrollTop, scrollHeight, clientHeight } = el;
+    const canUp = scrollTop > 2;
+    const canDown = scrollTop + clientHeight < scrollHeight - 2;
+    setRailScrollEdges((prev) =>
+      prev.canUp === canUp && prev.canDown === canDown ? prev : { canUp, canDown }
+    );
+  }, []);
+
+  useLayoutEffect(() => {
+    syncRailScrollEdges();
+  }, [syncRailScrollEdges]);
+
+  useEffect(() => {
+    const el = railScrollRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => syncRailScrollEdges());
+    ro.observe(el);
+    el.addEventListener('scroll', syncRailScrollEdges, { passive: true });
+    return () => {
+      ro.disconnect();
+      el.removeEventListener('scroll', syncRailScrollEdges);
+    };
+  }, [syncRailScrollEdges]);
+
+  const scrollRailBy = useCallback((direction: -1 | 1) => {
+    const el = railScrollRef.current;
+    if (!el) return;
+    const step = Math.max(72, Math.round(el.clientHeight * 0.35));
+    el.scrollBy({ top: direction * step, behavior: 'smooth' });
+  }, []);
+
+  useEffect(() => {
+    const id = window.requestAnimationFrame(() => {
+      const el = railScrollRef.current;
+      if (!el) return;
+      const pressed = el.querySelector('button[aria-pressed="true"]');
+      if (pressed instanceof HTMLElement) {
+        pressed.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+      syncRailScrollEdges();
+    });
+    return () => window.cancelAnimationFrame(id);
+  }, [activeSection, syncRailScrollEdges]);
 
   const updateProjectStyle = useCallback((patch: Record<string, unknown>) => {
     if (!project) return;
@@ -366,7 +442,7 @@ export function AssetLibrary({ mode }: { mode?: string }) {
     dispatch({ type: 'ADD_CLIP', payload: { trackId: track.id, clip } });
   };
 
-  /** Subtítulo en el cabezal actual (estilo cortos / captions). */
+  /** Subtítulo en el cabezal actual (estilo cortos / ostions). */
   const quickAddCaptionAtPlayhead = (
     text: string,
     size: number,
@@ -698,8 +774,6 @@ export function AssetLibrary({ mode }: { mode?: string }) {
     }
   };
 
-  const scrollSections = LIBRARY_TOOL_SECTIONS.filter(([id]) => id !== 'multimedia');
-
   useEffect(() => {
     if (mode === 'clip-generator') {
       queueMicrotask(() => setActiveSection('shorts'));
@@ -713,50 +787,113 @@ export function AssetLibrary({ mode }: { mode?: string }) {
 
   return (
     <div className="editor-panel-fill w-full flex-row overflow-hidden">
-      <div className="flex h-full min-h-0 w-[88px] shrink-0 flex-col self-stretch border-r border-[#283046] bg-[#0b0f17]">
-        <div className="shrink-0 border-b border-[#283046] px-1 pb-2 pt-2">
+      <div className="flex h-full min-h-0 w-[88px] shrink-0 flex-col self-stretch border-r border-[var(--os-border-default)] bg-[var(--os-bg-canvas)]">
+        <div className="shrink-0 border-b border-[var(--os-border-default)] px-1 pb-2 pt-2">
           <button
             type="button"
             className={cn(
-              'w-full py-2 text-[10px] rounded-xl transition-all border flex flex-col items-center gap-1',
+              'flex w-full flex-col items-center gap-1 rounded-xl border py-2 text-[10px] font-medium leading-tight transition-all',
               activeSection === 'multimedia'
-                ? 'text-[#ffffff] bg-[#202b3f] border-[#3d6ebf] shadow-[inset_0_0_0_1px_rgba(125,160,220,0.22)]'
-                : 'text-[#8793b0] hover:text-[#d6e4ff] hover:bg-[#141c2d] border-transparent'
+                ? 'text-[var(--os-text-primary)] bg-[var(--os-bg-active)] border-[var(--os-border-accent)] shadow-[inset_0_0_0_1px_rgba(125,160,220,0.22)]'
+                : 'border-transparent text-[var(--os-text-muted)] hover:bg-[var(--os-bg-hover)] hover:text-[var(--os-text-primary)]'
             )}
             onClick={() => setActiveSection('multimedia')}
-            title="Biblioteca / multimedia"
+            aria-pressed={activeSection === 'multimedia'}
+            title="Biblioteca: vídeos, audio e imágenes del proyecto"
+            aria-label="Biblioteca multimedia"
           >
-            <icons.folder size={14} />
-            <span>Multimedia</span>
+            <icons.folder size={14} className="shrink-0" aria-hidden />
+            <span className="max-w-full px-0.5 text-center">Multimedia</span>
           </button>
         </div>
-        <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overflow-x-hidden px-1 py-2">
-          {scrollSections.map(([id, label, icon]) => (
-            <button
-              key={id}
-              type="button"
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <button
+            type="button"
+            className="flex h-8 w-full shrink-0 items-center justify-center border-b border-[var(--os-border-default)]/50 text-[var(--os-text-muted)] transition-colors hover:bg-[var(--os-bg-hover)] hover:text-[var(--os-text-primary)] disabled:pointer-events-none disabled:opacity-30"
+            aria-label="Subir en la lista de herramientas"
+            title="Ver herramientas anteriores"
+            disabled={!railScrollEdges.canUp}
+            onClick={() => scrollRailBy(-1)}
+          >
+            <ChevronUp size={16} strokeWidth={2} aria-hidden />
+          </button>
+          <div className="relative min-h-0 flex-1 overflow-hidden">
+            <div
               className={cn(
-                'mx-0 py-2 text-[10px] rounded-xl transition-all border flex flex-col items-center gap-1',
-                activeSection === id
-                  ? 'text-[#ffffff] bg-[#202b3f] border-[#3d6ebf] shadow-[inset_0_0_0_1px_rgba(125,160,220,0.22)]'
-                  : 'text-[#8793b0] hover:text-[#d6e4ff] hover:bg-[#141c2d] border-transparent'
+                'pointer-events-none absolute inset-x-0 top-0 z-[1] h-10 bg-gradient-to-b from-[var(--os-bg-canvas)] via-[var(--os-bg-canvas)]/90 to-transparent transition-opacity duration-200',
+                !railScrollEdges.canUp && 'opacity-0'
               )}
-              onClick={() => setActiveSection(id)}
-              title={label}
+              aria-hidden
+            />
+            <div
+              ref={railScrollRef}
+              className="os-scrollbar-none h-full min-h-0 overflow-y-auto overflow-x-hidden px-1 py-2"
             >
-              {(() => {
-                const Icon = icons[icon];
-                return <Icon size={14} />;
-              })()}
-              <span>{label}</span>
-            </button>
-          ))}
+              {LIBRARY_SIDE_GROUPS.map((group, gi) => (
+                <div
+                  key={group.label}
+                  role="group"
+                  aria-label={group.ariaLabel}
+                  className={cn(
+                    'flex flex-col gap-1',
+                    gi > 0 && 'mt-2 border-t border-[var(--os-border-default)]/60 pt-2'
+                  )}
+                >
+                  <p className="px-0.5 pb-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-[var(--os-text-muted)]">
+                    {group.label}
+                  </p>
+                  {group.sections.map(([id, label, icon]) => {
+                    const Icon = icons[icon];
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        className={cn(
+                          'flex w-full flex-col items-center gap-1 rounded-xl border py-2 text-[10px] font-medium leading-tight transition-all',
+                          activeSection === id
+                            ? 'text-[var(--os-text-primary)] bg-[var(--os-bg-active)] border-[var(--os-border-accent)] shadow-[inset_0_0_0_1px_rgba(125,160,220,0.22)]'
+                            : 'border-transparent text-[var(--os-text-muted)] hover:bg-[var(--os-bg-hover)] hover:text-[var(--os-text-primary)]'
+                        )}
+                        onClick={() => setActiveSection(id)}
+                        title={`${label}. ${SECTION_LABELS[id] ?? ''}`}
+                        aria-label={SECTION_LABELS[id] ?? label}
+                        aria-pressed={activeSection === id}
+                      >
+                        <Icon size={14} className="shrink-0" aria-hidden />
+                        <span className="max-w-full break-words px-0.5 text-center">{label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+            <div
+              className={cn(
+                'pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-10 bg-gradient-to-t from-[var(--os-bg-canvas)] via-[var(--os-bg-canvas)]/90 to-transparent transition-opacity duration-200',
+                !railScrollEdges.canDown && 'opacity-0'
+              )}
+              aria-hidden
+            />
+          </div>
+          <button
+            type="button"
+            className="flex h-8 w-full shrink-0 items-center justify-center border-t border-[var(--os-border-default)]/50 text-[var(--os-text-muted)] transition-colors hover:bg-[var(--os-bg-hover)] hover:text-[var(--os-text-primary)] disabled:pointer-events-none disabled:opacity-30"
+            aria-label="Bajar en la lista de herramientas"
+            title="Ver más herramientas"
+            disabled={!railScrollEdges.canDown}
+            onClick={() => scrollRailBy(1)}
+          >
+            <ChevronDown size={16} strokeWidth={2} aria-hidden />
+          </button>
         </div>
       </div>
 
       <div className="flex min-h-0 min-w-0 flex-1 max-w-full flex-col self-stretch overflow-hidden">
-        <div className="flex h-11 shrink-0 items-center justify-between gap-2 border-b border-[#283046] bg-gradient-to-r from-[#0f1522] to-[#0c111c] px-3">
-          <span className="min-w-0 truncate text-[11px] font-semibold uppercase tracking-[0.12em] text-[#b8c5e8]">
+        <div className="flex h-11 shrink-0 items-center justify-between gap-2 border-b border-[var(--os-border-default)] bg-gradient-to-r from-[var(--os-media-card-bg)] to-[var(--os-timeline-bg)] px-3">
+          <span
+            className="min-w-0 max-w-[min(100%,14rem)] text-left text-[11px] font-semibold leading-snug text-[var(--os-text-primary)] line-clamp-2 break-words"
+            title={SECTION_LABELS[activeSection]}
+          >
             {SECTION_LABELS[activeSection]}
           </span>
           {activeSection !== 'multimedia' && (
@@ -770,26 +907,23 @@ export function AssetLibrary({ mode }: { mode?: string }) {
           )}
         </div>
         <div
-          className={cn('w-full min-w-0 flex-1 p-3 overflow-y-auto bg-[#0d111a]', isDragging && 'bg-sky-500/10')}
+          className={cn(
+            'os-scrollbar-none w-full min-w-0 flex-1 overflow-y-auto bg-[var(--os-bg-subtle)] p-3',
+            isDragging && 'bg-[var(--os-accent-primary)]/10'
+          )}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
         >
           {activeSection === 'multimedia' && (
             <div className="space-y-3">
-              <div className="rounded-xl border border-[#2a3348] bg-[#121827] p-3">
-                <p className="text-xs text-[#dbe7ff]">Kit de marca</p>
-                <p className="text-[11px] text-[#8190b1] mt-1">
-                  Crea una apariencia consistente con logos, presets y stickers.
-                </p>
-              </div>
               <div>
-                <p className="text-xs text-zinc-400 mb-2">Videos</p>
+                <p className="text-xs text-[var(--os-text-secondary)] mb-2">Videos</p>
                 <div className="grid grid-cols-1 gap-2">
                   {mediaFiles.slice(0, 4).map((v, index) => (
                     <button
                       key={`${v.id}-${index}`}
-                    className="h-14 rounded-xl border border-[#2a3348] bg-[#121827] text-[10px] text-[#c0cce6] truncate px-2 hover:bg-[#1a2438]"
+                    className="h-14 rounded-xl border border-[var(--os-border-default)] bg-[var(--os-bg-panel-2)] text-[10px] text-[var(--os-text-secondary)] truncate px-2 hover:bg-[var(--os-bg-hover)]"
                       onClick={() => handleAddToTimeline(v)}
                     >
                       {v.name}
@@ -798,16 +932,16 @@ export function AssetLibrary({ mode }: { mode?: string }) {
                 </div>
               </div>
               <div>
-                <p className="text-xs text-zinc-400 mb-2">Textos predefinidos</p>
+                <p className="text-xs text-[var(--os-text-secondary)] mb-2">Textos predefinidos</p>
                 <div className="grid grid-cols-1 gap-2">
                   <button
-                    className="h-10 rounded-xl border border-[#2a3348] bg-[#121827] px-2 text-white text-sm leading-none whitespace-nowrap hover:bg-[#1a2438]"
+                    className="h-10 rounded-xl border border-[var(--os-border-default)] bg-[var(--os-bg-panel-2)] px-2 text-white text-sm leading-none whitespace-nowrap hover:bg-[var(--os-bg-hover)]"
                     onClick={() => quickAddTextTemplate('Escribe tu texto aquí', 46, '#ffffff')}
                   >
                     Escribe tu texto aquí
                   </button>
                   <button
-                    className="h-10 rounded-xl border border-[#2a3348] bg-[#121827] px-2 text-white text-sm leading-none whitespace-nowrap hover:bg-[#1a2438]"
+                    className="h-10 rounded-xl border border-[var(--os-border-default)] bg-[var(--os-bg-panel-2)] px-2 text-white text-sm leading-none whitespace-nowrap hover:bg-[var(--os-bg-hover)]"
                     onClick={() => quickAddTextTemplate('Escribe tu texto aquí', 46, '#e879f9')}
                   >
                     Escribe tu texto aquí
@@ -819,77 +953,61 @@ export function AssetLibrary({ mode }: { mode?: string }) {
 
           {activeSection === 'workflow' && (
             <div className="space-y-3">
-              <div className="rounded-xl border border-[#2a3348] bg-[#121827] p-3">
-                <p className="text-xs font-medium text-[#dbe7ff]">Estudio · flujo unificado</p>
-                <p className="text-[11px] text-[#8190b1] mt-1 leading-snug">
-                  Inspirado en editores como{' '}
-                  <a
-                    href="https://www.opus.pro/es-es/ai-video-editor"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sky-400 underline-offset-2 hover:underline"
-                  >
-                    referente del sector
-                  </a>
-                  : cortos, subtítulos con estilo, guion con tiempo, marca y export para redes — desde un solo
-                  panel.
-                </p>
-              </div>
               <div className="grid grid-cols-1 gap-2">
                 <button
                   type="button"
-                  className="rounded-lg border border-zinc-600 bg-zinc-800 px-2 py-2.5 text-left text-[11px] text-zinc-200 hover:bg-zinc-700"
+                  className="rounded-lg border border-[var(--os-border-strong)] bg-[var(--os-surface-2)] px-2 py-2.5 text-left text-[11px] text-[var(--os-text-primary)] hover:bg-[var(--os-bg-hover)]"
                   onClick={() => setActiveSection('shorts')}
                 >
-                  <span className="font-medium text-zinc-100">Shorts 1 clic</span>
-                  <span className="mt-0.5 block text-[10px] text-zinc-500">Segmentos desde biblioteca o timeline</span>
+                  <span className="font-medium text-[var(--os-text-primary)]">Shorts 1 clic</span>
+                  <span className="mt-0.5 block text-[10px] text-[var(--os-text-muted)]">Segmentos desde biblioteca o timeline</span>
                 </button>
                 <button
                   type="button"
-                  className="rounded-lg border border-zinc-600 bg-zinc-800 px-2 py-2.5 text-left text-[11px] text-zinc-200 hover:bg-zinc-700"
+                  className="rounded-lg border border-[var(--os-border-strong)] bg-[var(--os-surface-2)] px-2 py-2.5 text-left text-[11px] text-[var(--os-text-primary)] hover:bg-[var(--os-bg-hover)]"
                   onClick={() => setActiveSection('ai-shorts')}
                 >
-                  <span className="font-medium text-zinc-100">AI Shorts</span>
-                  <span className="mt-0.5 block text-[10px] text-zinc-500">Brief, guion y modo Low/Premium</span>
+                  <span className="font-medium text-[var(--os-text-primary)]">AI Shorts</span>
+                  <span className="mt-0.5 block text-[10px] text-[var(--os-text-muted)]">Brief, guion y modo Low/Premium</span>
                 </button>
                 <button
                   type="button"
-                  className="rounded-lg border border-zinc-600 bg-zinc-800 px-2 py-2.5 text-left text-[11px] text-zinc-200 hover:bg-zinc-700"
+                  className="rounded-lg border border-[var(--os-border-strong)] bg-[var(--os-surface-2)] px-2 py-2.5 text-left text-[11px] text-[var(--os-text-primary)] hover:bg-[var(--os-bg-hover)]"
                   onClick={() => setActiveSection('subtitles')}
                 >
-                  <span className="font-medium text-zinc-100">Subtítulos</span>
-                  <span className="mt-0.5 block text-[10px] text-zinc-500">Presets listos para redes</span>
+                  <span className="font-medium text-[var(--os-text-primary)]">Subtítulos</span>
+                  <span className="mt-0.5 block text-[10px] text-[var(--os-text-muted)]">Presets listos para redes</span>
                 </button>
                 <button
                   type="button"
-                  className="rounded-lg border border-zinc-600 bg-zinc-800 px-2 py-2.5 text-left text-[11px] text-zinc-200 hover:bg-zinc-700"
+                  className="rounded-lg border border-[var(--os-border-strong)] bg-[var(--os-surface-2)] px-2 py-2.5 text-left text-[11px] text-[var(--os-text-primary)] hover:bg-[var(--os-bg-hover)]"
                   onClick={() => setActiveSection('transcribe')}
                 >
-                  <span className="font-medium text-zinc-100">Guion / voz</span>
-                  <span className="mt-0.5 block text-[10px] text-zinc-500">Planifica frases y tiempos</span>
+                  <span className="font-medium text-[var(--os-text-primary)]">Guion / voz</span>
+                  <span className="mt-0.5 block text-[10px] text-[var(--os-text-muted)]">Planifica frases y tiempos</span>
                 </button>
                 <button
                   type="button"
-                  className="rounded-lg border border-zinc-600 bg-zinc-800 px-2 py-2.5 text-left text-[11px] text-zinc-200 hover:bg-zinc-750"
+                  className="rounded-lg border border-[var(--os-border-strong)] bg-[var(--os-surface-2)] px-2 py-2.5 text-left text-[11px] text-[var(--os-text-primary)] hover:bg-[var(--os-bg-hover)]"
                   onClick={() => setActiveSection('brandkit')}
                 >
-                  <span className="font-medium text-zinc-100">Marca</span>
-                  <span className="mt-0.5 block text-[10px] text-zinc-500">Colores y logos rápidos</span>
+                  <span className="font-medium text-[var(--os-text-primary)]">Marca</span>
+                  <span className="mt-0.5 block text-[10px] text-[var(--os-text-muted)]">Colores y logos rápidos</span>
                 </button>
               </div>
-              <p className="text-[10px] leading-snug text-zinc-500">
-                <span className="text-zinc-400">Reencuadre del lienzo:</span> panel derecho de propiedades → sección
+              <p className="text-[10px] leading-snug text-[var(--os-text-muted)]">
+                <span className="text-[var(--os-text-secondary)]">Reencuadre del lienzo:</span> panel derecho de propiedades → sección
                 «Reencuadre del lienzo» (16:9, 9:16, 1:1, 4:5).{' '}
-                <span className="text-zinc-400">Export por red:</span> selector de plataforma en la barra superior.
+                <span className="text-[var(--os-text-secondary)]">Export por red:</span> selector de plataforma en la barra superior.
               </p>
-              <div className="rounded-lg border border-zinc-700 bg-zinc-900/60 p-2">
-                <label htmlFor="workflow-notes" className="text-[11px] font-medium text-zinc-400">
+              <div className="rounded-lg border border-[var(--os-border-default)] bg-[var(--os-surface-1)]/60 p-2">
+                <label htmlFor="workflow-notes" className="text-[11px] font-medium text-[var(--os-text-secondary)]">
                   Guion y marcas de tiempo
                 </label>
                 <textarea
                   id="workflow-notes"
                   rows={6}
-                  className="mt-1 w-full resize-y rounded-md border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-[11px] text-zinc-200 placeholder:text-zinc-600 focus:border-sky-500 focus:outline-none"
+                  className="mt-1 w-full resize-y rounded-md border border-[var(--os-border-default)] bg-[var(--os-bg-app)] px-2 py-1.5 text-[11px] text-[var(--os-text-primary)] placeholder:text-[var(--os-text-muted)] focus:border-[var(--os-border-accent)] focus:outline-none"
                   placeholder={'Una línea por frase. Usa [00:12.00] para marcar el cabezal.\nEj: Hook fuerte en los primeros 3 s…'}
                   value={project?.textWorkflowNotes ?? ''}
                   onChange={(e) => updateProjectStyle({ textWorkflowNotes: e.target.value })}
@@ -938,7 +1056,7 @@ export function AssetLibrary({ mode }: { mode?: string }) {
                 <span className="ml-2">Upload video</span>
               </Button>
               {mediaFiles.filter((m) => m.type.startsWith('video')).length === 0 ? (
-                <p className="text-xs text-zinc-600 text-center py-4">No videos yet</p>
+                <p className="text-xs text-[var(--os-text-muted)] text-center py-4">No videos yet</p>
               ) : (
                 <div className="space-y-2">
                   {mediaFiles
@@ -946,10 +1064,10 @@ export function AssetLibrary({ mode }: { mode?: string }) {
                     .map((file, index) => (
                       <button
                         key={`${file.id}-${index}`}
-                        className="w-full flex items-center gap-2 p-2 bg-zinc-800 rounded-lg hover:bg-zinc-700"
+                        className="w-full flex items-center gap-2 p-2 bg-[var(--os-surface-2)] rounded-lg hover:bg-[var(--os-bg-hover)]"
                         onClick={() => handleAddToTimeline(file)}
                       >
-                        <div className="w-10 h-10 bg-zinc-700 rounded overflow-hidden flex-shrink-0">
+                        <div className="w-10 h-10 bg-[var(--os-surface-3)] rounded overflow-hidden flex-shrink-0">
                           {file.thumbnail && (
                             <Image
                               src={file.thumbnail}
@@ -963,7 +1081,7 @@ export function AssetLibrary({ mode }: { mode?: string }) {
                         </div>
                         <div className="flex-1 min-w-0 text-left">
                           <p className="text-xs text-white truncate">{file.name}</p>
-                          <p className="text-[10px] text-zinc-500">{file.width}x{file.height}</p>
+                          <p className="text-[10px] text-[var(--os-text-muted)]">{file.width}x{file.height}</p>
                         </div>
                       </button>
                     ))}
@@ -976,12 +1094,12 @@ export function AssetLibrary({ mode }: { mode?: string }) {
             <div className="space-y-3">
               <div
                 className={cn(
-                  'border-2 border-dashed border-zinc-700 rounded-lg p-6 text-center transition-colors',
+                  'border-2 border-dashed border-[var(--os-border-default)] rounded-lg p-6 text-center transition-colors',
                   isDragging && 'border-indigo-500 bg-indigo-500/10'
                 )}
               >
-                <icons.upload className="mx-auto text-zinc-500 mb-2" size={24} />
-                <p className="text-xs text-zinc-500">Drop files here or</p>
+                <icons.upload className="mx-auto text-[var(--os-text-muted)] mb-2" size={24} />
+                <p className="text-xs text-[var(--os-text-muted)]">Drop files here or</p>
                 <Button variant="ghost" size="sm" className="mt-2" onClick={handleBrowseClick}>
                   Browse
                 </Button>
@@ -991,12 +1109,12 @@ export function AssetLibrary({ mode }: { mode?: string }) {
 
           {activeSection === 'record' && (
             <div className="space-y-3">
-              <p className="text-xs text-zinc-400">
+              <p className="text-xs text-[var(--os-text-secondary)]">
                 Use the Record button in the top bar to open recording setup.
               </p>
-              <div className="rounded-lg border border-zinc-700 p-3 bg-zinc-800/60">
-                <p className="text-xs text-zinc-300">Quick tips</p>
-                <ul className="mt-2 text-[11px] text-zinc-500 space-y-1">
+              <div className="rounded-lg border border-[var(--os-border-default)] p-3 bg-[var(--os-surface-2)]/60">
+                <p className="text-xs text-[var(--os-text-primary)]">Quick tips</p>
+                <ul className="mt-2 text-[11px] text-[var(--os-text-muted)] space-y-1">
                   <li>1) Choose microphone/system audio</li>
                   <li>2) Start recording and stop from header</li>
                   <li>3) Recording is added to Videos automatically</li>
@@ -1007,9 +1125,9 @@ export function AssetLibrary({ mode }: { mode?: string }) {
 
           {activeSection === 'audio' && (
             <div className="space-y-3">
-              <div className="rounded-xl border border-[#2a3348] bg-[#111827] p-3">
-                <p className="text-sm font-semibold text-[#eef3ff]">Música</p>
-                <p className="mt-1 text-[11px] leading-snug text-[#f8a04b]">
+              <div className="rounded-xl border border-[var(--os-border-default)] bg-[var(--os-bg-panel-2)] p-3">
+                <p className="text-sm font-semibold text-[var(--os-text-primary)]">Música</p>
+                <p className="mt-1 text-[11px] leading-snug text-[var(--os-warning)]">
                   Parte de la música instrumental no está disponible por caducidad de licencia. Nuevos tracks pronto.
                 </p>
               </div>
@@ -1017,7 +1135,7 @@ export function AssetLibrary({ mode }: { mode?: string }) {
                 <icons.upload size={14} />
                 <span className="ml-2">Subir</span>
               </Button>
-              <div className="rounded-xl border border-[#2a3348] bg-[#0f1522] px-3 py-2 text-[11px] text-[#97a8cf]">
+              <div className="rounded-xl border border-[var(--os-border-default)] bg-[var(--os-media-card-bg)] px-3 py-2 text-[11px] text-[var(--os-text-secondary)]">
                 Buscar música libre de derechos
               </div>
               <div className="flex gap-2 overflow-x-auto">
@@ -1027,42 +1145,42 @@ export function AssetLibrary({ mode }: { mode?: string }) {
                     className={cn(
                       'whitespace-nowrap rounded-full border px-3 py-1 text-[11px]',
                       tag === 'Instrumental'
-                        ? 'border-white bg-white text-[#0f1116]'
-                        : 'border-[#2a3348] bg-[#111827] text-[#c5d1ec]'
+                        ? 'border-[var(--os-text-primary)] bg-[var(--os-text-primary)] text-[var(--os-text-inverse)]'
+                        : 'border-[var(--os-border-default)] bg-[var(--os-bg-panel-2)] text-[var(--os-text-secondary)]'
                     )}
                   >
                     {tag}
                   </span>
                 ))}
               </div>
-              <p className="text-[11px] text-zinc-500 leading-snug">
+              <p className="text-[11px] text-[var(--os-text-muted)] leading-snug">
                 Mezcla rápida en el clip activo (volumen por clip).
               </p>
               <div className="grid grid-cols-1 gap-2">
                 <button
                   type="button"
-                  className="rounded-xl border border-zinc-700 bg-zinc-800 px-2 py-2 text-[10px] text-zinc-200 hover:bg-zinc-700"
+                  className="rounded-xl border border-[var(--os-border-default)] bg-[var(--os-surface-2)] px-2 py-2 text-[10px] text-[var(--os-text-primary)] hover:bg-[var(--os-bg-hover)]"
                   onClick={() => applyAudioMixPreset(1, 'Normal')}
                 >
                   Normal (100%)
                 </button>
                 <button
                   type="button"
-                  className="rounded-xl border border-zinc-700 bg-zinc-800 px-2 py-2 text-[10px] text-zinc-200 hover:bg-zinc-700"
+                  className="rounded-xl border border-[var(--os-border-default)] bg-[var(--os-surface-2)] px-2 py-2 text-[10px] text-[var(--os-text-primary)] hover:bg-[var(--os-bg-hover)]"
                   onClick={() => applyAudioMixPreset(0.35, 'Bed')}
                 >
                   Música fondo (~−9 dB)
                 </button>
                 <button
                   type="button"
-                  className="rounded-xl border border-zinc-700 bg-zinc-800 px-2 py-2 text-[10px] text-zinc-200 hover:bg-zinc-700"
+                  className="rounded-xl border border-[var(--os-border-default)] bg-[var(--os-surface-2)] px-2 py-2 text-[10px] text-[var(--os-text-primary)] hover:bg-[var(--os-bg-hover)]"
                   onClick={() => applyAudioMixPreset(0.15, 'Ambiente')}
                 >
                   Ambiente muy bajo
                 </button>
                 <button
                   type="button"
-                  className="rounded-xl border border-zinc-700 bg-zinc-800 px-2 py-2 text-[10px] text-zinc-200 hover:bg-zinc-700"
+                  className="rounded-xl border border-[var(--os-border-default)] bg-[var(--os-surface-2)] px-2 py-2 text-[10px] text-[var(--os-text-primary)] hover:bg-[var(--os-bg-hover)]"
                   onClick={() => applyAudioMixPreset(0, 'Mute')}
                 >
                   Silenciar clip
@@ -1074,15 +1192,15 @@ export function AssetLibrary({ mode }: { mode?: string }) {
                   .map((file, index) => (
                     <button
                       key={`${file.id}-${index}`}
-                      className="w-full flex items-center gap-3 p-2.5 bg-zinc-900 rounded-xl border border-[#2a3348] hover:bg-zinc-800"
+                      className="w-full flex items-center gap-3 p-2.5 bg-[var(--os-surface-1)] rounded-xl border border-[var(--os-border-default)] hover:bg-[var(--os-surface-2)]"
                       onClick={() => handleAddToTimeline(file)}
                     >
-                      <div className="h-10 w-10 shrink-0 rounded-md bg-[#1a2438] flex items-center justify-center">
+                      <div className="h-10 w-10 shrink-0 rounded-md bg-[var(--os-bg-hover)] flex items-center justify-center">
                         <icons.audio size={14} />
                       </div>
                       <div className="text-left min-w-0">
                         <p className="text-xs text-white truncate">{file.name}</p>
-                        <p className="text-[10px] text-zinc-500">
+                        <p className="text-[10px] text-[var(--os-text-muted)]">
                           {Math.max(0, Math.round(file.duration ?? 0)).toString().padStart(2, '0')}s · {file.type}
                         </p>
                       </div>
@@ -1095,22 +1213,22 @@ export function AssetLibrary({ mode }: { mode?: string }) {
           {activeSection === 'elements' && (
             <div className="space-y-3">
               <div>
-                <p className="text-xs text-zinc-400 mb-2">Shapes</p>
+                <p className="text-xs text-[var(--os-text-secondary)] mb-2">Shapes</p>
                 <div className="grid grid-cols-3 gap-2">
                   <button
-                    className="h-10 rounded bg-zinc-800 hover:bg-zinc-700 text-white text-lg"
+                    className="h-10 rounded bg-[var(--os-surface-2)] hover:bg-[var(--os-bg-hover)] text-white text-lg"
                     onClick={() => handleAddShape('rectangle')}
                   >
                     ■
                   </button>
                   <button
-                    className="h-10 rounded bg-zinc-800 hover:bg-zinc-700 text-white text-lg"
+                    className="h-10 rounded bg-[var(--os-surface-2)] hover:bg-[var(--os-bg-hover)] text-white text-lg"
                     onClick={() => handleAddShape('circle')}
                   >
                     ●
                   </button>
                   <button
-                    className="h-10 rounded bg-zinc-800 hover:bg-zinc-700 text-white text-lg"
+                    className="h-10 rounded bg-[var(--os-surface-2)] hover:bg-[var(--os-bg-hover)] text-white text-lg"
                     onClick={() => handleAddShape('triangle')}
                   >
                     ▲
@@ -1138,7 +1256,7 @@ export function AssetLibrary({ mode }: { mode?: string }) {
 
           {activeSection === 'text' && (
             <div className="space-y-3">
-              <p className="text-xs text-zinc-400">Básico</p>
+              <p className="text-xs text-[var(--os-text-secondary)]">Básico</p>
               <Button
                 variant="secondary"
                 className="w-full"
@@ -1153,12 +1271,12 @@ export function AssetLibrary({ mode }: { mode?: string }) {
               >
                 Agregar texto del cuerpo
               </Button>
-              <p className="text-xs text-zinc-400">Tendencias</p>
+              <p className="text-xs text-[var(--os-text-secondary)]">Tendencias</p>
               <div className="grid grid-cols-1 gap-2">
                 {['PERFECTO', 'BOOYAH!', 'NICE TRY', 'Free Fire'].map((txt) => (
                   <button
                     key={txt}
-                    className="h-14 rounded border border-zinc-700 bg-zinc-800 text-[11px] text-zinc-200"
+                    className="h-14 rounded border border-[var(--os-border-default)] bg-[var(--os-surface-2)] text-[11px] text-[var(--os-text-primary)]"
                     onClick={() => quickAddTextTemplate(txt, 38, '#ffffff')}
                   >
                     {txt}
@@ -1174,7 +1292,7 @@ export function AssetLibrary({ mode }: { mode?: string }) {
 
           {activeSection === 'effects' && (
             <div className="space-y-3">
-              <p className="text-xs text-zinc-400">
+              <p className="text-xs text-[var(--os-text-secondary)]">
                 {selectedClipId ? 'Aplica al clip seleccionado' : 'Se aplica al clip activo (auto)'}
               </p>
               <div className="grid grid-cols-2 gap-2">
@@ -1185,13 +1303,13 @@ export function AssetLibrary({ mode }: { mode?: string }) {
                       key={preset.id}
                       type="button"
                       title={preset.hint ? `${preset.name} — ${preset.hint}` : preset.name}
-                      className="cap-effect-card"
+                      className="os-effect-card"
                       onClick={() => applyCatalogEffect(preset.id)}
                     >
-                      <div className={`cap-effect-preview ${effectClass}`}>
+                      <div className={`os-effect-preview ${effectClass}`}>
                         <span className="text-white text-xs font-medium drop-shadow-lg">{preset.name}</span>
                       </div>
-                      <div className="cap-effect-preview-label">
+                      <div className="os-effect-preview-label">
                         {preset.hint || preset.name}
                       </div>
                     </button>
@@ -1203,20 +1321,17 @@ export function AssetLibrary({ mode }: { mode?: string }) {
 
           {activeSection === 'motion' && (
             <div className="space-y-3">
-              <p className="text-xs text-zinc-400">
-                Animaciones en clip activo (keyframes). Inspirado en composición tipo Remotion / Motion.
-              </p>
               <div className="grid grid-cols-1 gap-2">
                 {MOTION_DESIGN_PRESETS.map((preset) => (
                   <button
                     key={preset.id}
                     type="button"
                     title={preset.description}
-                    className="min-h-[3rem] rounded border border-zinc-700 bg-zinc-800 px-2 py-2 text-left text-[10px] text-zinc-200 hover:bg-zinc-700"
+                    className="min-h-[3rem] rounded border border-[var(--os-border-default)] bg-[var(--os-surface-2)] px-2 py-2 text-left text-[10px] text-[var(--os-text-primary)] hover:bg-[var(--os-bg-hover)]"
                     onClick={() => applyMotionDesignPreset(preset.id)}
                   >
-                    <span className="font-medium text-zinc-100">{preset.name}</span>
-                    <span className="mt-0.5 block text-[9px] leading-tight text-zinc-500">{preset.description}</span>
+                    <span className="font-medium text-[var(--os-text-primary)]">{preset.name}</span>
+                    <span className="mt-0.5 block text-[9px] leading-tight text-[var(--os-text-muted)]">{preset.description}</span>
                   </button>
                 ))}
               </div>
@@ -1226,18 +1341,9 @@ export function AssetLibrary({ mode }: { mode?: string }) {
           {activeSection === 'lienzo' && (
             <div className="flex min-h-0 flex-col space-y-3">
               {!project ? (
-                <p className="text-xs text-zinc-500">Abre o crea un proyecto para usar zoom tutorial y cursor.</p>
+                <p className="text-xs text-[var(--os-text-muted)]">Abre o crea un proyecto para usar zoom tutorial y cursor.</p>
               ) : (
                 <>
-                  <div className="shrink-0 rounded-lg border border-sky-500/35 bg-sky-500/[0.07] px-3 py-2">
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-sky-400">
-                      Herramientas de proyecto
-                    </p>
-                    <p className="mt-1 text-[10px] leading-snug text-zinc-500">
-                      Zoom y cursor aplican a <span className="text-zinc-400">todo el vídeo</span>, no al clip
-                      seleccionado. Lienzo (blur, marco) y cámara siguen en el panel derecho de propiedades.
-                    </p>
-                  </div>
                   <ProjectZoomCursorSections
                     project={project}
                     currentTime={currentTime}
@@ -1250,13 +1356,13 @@ export function AssetLibrary({ mode }: { mode?: string }) {
 
           {activeSection === 'transitions' && (
             <div className="space-y-3">
-              <div className="rounded-xl border border-[#2a3348] bg-[#111827] p-1 grid grid-cols-2 gap-1 text-[12px]">
+              <div className="rounded-xl border border-[var(--os-border-default)] bg-[var(--os-bg-panel-2)] p-1 grid grid-cols-2 gap-1 text-[12px]">
                 <button
                   type="button"
                   onClick={() => setTransitionEdgeTab('in')}
                   className={cn(
                     'h-8 rounded-lg',
-                    transitionEdgeTab === 'in' ? 'bg-[#202b3f] text-white' : 'text-[#9aa9cb] hover:bg-[#182335]'
+                    transitionEdgeTab === 'in' ? 'bg-[var(--os-bg-active)] text-white' : 'text-[var(--os-text-secondary)] hover:bg-[var(--os-bg-hover)]'
                   )}
                 >
                   Entrada
@@ -1266,13 +1372,13 @@ export function AssetLibrary({ mode }: { mode?: string }) {
                   onClick={() => setTransitionEdgeTab('out')}
                   className={cn(
                     'h-8 rounded-lg',
-                    transitionEdgeTab === 'out' ? 'bg-[#202b3f] text-white' : 'text-[#9aa9cb] hover:bg-[#182335]'
+                    transitionEdgeTab === 'out' ? 'bg-[var(--os-bg-active)] text-white' : 'text-[var(--os-text-secondary)] hover:bg-[var(--os-bg-hover)]'
                   )}
                 >
                   Salida
                 </button>
               </div>
-              <p className="text-xs text-zinc-400">
+              <p className="text-xs text-[var(--os-text-secondary)]">
                 {selectedClipId ? 'Selecciona transición para el clip' : 'Se aplica al clip activo (auto)'}
               </p>
               <div className="grid grid-cols-2 gap-2">
@@ -1281,13 +1387,13 @@ export function AssetLibrary({ mode }: { mode?: string }) {
                   return (
                     <button
                       key={`${transitionEdgeTab}-${preset.id}`}
-                      className="cap-transition-card"
+                      className="os-transition-card"
                       onClick={() => applyCatalogTransition(preset.id, transitionEdgeTab)}
                     >
-                      <div className={`cap-transition-preview ${transitionClass}`} />
-                      <div className="cap-filter-label">
+                      <div className={`os-transition-preview ${transitionClass}`} />
+                      <div className="os-filter-label">
                         <span className="font-medium">{preset.name}</span>
-                        {preset.duration && <span className="text-zinc-500 ml-1">({preset.duration}s)</span>}
+                        {preset.duration && <span className="text-[var(--os-text-muted)] ml-1">({preset.duration}s)</span>}
                       </div>
                     </button>
                   );
@@ -1298,7 +1404,7 @@ export function AssetLibrary({ mode }: { mode?: string }) {
 
           {activeSection === 'filters' && (
             <div className="space-y-3">
-              <p className="text-xs text-zinc-400">
+              <p className="text-xs text-[var(--os-text-secondary)]">
                 {selectedClipId ? 'Catálogo de filtros Timeline Pro' : 'Se aplica al clip activo (auto)'}
               </p>
               <div className="grid grid-cols-2 gap-2">
@@ -1309,13 +1415,13 @@ export function AssetLibrary({ mode }: { mode?: string }) {
                       key={preset.id}
                       type="button"
                       title={preset.hint ? `${preset.name} — ${preset.hint}` : preset.name}
-                      className="cap-filter-card"
+                      className="os-filter-card"
                       onClick={() => applyCatalogFilter(preset.id)}
                     >
-                      <div className={`cap-filter-preview ${filterClass}`} />
-                      <div className="cap-filter-label">
+                      <div className={`os-filter-preview ${filterClass}`} />
+                      <div className="os-filter-label">
                         <span className="font-medium">{preset.name}</span>
-                        {preset.hint && <span className="text-zinc-500 ml-1">— {preset.hint}</span>}
+                        {preset.hint && <span className="text-[var(--os-text-muted)] ml-1">— {preset.hint}</span>}
                       </div>
                     </button>
                   );
@@ -1324,21 +1430,14 @@ export function AssetLibrary({ mode }: { mode?: string }) {
             </div>
           )}
           {resourceNotice && (
-            <div className="rounded-md border border-sky-500/40 bg-sky-500/10 px-2 py-1 text-[10px] text-sky-200">
+            <div className="rounded-md border border-[var(--os-border-accent)]/40 bg-[var(--os-accent-primary)]/10 px-2 py-1 text-[10px] text-[var(--os-text-primary)]">
               {resourceNotice}
             </div>
           )}
 
           {activeSection === 'brandkit' && (
             <div className="space-y-3">
-              <div className="rounded-lg border border-zinc-700 bg-zinc-800 p-3">
-                <p className="text-xs text-zinc-300">Kit de marca</p>
-                <p className="text-[11px] text-zinc-500 mt-1 leading-snug">
-                  Colores de marca en el fondo de escena, logos e identidad en texto — alineado a plantillas de marca
-                  de nivel profesional.
-                </p>
-              </div>
-              <p className="text-[10px] font-medium uppercase tracking-wide text-zinc-500">Colores rápidos</p>
+              <p className="text-[10px] font-medium uppercase tracking-wide text-[var(--os-text-muted)]">Colores rápidos</p>
               <div className="flex flex-wrap gap-2">
                 {[
                   ['Primario oscuro', '#0f172a'],
@@ -1351,7 +1450,7 @@ export function AssetLibrary({ mode }: { mode?: string }) {
                     key={hex}
                     type="button"
                     title={label}
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-zinc-600 ring-offset-2 ring-offset-zinc-900 hover:ring-2 hover:ring-sky-500/60"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--os-border-strong)] ring-offset-2 ring-offset-[var(--os-bg-app)] hover:ring-2 hover:ring-[var(--os-accent-primary)]/60"
                     style={{ backgroundColor: hex }}
                     onClick={() => updateBackground({ type: 'solid', color: hex })}
                   />
@@ -1364,14 +1463,14 @@ export function AssetLibrary({ mode }: { mode?: string }) {
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
-                  className="h-16 rounded border border-zinc-700 bg-zinc-800 text-sm text-zinc-200 hover:bg-zinc-700"
+                  className="h-16 rounded border border-[var(--os-border-default)] bg-[var(--os-surface-2)] text-sm text-[var(--os-text-primary)] hover:bg-[var(--os-bg-hover)]"
                   onClick={() => quickAddCaptionAtPlayhead('TU MARCA', 44, '#ffffff', true)}
                 >
                   Wordmark blanco
                 </button>
                 <button
                   type="button"
-                  className="h-16 rounded border border-zinc-700 bg-zinc-800 text-sm text-zinc-200 hover:bg-zinc-700"
+                  className="h-16 rounded border border-[var(--os-border-default)] bg-[var(--os-surface-2)] text-sm text-[var(--os-text-primary)] hover:bg-[var(--os-bg-hover)]"
                   onClick={() => quickAddCaptionAtPlayhead('TU MARCA', 40, '#c4b5fd', true)}
                 >
                   Wordmark color
@@ -1385,12 +1484,12 @@ export function AssetLibrary({ mode }: { mode?: string }) {
               <Button variant="secondary" className="w-full text-xs" onClick={clearSceneBackground}>
                 Quitar fondo (transparente en el playhead)
               </Button>
-              <p className="text-[10px] text-[#8190b1] leading-snug">
-                El fondo es un clip en la pista <span className="text-[#d6e4ff]">Background</span> al final
-                del timeline (capa bajo el vídeo del proyecto). Puedes borrarlo, moverlo o partirlo con
+              <p className="text-[10px] text-[var(--os-text-muted)] leading-snug">
+                El fondo es un clip en la pista <span className="text-[var(--os-text-primary)]">Background</span> al final
+                del timeline (osa bajo el vídeo del proyecto). Puedes borrarlo, moverlo o partirlo con
                 Split.
               </p>
-              <div className="rounded-xl border border-[#2a3348] p-1 bg-[#111827] grid grid-cols-3 gap-1">
+              <div className="rounded-xl border border-[var(--os-border-default)] p-1 bg-[var(--os-bg-panel-2)] grid grid-cols-3 gap-1">
                 {([
                   ['wallpaper', 'Wallpaper'],
                   ['color', 'Color'],
@@ -1402,8 +1501,8 @@ export function AssetLibrary({ mode }: { mode?: string }) {
                     className={cn(
                       'h-7 rounded-md text-[11px] transition-colors',
                       backgroundTab === id
-                        ? 'bg-[#1f2937] text-white border border-[#2f9fe8]'
-                        : 'text-[#9badcf] hover:text-white'
+                        ? 'bg-[var(--os-surface-3)] text-white border border-[var(--os-border-accent)]'
+                        : 'text-[var(--os-text-secondary)] hover:text-white'
                     )}
                   >
                     {label}
@@ -1422,8 +1521,8 @@ export function AssetLibrary({ mode }: { mode?: string }) {
                         className={cn(
                           'h-7 rounded-md text-[10px] border',
                           safeWallpaperCategory === category.id
-                            ? 'border-sky-400 bg-sky-500/10 text-white'
-                            : 'border-zinc-700 bg-zinc-900 text-zinc-300 hover:text-white'
+                            ? 'border-[var(--os-border-accent)] bg-[var(--os-accent-primary)]/10 text-white'
+                            : 'border-[var(--os-border-default)] bg-[var(--os-surface-1)] text-[var(--os-text-primary)] hover:text-white'
                         )}
                       >
                         {category.label}
@@ -1435,7 +1534,7 @@ export function AssetLibrary({ mode }: { mode?: string }) {
                       <button
                         key={wallpaper.id}
                         type="button"
-                        className="h-10 rounded-lg border border-zinc-700"
+                        className="h-10 rounded-lg border border-[var(--os-border-default)]"
                         style={{ background: `url(${wallpaper.previewUrl}) center / cover no-repeat` }}
                         onClick={() =>
                           updateBackground({
@@ -1456,8 +1555,8 @@ export function AssetLibrary({ mode }: { mode?: string }) {
                       className={cn(
                         'h-9 rounded-lg border text-xs',
                         resolvedSceneBackground?.type === 'solid'
-                          ? 'border-sky-400 text-white bg-sky-500/10'
-                          : 'border-zinc-700 text-zinc-300 bg-zinc-800'
+                          ? 'border-[var(--os-border-accent)] text-white bg-[var(--os-accent-primary)]/10'
+                          : 'border-[var(--os-border-default)] text-[var(--os-text-primary)] bg-[var(--os-surface-2)]'
                       )}
                       onClick={() => updateBackground({ type: 'solid' })}
                     >
@@ -1467,8 +1566,8 @@ export function AssetLibrary({ mode }: { mode?: string }) {
                       className={cn(
                         'h-9 rounded-lg border text-xs',
                         resolvedSceneBackground?.type === 'gradient'
-                          ? 'border-sky-400 text-white bg-sky-500/10'
-                          : 'border-zinc-700 text-zinc-300 bg-zinc-800'
+                          ? 'border-[var(--os-border-accent)] text-white bg-[var(--os-accent-primary)]/10'
+                          : 'border-[var(--os-border-default)] text-[var(--os-text-primary)] bg-[var(--os-surface-2)]'
                       )}
                       onClick={() => updateBackground({ type: 'gradient' })}
                     >
@@ -1476,10 +1575,10 @@ export function AssetLibrary({ mode }: { mode?: string }) {
                     </button>
                   </div>
 
-                  <label className="text-[11px] text-zinc-400">Color 1</label>
+                  <label className="text-[11px] text-[var(--os-text-secondary)]">Color 1</label>
                   <input
                     type="color"
-                    className="w-full h-9 rounded-lg border border-zinc-700 bg-zinc-800"
+                    className="w-full h-9 rounded-lg border border-[var(--os-border-default)] bg-[var(--os-surface-2)]"
                     value={
                       resolvedSceneBackground?.gradientFrom ??
                       resolvedSceneBackground?.color ??
@@ -1493,10 +1592,10 @@ export function AssetLibrary({ mode }: { mode?: string }) {
                     }
                   />
 
-                  <label className="text-[11px] text-zinc-400">Color 2</label>
+                  <label className="text-[11px] text-[var(--os-text-secondary)]">Color 2</label>
                   <input
                     type="color"
-                    className="w-full h-9 rounded-lg border border-zinc-700 bg-zinc-800"
+                    className="w-full h-9 rounded-lg border border-[var(--os-border-default)] bg-[var(--os-surface-2)]"
                     value={resolvedSceneBackground?.gradientTo ?? '#6366f1'}
                     onChange={(e) => updateBackground({ gradientTo: e.target.value })}
                   />
@@ -1504,7 +1603,7 @@ export function AssetLibrary({ mode }: { mode?: string }) {
                     {STUDIO_SOLID_COLORS.slice(0, 24).map((color) => (
                       <button
                         key={color}
-                        className="h-5 w-5 rounded-md border border-zinc-700"
+                        className="h-5 w-5 rounded-md border border-[var(--os-border-default)]"
                         style={{ backgroundColor: color }}
                         onClick={() => updateBackground({ type: 'solid', color })}
                       />
@@ -1514,7 +1613,7 @@ export function AssetLibrary({ mode }: { mode?: string }) {
                     {STUDIO_GRADIENT_PRESETS.map((preset) => (
                       <button
                         key={`${preset.from}-${preset.to}`}
-                        className="h-8 rounded-md border border-zinc-700"
+                        className="h-8 rounded-md border border-[var(--os-border-default)]"
                         style={{ background: `linear-gradient(135deg, ${preset.from}, ${preset.to})` }}
                         onClick={() =>
                           updateBackground({
@@ -1533,7 +1632,7 @@ export function AssetLibrary({ mode }: { mode?: string }) {
               {backgroundTab === 'image' && (
                 <div className="space-y-3">
                   <button
-                    className="w-full h-20 rounded-xl border border-dashed border-zinc-700 bg-zinc-800/60 text-xs text-zinc-300 hover:bg-zinc-800"
+                    className="w-full h-20 rounded-xl border border-dashed border-[var(--os-border-default)] bg-[var(--os-surface-2)]/60 text-xs text-[var(--os-text-primary)] hover:bg-[var(--os-surface-2)]"
                     onClick={() => backgroundImageInputRef.current?.click()}
                   >
                     Drag an image here or upload a file
@@ -1549,8 +1648,8 @@ export function AssetLibrary({ mode }: { mode?: string }) {
                 </div>
               )}
 
-              <div className="pt-2 border-t border-[#283046] space-y-2">
-                <p className="text-[11px] text-zinc-400 uppercase tracking-wide">Options</p>
+              <div className="pt-2 border-t border-[var(--os-border-default)] space-y-2">
+                <p className="text-[11px] text-[var(--os-text-secondary)] uppercase tracking-wide">Options</p>
                 <Slider
                   label="Blur"
                   min={0}
@@ -1589,7 +1688,7 @@ export function AssetLibrary({ mode }: { mode?: string }) {
 
           {activeSection === 'mockup' && (
             <div className="space-y-3">
-              <p className="text-xs text-zinc-300">Mockups de dispositivo</p>
+              <p className="text-xs text-[var(--os-text-primary)]">Mockups de dispositivo</p>
               <div className="grid grid-cols-1 gap-2">
                 {STUDIO_MOCKUP_PRESETS.map((mockup) => (
                   <button
@@ -1598,8 +1697,8 @@ export function AssetLibrary({ mode }: { mode?: string }) {
                       'relative h-20 rounded-lg border text-left overflow-hidden',
                       (project?.deviceFrame?.type ?? 'none') === mockup.deviceType &&
                         (project?.background?.radius ?? 16) === mockup.radius
-                        ? 'border-sky-400 ring-1 ring-sky-400/60'
-                        : 'border-zinc-700 hover:border-zinc-500'
+                        ? 'border-[var(--os-border-accent)] ring-1 ring-[var(--os-accent-primary)]/60'
+                        : 'border-[var(--os-border-default)] hover:border-[var(--os-border-strong)]'
                     )}
                     onClick={() => applyMockupPreset(mockup.id)}
                   >
@@ -1632,8 +1731,8 @@ export function AssetLibrary({ mode }: { mode?: string }) {
                     className={cn(
                       'px-2 py-1 rounded-full text-[10px] border',
                       templateSourceFilter === id
-                        ? 'border-sky-400 bg-sky-400/10 text-white'
-                        : 'border-[#2a3348] bg-[#121827] text-[#aeb9d6] hover:bg-[#1a2438]'
+                        ? 'border-[var(--os-border-accent)] bg-[var(--os-timeline-selection)] text-white'
+                        : 'border-[var(--os-border-default)] bg-[var(--os-bg-panel-2)] text-[var(--os-text-secondary)] hover:bg-[var(--os-bg-hover)]'
                     )}
                     onClick={() => setTemplateSourceFilter(id)}
                   >
@@ -1643,20 +1742,20 @@ export function AssetLibrary({ mode }: { mode?: string }) {
               </div>
 
               {visibleTemplates.length === 0 && (
-                <p className="text-xs text-[#8b99b8]">No templates for this source.</p>
+                <p className="text-xs text-[var(--os-text-muted)]">No templates for this source.</p>
               )}
 
               {visibleTemplates.map((template, index) => (
                 <button
                   key={`${template.source}-${template.id}-${index}`}
-                  className="w-full p-3 bg-zinc-800 rounded-lg text-left hover:bg-zinc-700 transition-colors"
+                  className="w-full p-3 bg-[var(--os-surface-2)] rounded-lg text-left hover:bg-[var(--os-bg-hover)] transition-colors"
                   onClick={() => handleApplyTemplate(template.id)}
                 >
                   <div className="flex items-center justify-between">
                     <p className="text-xs font-medium text-white">{template.name}</p>
-                    <span className="text-[10px] uppercase text-zinc-400">{template.source}</span>
+                    <span className="text-[10px] uppercase text-[var(--os-text-secondary)]">{template.source}</span>
                   </div>
-                  <p className="text-[11px] text-zinc-400 mt-1">{template.description}</p>
+                  <p className="text-[11px] text-[var(--os-text-secondary)] mt-1">{template.description}</p>
                 </button>
               ))}
             </div>

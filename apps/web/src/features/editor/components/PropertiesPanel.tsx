@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useEditorStore } from '@/features/editor/store/editorStore';
 import { Slider } from '@/shared/components/ui/Slider';
 import { Input } from '@/shared/components/ui/Input';
+import { Button } from '@/shared/components/ui/Button';
 import { icons } from '@/shared/components/icons';
 import {
   DEFAULT_MEDIA_CROP,
@@ -63,7 +64,7 @@ function SelectedClipNameField({ clip }: { clip: Clip }) {
 
   return (
     <>
-      <label className="text-[10px] uppercase tracking-wide text-zinc-500 block mb-1">Nombre</label>
+      <label className="text-[10px] uppercase tracking-wide text-[var(--os-text-muted)] block mb-1">Nombre</label>
       <Input
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
@@ -74,7 +75,7 @@ function SelectedClipNameField({ clip }: { clip: Clip }) {
             (e.target as HTMLInputElement).blur();
           }
         }}
-        className="h-8 text-sm font-medium text-white border-zinc-700 bg-zinc-950/80"
+        className="h-8 text-sm font-medium text-white border-[var(--os-border-default)] bg-[var(--os-bg-app)]/80"
       />
     </>
   );
@@ -247,12 +248,12 @@ export function PropertiesPanel() {
     const list = selectedClip.keyframes[channel];
     return (
       <div className="space-y-1">
-        <p className="text-[10px] uppercase tracking-wide text-zinc-500">{label}</p>
-        <div className="relative h-6 rounded bg-zinc-800 border border-zinc-700">
+        <p className="text-[10px] uppercase tracking-wide text-[var(--os-text-muted)]">{label}</p>
+        <div className="relative h-6 rounded bg-[var(--os-surface-2)] border border-[var(--os-border-default)]">
           {list.map((k) => (
             <span
               key={`${k.id}-dot`}
-              className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-indigo-400"
+              className="absolute top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--os-accent-primary)]"
               style={{
                 left: `${(k.time / Math.max(0.01, selectedClip.duration)) * 100}%`,
               }}
@@ -263,9 +264,9 @@ export function PropertiesPanel() {
         <div className="space-y-1">
           {list.map((k) => (
             <div key={k.id} className="flex items-center gap-2 text-[10px]">
-              <span className="text-zinc-400 min-w-[40px]">t={k.time.toFixed(2)}</span>
+              <span className="text-[var(--os-text-secondary)] min-w-[40px]">t={k.time.toFixed(2)}</span>
               <select
-                className="bg-zinc-800 border border-zinc-700 rounded px-1 py-0.5 text-zinc-200"
+                className="bg-[var(--os-surface-2)] border border-[var(--os-border-default)] rounded px-1 py-0.5 text-[var(--os-text-primary)]"
                 value={k.easing}
                 onChange={(e) =>
                   updateKeyframeEasing(
@@ -293,7 +294,7 @@ export function PropertiesPanel() {
               </button>
             </div>
           ))}
-          {list.length === 0 && <p className="text-[10px] text-zinc-600">No keyframes</p>}
+          {list.length === 0 && <p className="text-[10px] text-[var(--os-text-muted)]">No keyframes</p>}
         </div>
       </div>
     );
@@ -520,16 +521,16 @@ export function PropertiesPanel() {
 
   if (!project) {
     return (
-      <div className="editor-panel-fill flex w-full flex-col items-center justify-center bg-[#0c0f18] p-5">
-        <p className="text-center text-sm text-[var(--text-muted)]">No hay proyecto cargado</p>
+      <div className="editor-panel-fill flex w-full flex-col items-center justify-center bg-[var(--os-bg-canvas)] p-5">
+        <p className="text-center text-sm text-[var(--os-text-muted)]">No hay proyecto cargado</p>
       </div>
     );
   }
 
   return (
-    <div className="editor-panel-fill flex flex-col overflow-hidden bg-[#0c0f18]">
+    <div className="editor-panel-fill flex flex-col overflow-hidden bg-[var(--os-bg-canvas)]">
       <div
-        className="flex shrink-0 gap-1 border-b border-[var(--border-default)] bg-[#080b12] p-1.5"
+        className="flex shrink-0 gap-1 border-b border-[var(--os-border-default)] bg-[var(--os-bg-app)] p-1.5"
         role="tablist"
         aria-label="Secciones del panel de propiedades"
       >
@@ -541,8 +542,8 @@ export function PropertiesPanel() {
           className={cn(
             'flex flex-1 items-center justify-center gap-2 rounded-lg px-2 py-2.5 text-[11px] font-semibold uppercase tracking-wide transition-colors',
             activeTab === 'lienzo'
-              ? 'border border-sky-500/45 bg-[#152030] text-sky-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]'
-              : 'border border-transparent text-zinc-500 hover:bg-[#121722] hover:text-zinc-300'
+              ? 'border border-[var(--os-border-accent)]/45 bg-[var(--os-bg-active)] text-[var(--os-text-primary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]'
+              : 'border border-transparent text-[var(--os-text-muted)] hover:bg-[var(--os-bg-panel-2)] hover:text-[var(--os-text-primary)]'
           )}
         >
           <icons.maximize size={14} className="shrink-0 opacity-90" aria-hidden />
@@ -556,8 +557,8 @@ export function PropertiesPanel() {
           className={cn(
             'flex flex-1 items-center justify-center gap-2 rounded-lg px-2 py-2.5 text-[11px] font-semibold uppercase tracking-wide transition-colors',
             activeTab === 'clip'
-              ? 'border border-sky-500/45 bg-[#152030] text-sky-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]'
-              : 'border border-transparent text-zinc-500 hover:bg-[#121722] hover:text-zinc-300'
+              ? 'border border-[var(--os-border-accent)]/45 bg-[var(--os-bg-active)] text-[var(--os-text-primary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]'
+              : 'border border-transparent text-[var(--os-text-muted)] hover:bg-[var(--os-bg-panel-2)] hover:text-[var(--os-text-primary)]'
           )}
         >
           <icons.layers size={14} className="shrink-0 opacity-90" aria-hidden />
@@ -567,7 +568,7 @@ export function PropertiesPanel() {
 
       {activeTab === 'lienzo' && (
         <div
-          className="min-h-0 flex-1 overflow-y-auto bg-[#0a0d14]/60"
+          className="os-scrollbar-minimal min-h-0 flex-1 overflow-y-auto bg-[var(--os-bg-app)]/60"
           role="tabpanel"
           id="properties-panel-lienzo"
         >
@@ -577,10 +578,10 @@ export function PropertiesPanel() {
             patchSceneBackground={patchSceneBackground}
             updateProjectStyle={updateProjectStyle}
           />
-          <div className="border-t border-[var(--border-default)]/50 bg-[#080b11]/90 px-3 py-2.5">
-            <p className="text-[10px] font-medium uppercase tracking-wide text-zinc-500">Zoom y cursor</p>
-            <p className="mt-1 text-[10px] leading-snug text-zinc-600">
-              En la barra izquierda elige <span className="text-zinc-400">Zoom / Cursor</span> (icono de pantalla) para
+          <div className="border-t border-[var(--os-border-default)]/50 bg-[var(--os-bg-app)]/90 px-3 py-2.5">
+            <p className="text-[10px] font-medium uppercase tracking-wide text-[var(--os-text-muted)]">Zoom y cursor</p>
+            <p className="mt-1 text-[10px] leading-snug text-[var(--os-text-muted)]">
+              En la barra izquierda elige <span className="text-[var(--os-text-secondary)]">Zoom / Cursor</span> (icono de pantalla) para
               zoom tutorial y puntero simulado del proyecto.
             </p>
           </div>
@@ -590,23 +591,23 @@ export function PropertiesPanel() {
       {activeTab === 'clip' &&
         (!selectedClip ? (
           <div
-            className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 overflow-y-auto bg-[#090c12]/55 px-5 py-8 text-center"
+            className="os-scrollbar-minimal flex min-h-0 flex-1 flex-col items-center justify-center gap-4 overflow-y-auto bg-[var(--os-bg-app)]/55 px-5 py-8 text-center"
             role="tabpanel"
             id="properties-panel-clip-empty"
           >
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[var(--border-default)] bg-[#121722] shadow-inner">
-              <icons.layers size={26} className="text-zinc-500" aria-hidden />
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[var(--os-border-default)] bg-[var(--os-bg-panel-2)] shadow-inner">
+              <icons.layers size={26} className="text-[var(--os-text-muted)]" aria-hidden />
             </div>
             <div className="max-w-[220px] space-y-2">
-              <p className="text-sm font-medium text-zinc-200">Ningún clip seleccionado</p>
-              <p className="text-xs leading-relaxed text-zinc-500">
+              <p className="text-sm font-medium text-[var(--os-text-primary)]">Ningún clip seleccionado</p>
+              <p className="text-xs leading-relaxed text-[var(--os-text-muted)]">
                 Pulsa un clip en la línea de tiempo para ver transformación, efectos, filtros, texto y tiempo.
               </p>
             </div>
             <button
               type="button"
               onClick={() => setActiveTab('lienzo')}
-              className="text-[11px] font-medium text-sky-400/90 underline-offset-2 hover:text-sky-300 hover:underline"
+              className="text-[11px] font-medium text-[var(--os-accent-primary)] underline-offset-2 hover:text-[var(--os-button-primary-bg-hover)] hover:underline"
             >
               Ir a Lienzo (blur, marco, cámara)
             </button>
@@ -618,43 +619,43 @@ export function PropertiesPanel() {
             id="properties-panel-clip"
             aria-label="Propiedades del clip"
           >
-          <div className="shrink-0 border-b border-zinc-800 p-4">
+          <div className="shrink-0 border-b border-[var(--os-border-default)] p-4">
             <SelectedClipNameField key={selectedClip.id} clip={selectedClip} />
-            <p className="mt-1 text-xs text-zinc-500">
+            <p className="mt-1 text-xs text-[var(--os-text-muted)]">
               {selectedClip.type.charAt(0).toUpperCase() + selectedClip.type.slice(1)} Clip
             </p>
           </div>
 
-          <div className="min-h-0 flex-1 space-y-6 overflow-y-auto p-4">
+          <div className="os-scrollbar-minimal min-h-0 flex-1 space-y-6 overflow-y-auto p-4">
         <div className="space-y-3">
-          <h4 className="text-xs font-medium text-zinc-400">Keyframes</h4>
+          <h4 className="text-xs font-medium text-[var(--os-text-secondary)]">Keyframes</h4>
           <div className="flex flex-col gap-2">
             <button
-              className="text-xs px-2 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-left"
+              className="text-xs px-2 py-1 rounded bg-[var(--os-surface-2)] hover:bg-[var(--os-bg-hover)] text-[var(--os-text-primary)] text-left"
               onClick={() => addKeyframe('positionX')}
             >
               Add keyframe at playhead (X)
             </button>
             <button
-              className="text-xs px-2 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-left"
+              className="text-xs px-2 py-1 rounded bg-[var(--os-surface-2)] hover:bg-[var(--os-bg-hover)] text-[var(--os-text-primary)] text-left"
               onClick={() => addKeyframe('positionY')}
             >
               Add keyframe at playhead (Y)
             </button>
             <button
-              className="text-xs px-2 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-left"
+              className="text-xs px-2 py-1 rounded bg-[var(--os-surface-2)] hover:bg-[var(--os-bg-hover)] text-[var(--os-text-primary)] text-left"
               onClick={() => addKeyframe('opacity')}
             >
               Add keyframe at playhead (Opacity)
             </button>
             <button
-              className="text-xs px-2 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-left"
+              className="text-xs px-2 py-1 rounded bg-[var(--os-surface-2)] hover:bg-[var(--os-bg-hover)] text-[var(--os-text-primary)] text-left"
               onClick={() => addKeyframe('scaleX')}
             >
               Add keyframe at playhead (Scale X)
             </button>
             <button
-              className="text-xs px-2 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-left"
+              className="text-xs px-2 py-1 rounded bg-[var(--os-surface-2)] hover:bg-[var(--os-bg-hover)] text-[var(--os-text-primary)] text-left"
               onClick={() => addKeyframe('scaleY')}
             >
               Add keyframe at playhead (Scale Y)
@@ -670,12 +671,12 @@ export function PropertiesPanel() {
         </div>
 
         <div className="space-y-3">
-          <h4 className="text-xs font-medium text-zinc-400">Effects</h4>
+          <h4 className="text-xs font-medium text-[var(--os-text-secondary)]">Effects</h4>
           <div className="flex flex-wrap gap-1.5">
             {EFFECT_PRESETS.map((preset) => (
               <button
                 key={preset.id}
-                className="px-2 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-[10px] text-zinc-200"
+                className="px-2 py-1 rounded bg-[var(--os-surface-2)] hover:bg-[var(--os-bg-hover)] text-[10px] text-[var(--os-text-primary)]"
                 onClick={() => applyEffectPreset(preset.id)}
                 title={preset.supportedNow ? 'Apply effect' : 'Coming soon'}
               >
@@ -687,9 +688,9 @@ export function PropertiesPanel() {
         </div>
 
         <div className="space-y-3">
-          <h4 className="text-xs font-medium text-zinc-400">Timeline Pro</h4>
+          <h4 className="text-xs font-medium text-[var(--os-text-secondary)]">Timeline Pro</h4>
           <div className="space-y-2">
-            <label className="text-xs text-zinc-500">Speed</label>
+            <label className="text-xs text-[var(--os-text-muted)]">Speed</label>
             <Slider
               value={selectedClip.speed ?? 1}
               min={0.1}
@@ -700,12 +701,12 @@ export function PropertiesPanel() {
             />
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-xs text-zinc-500">Reverse</span>
+            <span className="text-xs text-[var(--os-text-muted)]">Reverse</span>
             <button
               className={`px-2 py-1 rounded text-xs border ${
                 selectedClip.reverse
-                  ? 'border-sky-400 bg-sky-400/10 text-white'
-                  : 'border-zinc-700 text-zinc-300'
+                  ? 'border-[var(--os-border-accent)] bg-[var(--os-timeline-selection)] text-[var(--os-text-primary)]'
+                  : 'border-[var(--os-border-default)] text-[var(--os-text-primary)]'
               }`}
               onClick={() => toggleClipReverse(!selectedClip.reverse)}
             >
@@ -714,14 +715,14 @@ export function PropertiesPanel() {
           </div>
           <div className="space-y-2">
             <button
-              className="text-xs px-2 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-left"
+              className="text-xs px-2 py-1 rounded bg-[var(--os-surface-2)] hover:bg-[var(--os-bg-hover)] text-[var(--os-text-primary)] text-left"
               onClick={addTimeRemapKeyframe}
             >
               Add speed keyframe at playhead
             </button>
             <div className="space-y-1">
               {(selectedClip.timeMap ?? []).map((k) => (
-                <div key={k.id} className="text-[10px] text-zinc-400">
+                <div key={k.id} className="text-[10px] text-[var(--os-text-secondary)]">
                   t={k.time.toFixed(2)} speed={k.speed.toFixed(2)}x
                 </div>
               ))}
@@ -730,12 +731,12 @@ export function PropertiesPanel() {
         </div>
 
         <div className="space-y-3">
-          <h4 className="text-xs font-medium text-zinc-400">Filters</h4>
+          <h4 className="text-xs font-medium text-[var(--os-text-secondary)]">Filters</h4>
           <div className="flex flex-wrap gap-1.5">
             {FILTER_PRESETS.map((preset) => (
               <span
                 key={preset.id}
-                className="px-2 py-1 rounded bg-zinc-800 text-[10px] text-zinc-300"
+                className="px-2 py-1 rounded bg-[var(--os-surface-2)] text-[10px] text-[var(--os-text-primary)]"
               >
                 {preset.name}
               </span>
@@ -744,29 +745,29 @@ export function PropertiesPanel() {
         </div>
 
         <div className="space-y-3">
-          <h4 className="text-xs font-medium text-zinc-400">Motion Design (After Effects style)</h4>
+          <h4 className="text-xs font-medium text-[var(--os-text-secondary)]">Motion Design (After Effects style)</h4>
           <div className="grid grid-cols-2 gap-2">
             {MOTION_DESIGN_PRESETS.map((preset) => (
               <button
                 key={preset.id}
-                className="rounded bg-zinc-800 hover:bg-zinc-700 px-2 py-2 text-left"
+                className="rounded bg-[var(--os-surface-2)] hover:bg-[var(--os-bg-hover)] px-2 py-2 text-left"
                 onClick={() => applyMotionDesignPreset(preset.id)}
                 title={preset.description}
               >
-                <p className="text-[11px] text-zinc-200">{preset.name}</p>
-                <p className="text-[10px] text-zinc-500">{preset.description}</p>
+                <p className="text-[11px] text-[var(--os-text-primary)]">{preset.name}</p>
+                <p className="text-[10px] text-[var(--os-text-muted)]">{preset.description}</p>
               </button>
             ))}
           </div>
         </div>
 
         <div className="space-y-3">
-          <h4 className="text-xs font-medium text-zinc-400">Animation Options</h4>
+          <h4 className="text-xs font-medium text-[var(--os-text-secondary)]">Animation Options</h4>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-xs text-zinc-500">Property</label>
+              <label className="text-xs text-[var(--os-text-muted)]">Property</label>
               <select
-                className="w-full bg-zinc-800 border border-zinc-700 rounded px-2 py-2 text-xs text-zinc-200"
+                className="w-full bg-[var(--os-surface-2)] border border-[var(--os-border-default)] rounded px-2 py-2 text-xs text-[var(--os-text-primary)]"
                 value={animProperty}
                 onChange={(e) =>
                   setAnimProperty(e.target.value as 'scale' | 'opacity' | 'positionY' | 'rotation')
@@ -779,9 +780,9 @@ export function PropertiesPanel() {
               </select>
             </div>
             <div>
-              <label className="text-xs text-zinc-500">Direction</label>
+              <label className="text-xs text-[var(--os-text-muted)]">Direction</label>
               <select
-                className="w-full bg-zinc-800 border border-zinc-700 rounded px-2 py-2 text-xs text-zinc-200"
+                className="w-full bg-[var(--os-surface-2)] border border-[var(--os-border-default)] rounded px-2 py-2 text-xs text-[var(--os-text-primary)]"
                 value={animDirection}
                 onChange={(e) => setAnimDirection(e.target.value as 'in' | 'out')}
               >
@@ -790,7 +791,7 @@ export function PropertiesPanel() {
               </select>
             </div>
             <div>
-              <label className="text-xs text-zinc-500">From</label>
+              <label className="text-xs text-[var(--os-text-muted)]">From</label>
               <Input
                 type="number"
                 step="0.1"
@@ -799,7 +800,7 @@ export function PropertiesPanel() {
               />
             </div>
             <div>
-              <label className="text-xs text-zinc-500">To</label>
+              <label className="text-xs text-[var(--os-text-muted)]">To</label>
               <Input
                 type="number"
                 step="0.1"
@@ -808,7 +809,7 @@ export function PropertiesPanel() {
               />
             </div>
             <div>
-              <label className="text-xs text-zinc-500">Duration (s)</label>
+              <label className="text-xs text-[var(--os-text-muted)]">Duration (s)</label>
               <Input
                 type="number"
                 step="0.1"
@@ -818,9 +819,9 @@ export function PropertiesPanel() {
               />
             </div>
             <div>
-              <label className="text-xs text-zinc-500">Easing</label>
+              <label className="text-xs text-[var(--os-text-muted)]">Easing</label>
               <select
-                className="w-full bg-zinc-800 border border-zinc-700 rounded px-2 py-2 text-xs text-zinc-200"
+                className="w-full bg-[var(--os-surface-2)] border border-[var(--os-border-default)] rounded px-2 py-2 text-xs text-[var(--os-text-primary)]"
                 value={animEasing}
                 onChange={(e) => setAnimEasing(e.target.value as Keyframe['easing'])}
               >
@@ -835,26 +836,23 @@ export function PropertiesPanel() {
               </select>
             </div>
           </div>
-          <button
-            className="w-full rounded bg-indigo-600 hover:bg-indigo-500 px-2 py-2 text-xs text-white"
-            onClick={applyConfiguredAnimation}
-          >
+          <Button type="button" variant="primary" size="sm" className="w-full" onClick={applyConfiguredAnimation}>
             Apply Animation Settings
-          </button>
+          </Button>
         </div>
 
         <div className="space-y-3">
-          <h4 className="text-xs font-medium text-zinc-400">
+          <h4 className="text-xs font-medium text-[var(--os-text-secondary)]">
             Transitions
           </h4>
           <div className="space-y-2">
             <div>
-              <p className="text-[10px] text-zinc-500 mb-1">In</p>
+              <p className="text-[10px] text-[var(--os-text-muted)] mb-1">In</p>
               <div className="flex flex-wrap gap-1.5">
                 {TRANSITION_PRESETS.map((preset) => (
                   <button
                     key={`in-${preset.id}`}
-                    className="px-2 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-[10px] text-zinc-300"
+                    className="px-2 py-1 rounded bg-[var(--os-surface-2)] hover:bg-[var(--os-bg-hover)] text-[10px] text-[var(--os-text-primary)]"
                     onClick={() => applyTransitionPreset('in', preset.id)}
                   >
                     {preset.name}
@@ -863,12 +861,12 @@ export function PropertiesPanel() {
               </div>
             </div>
             <div>
-              <p className="text-[10px] text-zinc-500 mb-1">Out</p>
+              <p className="text-[10px] text-[var(--os-text-muted)] mb-1">Out</p>
               <div className="flex flex-wrap gap-1.5">
                 {TRANSITION_PRESETS.map((preset) => (
                   <button
                     key={`out-${preset.id}`}
-                    className="px-2 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-[10px] text-zinc-300"
+                    className="px-2 py-1 rounded bg-[var(--os-surface-2)] hover:bg-[var(--os-bg-hover)] text-[10px] text-[var(--os-text-primary)]"
                     onClick={() => applyTransitionPreset('out', preset.id)}
                   >
                     {preset.name}
@@ -880,13 +878,13 @@ export function PropertiesPanel() {
         </div>
 
         <div className="space-y-3">
-          <h4 className="text-xs font-medium text-zinc-400 flex items-center gap-2">
+          <h4 className="text-xs font-medium text-[var(--os-text-secondary)] flex items-center gap-2">
             <icons.move size={14} />
             Position
           </h4>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-xs text-zinc-500">X</label>
+              <label className="text-xs text-[var(--os-text-muted)]">X</label>
               <Input
                 type="number"
                 value={selectedClip.transform.x}
@@ -894,7 +892,7 @@ export function PropertiesPanel() {
               />
             </div>
             <div>
-              <label className="text-xs text-zinc-500">Y</label>
+              <label className="text-xs text-[var(--os-text-muted)]">Y</label>
               <Input
                 type="number"
                 value={selectedClip.transform.y}
@@ -906,7 +904,7 @@ export function PropertiesPanel() {
 
         {selectedClip.type === 'audio' && (
           <div className="space-y-3">
-            <h4 className="text-xs font-medium text-zinc-400">Volume</h4>
+            <h4 className="text-xs font-medium text-[var(--os-text-secondary)]">Volume</h4>
             <Slider
               value={(selectedClip.volume ?? 1) * 100}
               min={0}
@@ -932,13 +930,13 @@ export function PropertiesPanel() {
         )}
 
         <div className="space-y-3">
-          <h4 className="text-xs font-medium text-zinc-400 flex items-center gap-2">
+          <h4 className="text-xs font-medium text-[var(--os-text-secondary)] flex items-center gap-2">
             <icons.maximize size={14} />
             Scale
           </h4>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-xs text-zinc-500">Scale X</label>
+              <label className="text-xs text-[var(--os-text-muted)]">Scale X</label>
               <Input
                 type="number"
                 step="0.1"
@@ -947,7 +945,7 @@ export function PropertiesPanel() {
               />
             </div>
             <div>
-              <label className="text-xs text-zinc-500">Scale Y</label>
+              <label className="text-xs text-[var(--os-text-muted)]">Scale Y</label>
               <Input
                 type="number"
                 step="0.1"
@@ -959,17 +957,17 @@ export function PropertiesPanel() {
         </div>
 
         {(selectedClip.type === 'video' || selectedClip.type === 'image') && (
-          <div className="space-y-3 rounded-md border border-zinc-800 bg-zinc-900/40 p-2">
-            <h4 className="text-xs font-medium text-zinc-400">Medio · layout (tipo Premiere / Resolve)</h4>
-            <p className="text-[10px] leading-snug text-zinc-500">
-              Cómo escala el archivo dentro del lienzo: <strong className="text-zinc-400">Cover</strong> rellena
-              recortando, <strong className="text-zinc-400">Contain</strong> muestra todo el encuadre (bandas),
-              <strong className="text-zinc-400"> Fill</strong> estira sin respetar proporción.
+          <div className="space-y-3 rounded-md border border-[var(--os-border-default)] bg-[var(--os-surface-1)]/40 p-2">
+            <h4 className="text-xs font-medium text-[var(--os-text-secondary)]">Medio · layout (tipo Premiere / Resolve)</h4>
+            <p className="text-[10px] leading-snug text-[var(--os-text-muted)]">
+              Cómo escala el archivo dentro del lienzo: <strong className="text-[var(--os-text-secondary)]">Cover</strong> rellena
+              recortando, <strong className="text-[var(--os-text-secondary)]">Contain</strong> muestra todo el encuadre (bandas),
+              <strong className="text-[var(--os-text-secondary)]"> Fill</strong> estira sin respetar proporción.
             </p>
             <div>
-              <label className="text-[10px] uppercase tracking-wide text-zinc-500">Encuadre</label>
+              <label className="text-[10px] uppercase tracking-wide text-[var(--os-text-muted)]">Encuadre</label>
               <select
-                className="mt-1 w-full rounded border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-xs text-zinc-200"
+                className="mt-1 w-full rounded border border-[var(--os-border-default)] bg-[var(--os-surface-1)] px-2 py-1.5 text-xs text-[var(--os-text-primary)]"
                 value={selectedClip.mediaLayout ?? 'cover'}
                 onChange={(e) => {
                   if (!selectedClip || !project) return;
@@ -995,8 +993,8 @@ export function PropertiesPanel() {
               </select>
             </div>
             {selectedClip.type === 'video' && (
-              <div className="space-y-1 border-t border-zinc-800/80 pt-2">
-                <label className="flex cursor-pointer items-center gap-2 text-[11px] text-zinc-300">
+              <div className="space-y-1 border-t border-[var(--os-border-default)]/80 pt-2">
+                <label className="flex cursor-pointer items-center gap-2 text-[11px] text-[var(--os-text-primary)]">
                   <input
                     type="checkbox"
                     checked={!!selectedClip.trackFace}
@@ -1022,25 +1020,25 @@ export function PropertiesPanel() {
                   />
                   Track face (encuadre hacia la cara)
                 </label>
-                <p className="text-[10px] leading-snug text-zinc-600">
+                <p className="text-[10px] leading-snug text-[var(--os-text-muted)]">
                   Usa la API Face Detector del navegador (p. ej. Chrome). El desplazamiento se aplica en preview y de
                   forma aproximada al exportar WebM.
                 </p>
                 {!isFaceDetectorSupported() && (
-                  <p className="text-[10px] text-amber-500/90">
+                  <p className="text-[10px] text-[var(--os-warning)]">
                     Este navegador no expone FaceDetector; la opción no tendrá efecto.
                   </p>
                 )}
               </div>
             )}
-            <div className="space-y-1 border-t border-zinc-800/80 pt-2">
-              <h4 className="text-[10px] font-medium uppercase tracking-wide text-zinc-500">Recorte del archivo</h4>
-              <p className="text-[10px] leading-snug text-zinc-500">
+            <div className="space-y-1 border-t border-[var(--os-border-default)]/80 pt-2">
+              <h4 className="text-[10px] font-medium uppercase tracking-wide text-[var(--os-text-muted)]">Recorte del archivo</h4>
+              <p className="text-[10px] leading-snug text-[var(--os-text-muted)]">
                 Usa «Recortar» en el lienzo para arrastrar bordes.
               </p>
               <button
                 type="button"
-                className="rounded-md border border-zinc-600 bg-zinc-800 px-2 py-1.5 text-[11px] text-zinc-200 hover:bg-zinc-750"
+                className="rounded-md border border-[var(--os-border-strong)] bg-[var(--os-surface-2)] px-2 py-1.5 text-[11px] text-[var(--os-text-primary)] hover:bg-[var(--os-bg-hover)]"
                 onClick={() => {
                   if (!selectedClip || !project) return;
                   const track = project.tracks.find((t) =>
@@ -1063,7 +1061,7 @@ export function PropertiesPanel() {
         )}
 
         <div className="space-y-3">
-          <h4 className="text-xs font-medium text-zinc-400 flex items-center gap-2">
+          <h4 className="text-xs font-medium text-[var(--os-text-secondary)] flex items-center gap-2">
             <icons.rotate size={14} />
             Rotation
           </h4>
@@ -1078,7 +1076,7 @@ export function PropertiesPanel() {
         </div>
 
         <div className="space-y-3">
-          <h4 className="text-xs font-medium text-zinc-400">Opacity</h4>
+          <h4 className="text-xs font-medium text-[var(--os-text-secondary)]">Opacity</h4>
           <Slider
             value={selectedClip.transform.opacity * 100}
             min={0}
@@ -1091,7 +1089,7 @@ export function PropertiesPanel() {
 
         {selectedClip.type === 'text' && (
           <div className="space-y-3">
-            <h4 className="text-xs font-medium text-zinc-400 flex items-center gap-2">
+            <h4 className="text-xs font-medium text-[var(--os-text-secondary)] flex items-center gap-2">
               <icons.text size={14} />
               Text Content
             </h4>
@@ -1102,7 +1100,7 @@ export function PropertiesPanel() {
             />
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-xs text-zinc-500">Font Size</label>
+                <label className="text-xs text-[var(--os-text-muted)]">Font Size</label>
                 <Input
                   type="number"
                   value={selectedClip.fontSize || 48}
@@ -1123,9 +1121,9 @@ export function PropertiesPanel() {
                 />
               </div>
               <div>
-                <label className="text-xs text-zinc-500">Font Family</label>
+                <label className="text-xs text-[var(--os-text-muted)]">Font Family</label>
                 <select
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded px-2 py-2 text-xs text-zinc-200"
+                  className="w-full bg-[var(--os-surface-2)] border border-[var(--os-border-default)] rounded px-2 py-2 text-xs text-[var(--os-text-primary)]"
                   value={selectedClip.fontFamily || 'Inter'}
                   onChange={(e) => {
                     if (!selectedClip || !project) return;
@@ -1151,12 +1149,12 @@ export function PropertiesPanel() {
               </div>
             </div>
             <div>
-              <label className="text-xs text-zinc-500">Color Palette</label>
+              <label className="text-xs text-[var(--os-text-muted)]">Color Palette</label>
               <div className="grid grid-cols-10 gap-1 mt-1">
                 {MOTION_COLOR_PALETTE.map((color) => (
                   <button
                     key={color}
-                    className="h-5 w-5 rounded border border-zinc-700"
+                    className="h-5 w-5 rounded border border-[var(--os-border-default)]"
                     style={{ backgroundColor: color }}
                     onClick={() => {
                       if (!selectedClip || !project) return;
@@ -1181,13 +1179,13 @@ export function PropertiesPanel() {
         )}
 
         <div className="space-y-3">
-          <h4 className="text-xs font-medium text-zinc-400 flex items-center gap-2">
+          <h4 className="text-xs font-medium text-[var(--os-text-secondary)] flex items-center gap-2">
             <icons.clock size={14} />
             Timing
           </h4>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-xs text-zinc-500">Start (s)</label>
+              <label className="text-xs text-[var(--os-text-muted)]">Start (s)</label>
               <Input
                 type="number"
                 step="0.1"
@@ -1196,7 +1194,7 @@ export function PropertiesPanel() {
               />
             </div>
             <div>
-              <label className="text-xs text-zinc-500">Duration (s)</label>
+              <label className="text-xs text-[var(--os-text-muted)]">Duration (s)</label>
               <Input
                 type="number"
                 step="0.1"
@@ -1207,14 +1205,14 @@ export function PropertiesPanel() {
           </div>
         </div>
 
-          <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+          <div className="os-scrollbar-minimal max-h-48 space-y-2 overflow-y-auto pr-1">
             {(project.zoomFragments ?? []).length === 0 && (
-              <p className="text-[10px] text-zinc-600">Sin fragmentos de zoom.</p>
+              <p className="text-[10px] text-[var(--os-text-muted)]">Sin fragmentos de zoom.</p>
             )}
             {(project.zoomFragments ?? []).map((f) => (
-              <div key={f.id} className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-2 space-y-2">
+              <div key={f.id} className="rounded-lg border border-[var(--os-border-default)] bg-[var(--os-surface-1)]/50 p-2 space-y-2">
                 <div className="flex justify-between items-center gap-1">
-                  <span className="text-[10px] text-zinc-500 font-mono truncate">{f.id.slice(0, 12)}…</span>
+                  <span className="text-[10px] text-[var(--os-text-muted)] font-mono truncate">{f.id.slice(0, 12)}…</span>
                   <button
                     type="button"
                     className="text-[10px] text-red-400 hover:text-red-300"
@@ -1230,7 +1228,7 @@ export function PropertiesPanel() {
                 </div>
                 <div className="grid grid-cols-2 gap-1">
                   <div>
-                    <label className="text-[10px] text-zinc-500">Inicio (s)</label>
+                    <label className="text-[10px] text-[var(--os-text-muted)]">Inicio (s)</label>
                     <Input
                       type="number"
                       step="0.1"
@@ -1249,7 +1247,7 @@ export function PropertiesPanel() {
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] text-zinc-500">Fin (s)</label>
+                    <label className="text-[10px] text-[var(--os-text-muted)]">Fin (s)</label>
                     <Input
                       type="number"
                       step="0.1"
@@ -1269,7 +1267,7 @@ export function PropertiesPanel() {
                   </div>
                 </div>
                 <div>
-                  <label className="text-[10px] text-zinc-500">Nivel 1–10 (más = más zoom)</label>
+                  <label className="text-[10px] text-[var(--os-text-muted)]">Nivel 1–10 (más = más zoom)</label>
                   <Slider
                     value={f.zoomLevel}
                     min={1}
@@ -1285,7 +1283,7 @@ export function PropertiesPanel() {
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] text-zinc-500">Velocidad transición 1–10</label>
+                  <label className="text-[10px] text-[var(--os-text-muted)]">Velocidad transición 1–10</label>
                   <Slider
                     value={f.speed}
                     min={1}
@@ -1302,7 +1300,7 @@ export function PropertiesPanel() {
                 </div>
                 <div className="grid grid-cols-2 gap-1">
                   <div>
-                    <label className="text-[10px] text-zinc-500">Foco X %</label>
+                    <label className="text-[10px] text-[var(--os-text-muted)]">Foco X %</label>
                     <Slider
                       value={f.focusX}
                       min={0}
@@ -1318,7 +1316,7 @@ export function PropertiesPanel() {
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] text-zinc-500">Foco Y %</label>
+                    <label className="text-[10px] text-[var(--os-text-muted)]">Foco Y %</label>
                     <Slider
                       value={f.focusY}
                       min={0}
@@ -1334,7 +1332,7 @@ export function PropertiesPanel() {
                     />
                   </div>
                 </div>
-                <label className="flex items-center gap-2 text-[10px] text-zinc-400">
+                <label className="flex items-center gap-2 text-[10px] text-[var(--os-text-secondary)]">
                   <input
                     type="checkbox"
                     checked={!!f.movementEnabled}
@@ -1360,7 +1358,7 @@ export function PropertiesPanel() {
                 {f.movementEnabled && (
                   <div className="grid grid-cols-2 gap-1">
                     <div>
-                      <label className="text-[10px] text-zinc-500">Fin foco X %</label>
+                      <label className="text-[10px] text-[var(--os-text-muted)]">Fin foco X %</label>
                       <Slider
                         value={f.movementEndX ?? f.focusX}
                         min={0}
@@ -1378,7 +1376,7 @@ export function PropertiesPanel() {
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] text-zinc-500">Fin foco Y %</label>
+                      <label className="text-[10px] text-[var(--os-text-muted)]">Fin foco Y %</label>
                       <Slider
                         value={f.movementEndY ?? f.focusY}
                         min={0}
@@ -1397,7 +1395,7 @@ export function PropertiesPanel() {
                     </div>
                   </div>
                 )}
-                <label className="flex items-center gap-2 text-[10px] text-zinc-400">
+                <label className="flex items-center gap-2 text-[10px] text-[var(--os-text-secondary)]">
                   <input
                     type="checkbox"
                     checked={!!f.enable3D}
@@ -1423,7 +1421,7 @@ export function PropertiesPanel() {
                 </label>
                 {f.enable3D && (
                   <div className="space-y-1">
-                    <label className="text-[10px] text-zinc-500">Intensidad 3D</label>
+                    <label className="text-[10px] text-[var(--os-text-muted)]">Intensidad 3D</label>
                     <Slider
                       value={f.perspective3DIntensity ?? 40}
                       min={0}
@@ -1441,7 +1439,7 @@ export function PropertiesPanel() {
                     />
                     <div className="grid grid-cols-2 gap-1">
                       <div>
-                        <label className="text-[10px] text-zinc-500">Ángulo X</label>
+                        <label className="text-[10px] text-[var(--os-text-muted)]">Ángulo X</label>
                         <Input
                           type="number"
                           className="h-8 text-xs"
@@ -1459,7 +1457,7 @@ export function PropertiesPanel() {
                         />
                       </div>
                       <div>
-                        <label className="text-[10px] text-zinc-500">Ángulo Y</label>
+                        <label className="text-[10px] text-[var(--os-text-muted)]">Ángulo Y</label>
                         <Input
                           type="number"
                           className="h-8 text-xs"
@@ -1483,12 +1481,12 @@ export function PropertiesPanel() {
             ))}
           </div>
 
-        <div className="space-y-3 border-t border-zinc-800 pt-3">
-          <h4 className="text-xs font-medium text-zinc-400 flex items-center gap-2">
+        <div className="space-y-3 border-t border-[var(--os-border-default)] pt-3">
+          <h4 className="text-xs font-medium text-[var(--os-text-secondary)] flex items-center gap-2">
             <icons.move size={14} />
             Cursor pantalla
           </h4>
-          <p className="text-[10px] text-zinc-600 leading-snug">
+          <p className="text-[10px] text-[var(--os-text-muted)] leading-snug">
             Cursor simulado encima del vídeo. Añade puntos en la línea de tiempo para animar la posición (porcentaje
             del lienzo).
           </p>
@@ -1498,7 +1496,7 @@ export function PropertiesPanel() {
                 key={p.id}
                 type="button"
                 title={p.subtitle}
-                className="rounded-md border border-zinc-700 bg-zinc-900/80 px-2 py-1.5 text-[10px] text-zinc-200 hover:border-sky-500/60 hover:bg-zinc-800"
+                className="rounded-md border border-[var(--os-border-default)] bg-[var(--os-surface-1)]/80 px-2 py-1.5 text-[10px] text-[var(--os-text-primary)] hover:border-[var(--os-border-accent)]/60 hover:bg-[var(--os-surface-2)]"
                 onClick={() => {
                   if (!project) return;
                   updateProjectStyle({
@@ -1510,7 +1508,7 @@ export function PropertiesPanel() {
               </button>
             ))}
           </div>
-          <label className="flex items-center gap-2 text-[11px] text-zinc-300">
+          <label className="flex items-center gap-2 text-[11px] text-[var(--os-text-primary)]">
             <input
               type="checkbox"
               checked={(project.screenCursor ?? DEFAULT_SCREEN_CURSOR).visible}
@@ -1523,9 +1521,9 @@ export function PropertiesPanel() {
             Mostrar cursor
           </label>
           <div>
-            <label className="text-[10px] text-zinc-500">Estilo</label>
+            <label className="text-[10px] text-[var(--os-text-muted)]">Estilo</label>
             <select
-              className="mt-1 w-full bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-zinc-200"
+              className="mt-1 w-full bg-[var(--os-surface-2)] border border-[var(--os-border-default)] rounded px-2 py-1 text-xs text-[var(--os-text-primary)]"
               value={(project.screenCursor ?? DEFAULT_SCREEN_CURSOR).style}
               onChange={(e) => {
                 if (!project) return;
@@ -1544,9 +1542,9 @@ export function PropertiesPanel() {
             </select>
           </div>
           <div>
-            <label className="text-[10px] text-zinc-500">Efecto al clic</label>
+            <label className="text-[10px] text-[var(--os-text-muted)]">Efecto al clic</label>
             <select
-              className="mt-1 w-full bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-zinc-200"
+              className="mt-1 w-full bg-[var(--os-surface-2)] border border-[var(--os-border-default)] rounded px-2 py-1 text-xs text-[var(--os-text-primary)]"
               value={(project.screenCursor ?? DEFAULT_SCREEN_CURSOR).clickEffect}
               onChange={(e) => {
                 if (!project) return;
@@ -1565,7 +1563,7 @@ export function PropertiesPanel() {
             </select>
           </div>
           <div>
-            <label className="text-[10px] text-zinc-500">Tamaño</label>
+            <label className="text-[10px] text-[var(--os-text-muted)]">Tamaño</label>
             <Slider
               value={(project.screenCursor ?? DEFAULT_SCREEN_CURSOR).size}
               min={16}
@@ -1579,7 +1577,7 @@ export function PropertiesPanel() {
             />
           </div>
           <div>
-            <label className="text-[10px] text-zinc-500">Suavizado trayectoria</label>
+            <label className="text-[10px] text-[var(--os-text-muted)]">Suavizado trayectoria</label>
             <Slider
               value={(project.screenCursor ?? DEFAULT_SCREEN_CURSOR).smoothing}
               min={0}
@@ -1594,10 +1592,10 @@ export function PropertiesPanel() {
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-[10px] text-zinc-500">Color</label>
+              <label className="text-[10px] text-[var(--os-text-muted)]">Color</label>
               <Input
                 type="color"
-                className="h-8 p-0 border-zinc-700"
+                className="h-8 p-0 border-[var(--os-border-default)]"
                 value={(project.screenCursor ?? DEFAULT_SCREEN_CURSOR).color}
                 onChange={(e) => {
                   if (!project) return;
@@ -1607,10 +1605,10 @@ export function PropertiesPanel() {
               />
             </div>
             <div>
-              <label className="text-[10px] text-zinc-500">Acento / clic</label>
+              <label className="text-[10px] text-[var(--os-text-muted)]">Acento / clic</label>
               <Input
                 type="color"
-                className="h-8 p-0 border-zinc-700"
+                className="h-8 p-0 border-[var(--os-border-default)]"
                 value={(project.screenCursor ?? DEFAULT_SCREEN_CURSOR).ringColor}
                 onChange={(e) => {
                   if (!project) return;
@@ -1622,7 +1620,7 @@ export function PropertiesPanel() {
           </div>
           <button
             type="button"
-            className="w-full rounded-lg border border-zinc-700 bg-zinc-800/80 px-2 py-2 text-[11px] text-zinc-200 hover:bg-zinc-800"
+            className="w-full rounded-lg border border-[var(--os-border-default)] bg-[var(--os-surface-2)]/80 px-2 py-2 text-[11px] text-[var(--os-text-primary)] hover:bg-[var(--os-surface-2)]"
             onClick={() => {
               if (!project) return;
               const sc = project.screenCursor ?? DEFAULT_SCREEN_CURSOR;
@@ -1643,11 +1641,11 @@ export function PropertiesPanel() {
           >
             + Punto de cursor en cabezal (50%, 50%)
           </button>
-          <div className="space-y-1 max-h-32 overflow-y-auto">
+          <div className="os-scrollbar-minimal max-h-32 space-y-1 overflow-y-auto">
             {(project.screenCursor ?? DEFAULT_SCREEN_CURSOR).keyframes.map((k) => (
               <div
                 key={k.id}
-                className="flex items-center gap-1 text-[10px] text-zinc-400 border border-zinc-800 rounded px-1 py-1"
+                className="flex items-center gap-1 text-[10px] text-[var(--os-text-secondary)] border border-[var(--os-border-default)] rounded px-1 py-1"
               >
                 <span className="font-mono w-14 shrink-0">{k.time.toFixed(2)}s</span>
                 <Input
@@ -1728,8 +1726,8 @@ export function PropertiesPanel() {
         </div>
 
         <div className="space-y-3">
-          <h4 className="text-xs font-medium text-zinc-400">Camera</h4>
-          <label className="text-xs text-zinc-500">Default Zoom</label>
+          <h4 className="text-xs font-medium text-[var(--os-text-secondary)]">Camera</h4>
+          <label className="text-xs text-[var(--os-text-muted)]">Default Zoom</label>
           <Slider
             value={project?.camera?.defaultZoom ?? 1}
             min={0.5}
@@ -1750,7 +1748,7 @@ export function PropertiesPanel() {
             }
             label="x"
           />
-          <label className="text-xs text-zinc-500">Default Tilt X</label>
+          <label className="text-xs text-[var(--os-text-muted)]">Default Tilt X</label>
           <Slider
             value={project?.camera?.defaultTiltX ?? 0}
             min={-30}
@@ -1771,7 +1769,7 @@ export function PropertiesPanel() {
             }
             label="deg"
           />
-          <label className="text-xs text-zinc-500">Default Tilt Y</label>
+          <label className="text-xs text-[var(--os-text-muted)]">Default Tilt Y</label>
           <Slider
             value={project?.camera?.defaultTiltY ?? 0}
             min={-30}

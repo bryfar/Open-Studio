@@ -90,7 +90,7 @@ function ClipFilmstripLayer({
       {Array.from({ length: tiles }).map((_, i) => (
         <div
           key={`${clip.id}-t-${i}`}
-          className="h-full min-w-[32px] flex-1 bg-[var(--bg-tertiary)]/90"
+          className="h-full min-w-[32px] flex-1 bg-[var(--os-bg-elevated)]/90"
           style={
             bgUrl
               ? {
@@ -770,90 +770,6 @@ export function Timeline({
     });
   }, [project, currentTime, dispatch]);
 
-  const addClipMarkerAtPlayhead = useCallback(() => {
-    if (!project || !selectedClipContext) return;
-    const safeTime = Math.max(
-      selectedClipContext.clip.startTime,
-      Math.min(
-        selectedClipContext.clip.startTime + selectedClipContext.clip.duration,
-        currentTime
-      )
-    );
-    const markerCount = project.markers?.length ?? 0;
-    const marker: TimelineMarker = {
-      id: generateId(),
-      time: safeTime,
-      label: `Clip M${markerCount + 1}`,
-      color: '#38bdf8',
-      clipId: selectedClipContext.clip.id,
-    };
-    dispatch({
-      type: 'UPDATE_PROJECT',
-      payload: {
-        markers: [...(project.markers ?? []), marker].sort((a, b) => a.time - b.time),
-      },
-    });
-  }, [project, selectedClipContext, currentTime, dispatch]);
-
-  const addRegionFromSelectedClip = useCallback(() => {
-    if (!project || !selectedClipContext) return;
-    const clip = selectedClipContext.clip;
-    const regionCount = project.regions?.length ?? 0;
-    dispatch({
-      type: 'UPDATE_PROJECT',
-      payload: {
-        regions: [
-          ...(project.regions ?? []),
-          {
-            id: generateId(),
-            start: clip.startTime,
-            end: clip.startTime + clip.duration,
-            label: `Region ${regionCount + 1}`,
-            color: '#a78bfa',
-          },
-        ],
-      },
-    });
-  }, [project, selectedClipContext, dispatch]);
-
-  const goToAdjacentMarker = useCallback(
-    (direction: 'prev' | 'next') => {
-      if (!project || sortedMarkers.length === 0) return;
-      const epsilon = 1e-4;
-      if (direction === 'next') {
-        const next = sortedMarkers.find((marker) => marker.time > currentTime + epsilon) ?? sortedMarkers[0];
-        dispatch({ type: 'SET_CURRENT_TIME', payload: next.time });
-        return;
-      }
-      const previous = [...sortedMarkers].reverse().find((marker) => marker.time < currentTime - epsilon);
-      const target = previous ?? sortedMarkers[sortedMarkers.length - 1];
-      dispatch({ type: 'SET_CURRENT_TIME', payload: target.time });
-    },
-    [project, sortedMarkers, currentTime, dispatch]
-  );
-
-  const removeMarkerNearPlayhead = useCallback(() => {
-    if (!project || sortedMarkers.length === 0) return;
-    const threshold = Math.max(0.12, SNAP_PX / pixelsPerSecond);
-    const hit = sortedMarkers.reduce<{ marker: TimelineMarker | null; distance: number }>(
-      (best, marker) => {
-        const distance = Math.abs(marker.time - currentTime);
-        if (distance < best.distance) {
-          return { marker, distance };
-        }
-        return best;
-      },
-      { marker: null, distance: Number.POSITIVE_INFINITY }
-    );
-    if (!hit.marker || hit.distance > threshold) return;
-    dispatch({
-      type: 'UPDATE_PROJECT',
-      payload: {
-        markers: sortedMarkers.filter((marker) => marker.id !== hit.marker?.id),
-      },
-    });
-  }, [project, sortedMarkers, currentTime, pixelsPerSecond, dispatch]);
-
   const duplicateSelectedClips = useCallback(() => {
     const st = useEditorStore.getState();
     if (!st.project) return;
@@ -1349,234 +1265,188 @@ export function Timeline({
   if (!project) return null;
 
   return (
-    <div className="relative flex h-full w-full flex-col overflow-hidden bg-transparent text-[var(--text-primary)]">
+    <div className="relative flex h-full w-full flex-col overflow-hidden bg-transparent text-[var(--os-text-primary)]">
       <div
-        className="flex shrink-0 flex-col border-b border-[var(--border-default)] bg-gradient-to-b from-[#0f1522] to-[#0c111c]"
+        className="flex shrink-0 flex-col border-b border-[var(--os-border-default)] bg-gradient-to-b from-[var(--os-timeline-track-bg)] to-[var(--os-timeline-bg)]"
         onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
-          <div className="flex min-w-0 flex-1 items-center gap-1">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-2.5 px-3 py-2.5">
+          <div
+            className="flex items-center gap-1 rounded-[var(--os-radius-md)] border border-[var(--os-border-default)]/80 bg-[var(--os-surface-1)]/50 px-1.5 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+            role="toolbar"
+            aria-label="Edición de clips"
+          >
             <button
               type="button"
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-[var(--text-secondary)] hover:bg-[#1a2438]/80"
-              title="Ocultar/mostrar línea de tiempo (T)"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-[var(--os-text-secondary)] hover:bg-[var(--os-bg-hover)]/80"
+              title={
+                compact
+                  ? 'Expandir línea de tiempo (más altura para pistas)'
+                  : 'Compactar línea de tiempo (menos altura; tecla T si está asignada)'
+              }
+              aria-label={compact ? 'Expandir panel del timeline' : 'Compactar panel del timeline'}
               onClick={() => onToggleCompact?.()}
             >
               {compact ? (
-                <icons.chevronUp size={14} className="text-[var(--text-muted)]" />
+                <icons.chevronUp size={16} className="text-[var(--os-text-muted)]" aria-hidden />
               ) : (
-                <icons.chevronDown size={14} className="text-[var(--text-muted)]" />
+                <icons.chevronDown size={16} className="text-[var(--os-text-muted)]" aria-hidden />
               )}
             </button>
-            <div className="mx-1 h-5 w-px bg-[var(--border-default)]" />
+            <div className="mx-0.5 h-5 w-px shrink-0 bg-[var(--os-border-default)]/90" aria-hidden />
             <Button
               type="button"
               variant="ghost"
               size="sm"
-              className="h-8 px-2 text-[var(--text-secondary)] hover:bg-[#1a2438]/80"
-              title="Dividir en el cabezal (S)"
+              className="h-9 w-9 shrink-0 p-0 text-[var(--os-text-secondary)] hover:bg-[var(--os-bg-hover)]/80"
+              title="Dividir clip en la posición del cabezal (atajo S)"
+              aria-label="Dividir en el cabezal"
               onClick={(e) => {
                 e.stopPropagation();
                 handleSplitAtPlayhead();
               }}
             >
-              <icons.cut size={16} />
+              <icons.cut size={16} aria-hidden />
             </Button>
             <Button
               type="button"
               variant="ghost"
               size="sm"
-              className="h-8 px-2 text-[var(--text-secondary)] hover:bg-[#1a2438]/80"
-              title="Duplicar clips seleccionados (R)"
+              className="h-9 w-9 shrink-0 p-0 text-[var(--os-text-secondary)] hover:bg-[var(--os-bg-hover)]/80"
+              title="Duplicar los clips seleccionados en la línea de tiempo (atajo R)"
+              aria-label="Duplicar clips seleccionados"
               onClick={(e) => {
                 e.stopPropagation();
                 duplicateSelectedClips();
               }}
             >
-              <icons.copy size={16} />
+              <icons.copy size={16} aria-hidden />
             </Button>
             <Button
               type="button"
               variant="ghost"
               size="sm"
-              className="h-8 px-2 text-[var(--text-secondary)] hover:bg-[#1a2438]/80"
-              title="Eliminar clips seleccionados (Supr / Retroceso)"
+              className="h-9 w-9 shrink-0 p-0 text-[var(--os-text-secondary)] hover:bg-[var(--os-bg-hover)]/80"
+              title="Eliminar los clips seleccionados (Suprimir o Retroceso)"
+              aria-label="Eliminar clips seleccionados"
               onClick={(e) => {
                 e.stopPropagation();
                 deleteSelectedClips();
               }}
             >
-              <icons.trash size={16} />
+              <icons.trash size={16} aria-hidden />
             </Button>
             <Button
               type="button"
               variant="ghost"
               size="sm"
               className={cn(
-                'h-8 px-2 hover:bg-[#1a2438]/80',
-                muteTargetMuted ? 'text-amber-400/90' : 'text-[var(--text-secondary)]'
+                'h-9 w-9 shrink-0 p-0 hover:bg-[var(--os-bg-hover)]/80',
+                muteTargetMuted ? 'text-[var(--os-warning)]' : 'text-[var(--os-text-secondary)]'
               )}
-              title="Silenciar / activar pista de audio (seleccionada o bajo el cabezal)"
+              title="Silenciar o activar audio de la pista seleccionada o de la que está bajo el cabezal"
+              aria-label={muteTargetMuted ? 'Activar audio de la pista' : 'Silenciar pista de audio'}
               onClick={(e) => {
                 e.stopPropagation();
                 toggleMuteTargetTrack();
               }}
             >
-              {muteTargetMuted ? <icons.volumeMute size={16} /> : <icons.volume size={16} />}
+              {muteTargetMuted ? <icons.volumeMute size={16} aria-hidden /> : <icons.volume size={16} aria-hidden />}
             </Button>
+          </div>
+
+          <div className="hidden h-7 w-px shrink-0 bg-[var(--os-border-default)]/70 sm:block" aria-hidden />
+
+          <div
+            className="flex flex-wrap items-center gap-1 rounded-[var(--os-radius-md)] border border-[var(--os-border-default)]/80 bg-[var(--os-surface-1)]/50 px-1.5 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+            role="toolbar"
+            aria-label="Marcadores en el tiempo"
+          >
             <Button
               type="button"
               variant="ghost"
               size="sm"
-              className="h-8 px-2 text-[var(--text-secondary)] hover:bg-[#1a2438]/80"
-              title="Agregar marcador en cabezal (Shift+M)"
+              className="h-9 w-9 shrink-0 p-0 text-[var(--os-text-secondary)] hover:bg-[var(--os-bg-hover)]/80"
+              title="Añadir marcador en el cabezal (atajo: Mayús+M)"
+              aria-label="Añadir marcador en el cabezal"
               onClick={(e) => {
                 e.stopPropagation();
                 addMarkerAtPlayhead();
               }}
             >
-              <icons.flag size={14} />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-8 px-2 text-[var(--text-secondary)] hover:bg-[#1a2438]/80"
-              title="Agregar marcador de clip en cabezal"
-              disabled={!selectedClipContext}
-              onClick={(e) => {
-                e.stopPropagation();
-                addClipMarkerAtPlayhead();
-              }}
-            >
-              <icons.flag size={14} />
-              <icons.layers size={12} />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-8 px-2 text-[var(--text-secondary)] hover:bg-[#1a2438]/80"
-              title="Crear región desde clip seleccionado"
-              disabled={!selectedClipContext}
-              onClick={(e) => {
-                e.stopPropagation();
-                addRegionFromSelectedClip();
-              }}
-            >
-              <icons.maximize size={14} />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-8 px-2 text-[var(--text-secondary)] hover:bg-[#1a2438]/80"
-              title="Ir al marcador anterior"
-              onClick={(e) => {
-                e.stopPropagation();
-                goToAdjacentMarker('prev');
-              }}
-            >
-              <icons.skipBack size={14} />
-              <icons.flag size={12} />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-8 px-2 text-[var(--text-secondary)] hover:bg-[#1a2438]/80"
-              title="Ir al marcador siguiente"
-              onClick={(e) => {
-                e.stopPropagation();
-                goToAdjacentMarker('next');
-              }}
-            >
-              <icons.flag size={12} />
-              <icons.skipForward size={14} />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-8 px-2 text-[var(--text-secondary)] hover:bg-[#1a2438]/80"
-              title="Eliminar marcador cercano al cabezal"
-              onClick={(e) => {
-                e.stopPropagation();
-                removeMarkerNearPlayhead();
-              }}
-            >
-              <icons.trash size={14} />
-              <icons.flag size={12} />
+              <icons.flag size={16} aria-hidden />
             </Button>
           </div>
 
-          <div className="flex items-center justify-center gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0 text-[var(--text-secondary)] hover:bg-[#1a2438]/80"
-              title="Fotograma anterior (←)"
-              onClick={(e) => {
-                e.stopPropagation();
-                nudgeFrame(-1);
-              }}
-            >
-              <icons.skipBack size={16} />
-            </Button>
-            <Button
-              type="button"
-              variant="primary"
-              size="sm"
-              className="h-9 w-9 rounded-full p-0 shadow-md"
-              title={playbackState === 'playing' ? 'Pausa' : 'Reproducir'}
-              onClick={(e) => {
-                e.stopPropagation();
-                togglePlayback();
-              }}
-            >
-              {playbackState === 'playing' ? (
-                <icons.pause size={18} className="text-white" />
-              ) : (
-                <icons.play size={18} className="ml-0.5 text-white" />
-              )}
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0 text-[var(--text-secondary)] hover:bg-[#1a2438]/80"
-              title="Detener (K)"
-              onClick={(e) => {
-                e.stopPropagation();
-                dispatch({ type: 'SET_PLAYBACK_STATE', payload: 'stopped' });
-                dispatch({ type: 'SET_CURRENT_TIME', payload: 0 });
-              }}
-            >
-              <icons.stop size={16} />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0 text-[var(--text-secondary)] hover:bg-[#1a2438]/80"
-              title="Fotograma siguiente (→)"
-              onClick={(e) => {
-                e.stopPropagation();
-                nudgeFrame(1);
-              }}
-            >
-              <icons.skipForward size={16} />
-            </Button>
-            <div className="ml-2 rounded-md border border-[var(--border-default)] bg-[var(--bg-primary)] px-3 py-1 font-mono text-[11px] tabular-nums text-[var(--text-primary)]">
+          <div className="flex min-w-0 flex-[1_1_14rem] flex-wrap items-center justify-center gap-2">
+            <div className="flex items-center gap-1 rounded-[var(--os-radius-lg)] border border-[var(--os-border-strong)]/50 bg-[var(--os-bg-panel)]/90 px-1.5 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 shrink-0 p-0 text-[var(--os-text-secondary)] hover:bg-[var(--os-bg-hover)]/80"
+                title="Fotograma anterior (←)"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  nudgeFrame(-1);
+                }}
+              >
+                <icons.skipBack size={16} />
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                className="h-9 w-9 shrink-0 rounded-full p-0 shadow-md ring-1 ring-[var(--os-border-default)]/40 ring-offset-1 ring-offset-[var(--os-bg-panel)]"
+                title={playbackState === 'playing' ? 'Pausa' : 'Reproducir'}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  togglePlayback();
+                }}
+              >
+                {playbackState === 'playing' ? (
+                  <icons.pause size={18} className="text-[var(--os-text-inverse)]" />
+                ) : (
+                  <icons.play size={18} className="ml-0.5 text-[var(--os-text-inverse)]" />
+                )}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 shrink-0 p-0 text-[var(--os-text-secondary)] hover:bg-[var(--os-bg-hover)]/80"
+                title="Detener (K)"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  dispatch({ type: 'SET_PLAYBACK_STATE', payload: 'stopped' });
+                  dispatch({ type: 'SET_CURRENT_TIME', payload: 0 });
+                }}
+              >
+                <icons.stop size={16} />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 shrink-0 p-0 text-[var(--os-text-secondary)] hover:bg-[var(--os-bg-hover)]/80"
+                title="Fotograma siguiente (→)"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  nudgeFrame(1);
+                }}
+              >
+                <icons.skipForward size={16} />
+              </Button>
+            </div>
+            <div className="rounded-md border border-[var(--os-border-default)] bg-[var(--os-bg-app)] px-3 py-1.5 font-mono text-[11px] tabular-nums text-[var(--os-text-primary)]">
               <span>{formatTime(currentTime)}</span>
-              <span className="mx-1.5 text-[var(--text-muted)]">/</span>
-              <span className="text-[var(--text-secondary)]">{formatTime(project.duration)}</span>
+              <span className="mx-1.5 text-[var(--os-text-muted)]">/</span>
+              <span className="text-[var(--os-text-secondary)]">{formatTime(project.duration)}</span>
             </div>
           </div>
 
-          <div className="ml-auto flex items-center justify-end gap-1">
+          <div className="ml-auto flex shrink-0 items-center justify-end gap-1.5">
             <div className="relative" ref={toolsMenuRef}>
               <Button
                 type="button"
@@ -1585,8 +1455,8 @@ export function Timeline({
                 className={cn(
                   'h-8 px-2',
                   snappingEnabled || rippleEditingEnabled || showCropPanel || showLayersPanel
-                    ? 'text-sky-300 bg-[#16243b]'
-                    : 'text-[var(--text-secondary)]'
+                    ? 'text-[var(--os-accent-primary)] bg-[var(--os-bg-active)]'
+                    : 'text-[var(--os-text-secondary)]'
                 )}
                 title="Herramientas de timeline"
                 onClick={(e) => {
@@ -1598,12 +1468,15 @@ export function Timeline({
                 <icons.chevronDown size={12} className="ml-1" />
               </Button>
               {showToolsDropdown && (
-                <div className="absolute bottom-9 right-0 z-dropdown min-w-[190px] rounded-lg border border-[#2a3348] bg-[#0f1522] p-1.5 shadow-xl">
+                <div
+                  className="absolute right-0 top-[calc(100%+6px)] z-[300] min-w-[190px] rounded-lg border border-[var(--os-border-default)] bg-[var(--os-media-card-bg)] p-1.5 shadow-xl"
+                  role="menu"
+                >
                   <button
                     type="button"
                     className={cn(
-                      'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-[#17233a]',
-                      snappingEnabled ? 'text-sky-300' : 'text-[var(--text-secondary)]'
+                      'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-[var(--os-surface-2)]',
+                      snappingEnabled ? 'text-[var(--os-accent-primary)]' : 'text-[var(--os-text-secondary)]'
                     )}
                     onClick={() => toggleSnapping()}
                   >
@@ -1613,8 +1486,8 @@ export function Timeline({
                   <button
                     type="button"
                     className={cn(
-                      'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-[#17233a]',
-                      rippleEditingEnabled ? 'text-emerald-300' : 'text-[var(--text-secondary)]'
+                      'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-[var(--os-surface-2)]',
+                      rippleEditingEnabled ? 'text-[var(--os-success)]' : 'text-[var(--os-text-secondary)]'
                     )}
                     onClick={() => toggleRippleEditing()}
                   >
@@ -1624,8 +1497,8 @@ export function Timeline({
                   <button
                     type="button"
                     className={cn(
-                      'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-[#17233a]',
-                      showCropPanel ? 'text-sky-300' : 'text-[var(--text-secondary)]'
+                      'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-[var(--os-surface-2)]',
+                      showCropPanel ? 'text-[var(--os-accent-primary)]' : 'text-[var(--os-text-secondary)]'
                     )}
                     onClick={() => {
                       setShowCropPanel((prev) => !prev);
@@ -1640,8 +1513,8 @@ export function Timeline({
                   <button
                     type="button"
                     className={cn(
-                      'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-[#17233a]',
-                      showLayersPanel ? 'text-sky-300' : 'text-[var(--text-secondary)]'
+                      'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-[var(--os-surface-2)]',
+                      showLayersPanel ? 'text-[var(--os-accent-primary)]' : 'text-[var(--os-text-secondary)]'
                     )}
                     onClick={() => {
                       setShowLayersPanel((prev) => !prev);
@@ -1655,8 +1528,8 @@ export function Timeline({
                   <button
                     type="button"
                     className={cn(
-                      'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-[#17233a]',
-                      showMaskPanel ? 'text-sky-300' : 'text-[var(--text-secondary)]'
+                      'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-[var(--os-surface-2)]',
+                      showMaskPanel ? 'text-[var(--os-accent-primary)]' : 'text-[var(--os-text-secondary)]'
                     )}
                     onClick={() => {
                       setShowMaskPanel((prev) => !prev);
@@ -1674,7 +1547,7 @@ export function Timeline({
               type="button"
               variant="ghost"
               size="sm"
-              className="h-8 w-8 p-0 text-[var(--text-secondary)] hover:bg-[#1a2438]/80"
+              className="h-8 w-8 p-0 text-[var(--os-text-secondary)] hover:bg-[var(--os-bg-hover)]/80"
               title="Alejar zoom (-)"
               disabled={isZoomMin}
               onClick={(e) => {
@@ -1692,14 +1565,14 @@ export function Timeline({
                 step={5}
                 onChange={handleZoomChange}
                 showValue={false}
-                className="[&_input]:accent-[var(--accent-primary)]"
+                className="[&_input]:accent-[var(--os-accent-primary)]"
               />
             </div>
             <Button
               type="button"
               variant="ghost"
               size="sm"
-              className="h-8 w-8 p-0 text-[var(--text-secondary)] hover:bg-[#1a2438]/80"
+              className="h-8 w-8 p-0 text-[var(--os-text-secondary)] hover:bg-[var(--os-bg-hover)]/80"
               title="Acercar zoom (+)"
               disabled={isZoomMax}
               onClick={(e) => {
@@ -1713,89 +1586,105 @@ export function Timeline({
         </div>
 
         {!compact && (
-          <div className="flex items-center gap-1 overflow-x-auto border-t border-[var(--border-default)] px-3 py-1.5">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-7 text-[11px] text-[var(--text-muted)]"
-              title="Keyframe de cámara"
-              onClick={(e) => handleAddCameraKeyframe(e)}
-            >
-              <icons.plus size={12} />
-              <span className="ml-1">Cam KF</span>
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-7 text-[11px] text-[var(--text-muted)]"
-              title="Agregar introducción (I)"
-              onClick={(e) => {
-                e.stopPropagation();
-                addQuickTitleClip('intro');
-              }}
-            >
-              <icons.workflow size={12} />
-              <span className="ml-1">+ Intro</span>
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-7 text-[11px] text-[var(--text-muted)]"
-              title="Agregar cierre (O)"
-              onClick={(e) => {
-                e.stopPropagation();
-                addQuickTitleClip('outro');
-              }}
-            >
-              <icons.workflow size={12} />
-              <span className="ml-1">+ Cierre</span>
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-7 text-[11px] text-[var(--text-muted)]"
-              title="Agregar clip de vídeo"
-              onClick={(e) => handleAddTrack('video', e)}
-            >
-              <icons.video size={12} />
-              <span className="ml-1">Vídeo</span>
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-7 text-[11px] text-[var(--text-muted)]"
-              title="Agregar clip de audio"
-              onClick={(e) => handleAddTrack('audio', e)}
-            >
-              <icons.audio size={12} />
-              <span className="ml-1">Audio</span>
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-7 text-[11px] text-[var(--text-muted)]"
-              title="Agregar clip de texto"
-              onClick={(e) => handleAddTrack('text', e)}
-            >
-              <icons.text size={12} />
-              <span className="ml-1">Texto</span>
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-7 text-[11px] text-[var(--text-muted)]"
-              onClick={(e) => handleAddTrack('background', e)}
-            >
-              <icons.layers size={12} />
-              <span className="ml-1">Fondo</span>
-            </Button>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 overflow-x-auto border-t border-[var(--os-border-default)] bg-[var(--os-bg-app)]/35 px-3 py-2">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--os-text-muted)]">
+                Inserción
+              </span>
+              <div className="flex flex-wrap items-center gap-1 rounded-[var(--os-radius-md)] border border-[var(--os-border-default)]/70 bg-[var(--os-surface-1)]/40 p-0.5">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 gap-1 px-2 text-[11px] text-[var(--os-text-secondary)]"
+                  title="Keyframe de cámara"
+                  onClick={(e) => handleAddCameraKeyframe(e)}
+                >
+                  <icons.keyframe size={14} className="text-[var(--os-accent-primary)]" />
+                  <span>Cam KF</span>
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 gap-1 px-2 text-[11px] text-[var(--os-text-secondary)]"
+                  title="Agregar introducción (I)"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    addQuickTitleClip('intro');
+                  }}
+                >
+                  <icons.text size={14} />
+                  <span>Intro</span>
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 gap-1 px-2 text-[11px] text-[var(--os-text-secondary)]"
+                  title="Agregar cierre (O)"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    addQuickTitleClip('outro');
+                  }}
+                >
+                  <icons.text size={14} className="opacity-70" />
+                  <span>Cierre</span>
+                </Button>
+              </div>
+            </div>
+            <div className="hidden h-7 w-px shrink-0 bg-[var(--os-border-default)]/70 md:block" aria-hidden />
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--os-text-muted)]">
+                Pistas
+              </span>
+              <div className="flex flex-wrap items-center gap-1 rounded-[var(--os-radius-md)] border border-[var(--os-border-default)]/70 bg-[var(--os-surface-1)]/40 p-0.5">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 gap-1 px-2 text-[11px] text-[var(--os-text-secondary)]"
+                  title="Agregar pista de vídeo"
+                  onClick={(e) => handleAddTrack('video', e)}
+                >
+                  <icons.video size={14} className="text-[var(--os-clip-video)]" />
+                  <span>Vídeo</span>
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 gap-1 px-2 text-[11px] text-[var(--os-text-secondary)]"
+                  title="Agregar pista de audio"
+                  onClick={(e) => handleAddTrack('audio', e)}
+                >
+                  <icons.audio size={14} className="text-[var(--os-clip-audio)]" />
+                  <span>Audio</span>
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 gap-1 px-2 text-[11px] text-[var(--os-text-secondary)]"
+                  title="Agregar pista de texto"
+                  onClick={(e) => handleAddTrack('text', e)}
+                >
+                  <icons.text size={14} className="text-[var(--os-clip-text)]" />
+                  <span>Texto</span>
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 gap-1 px-2 text-[11px] text-[var(--os-text-secondary)]"
+                  title="Agregar pista de fondo"
+                  onClick={(e) => handleAddTrack('background', e)}
+                >
+                  <icons.layers size={14} className="text-[var(--os-clip-background)]" />
+                  <span>Fondo</span>
+                </Button>
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -1803,19 +1692,25 @@ export function Timeline({
       {!compact && (
       <div className="flex min-h-0 flex-1 overflow-hidden">
         <div
-          className="flex-shrink-0 border-r border-[var(--border-default)] bg-[#121827]"
+          className="flex-shrink-0 border-r border-[var(--os-border-default)] bg-[var(--os-bg-panel-2)]"
           style={{ width: TRACK_LABEL_WIDTH }}
         >
-          <div className="h-9 border-b border-[var(--border-default)] bg-[#0f1522]" />
+          <div className="h-9 border-b border-[var(--os-border-default)] bg-[var(--os-media-card-bg)]" />
           {project.tracks.map((track) => (
             <div
               key={track.id}
               className={cn(
-                'flex h-14 cursor-pointer items-center gap-2 border-b border-[var(--border-default)] px-2',
-                selectedTrackId === track.id ? 'bg-[#1a2438]/95' : '',
+                'flex h-14 cursor-pointer items-center gap-2.5 border-b border-[var(--os-border-default)] border-l-[3px] px-3 pl-2.5',
+                selectedTrackId === track.id ? 'bg-[var(--os-bg-hover)]/95' : 'bg-[var(--os-timeline-track-bg)]/30',
                 !track.visible ? 'opacity-50' : '',
                 track.muted ? 'opacity-70' : ''
               )}
+              style={{
+                borderLeftColor:
+                  track.type === 'background'
+                    ? timelineColors.background
+                    : timelineColors[track.type],
+              }}
               onClick={() =>
                 dispatch({
                   type: 'SET_SELECTED_TRACK',
@@ -1824,7 +1719,7 @@ export function Timeline({
               }
             >
               <button
-                className="p-1 rounded hover:bg-[#1a2438]"
+                className="rounded p-1.5 hover:bg-[var(--os-bg-hover)]"
                 onClick={(e) => {
                   e.stopPropagation();
                   toggleTrackVisible(track.id);
@@ -1832,13 +1727,13 @@ export function Timeline({
                 title={track.visible ? 'Ocultar pista' : 'Mostrar pista'}
               >
                 {track.visible ? (
-                  <icons.eye size={14} className="text-[var(--text-secondary)]" />
+                  <icons.eye size={14} className="text-[var(--os-text-secondary)]" />
                 ) : (
-                  <icons.eyeOff size={14} className="text-[var(--text-muted)]" />
+                  <icons.eyeOff size={14} className="text-[var(--os-text-muted)]" />
                 )}
               </button>
               <button
-                className="p-1 rounded hover:bg-[#1a2438]"
+                className="rounded p-1.5 hover:bg-[var(--os-bg-hover)]"
                 onClick={(e) => {
                   e.stopPropagation();
                   toggleTrackLocked(track.id);
@@ -1846,13 +1741,13 @@ export function Timeline({
                 title={track.locked ? 'Desbloquear pista' : 'Bloquear pista'}
               >
                 {track.locked ? (
-                  <icons.lock size={14} className="text-[var(--text-secondary)]" />
+                  <icons.lock size={14} className="text-[var(--os-text-secondary)]" />
                 ) : (
-                  <icons.unlock size={14} className="text-[var(--text-muted)]" />
+                  <icons.unlock size={14} className="text-[var(--os-text-muted)]" />
                 )}
               </button>
               <span
-                className="h-2 w-2 shrink-0 rounded-full"
+                className="h-2 w-2 shrink-0 rounded-full ring-1 ring-[var(--os-border-default)]/60"
                 style={{
                   backgroundColor:
                     track.type === 'background'
@@ -1861,34 +1756,36 @@ export function Timeline({
                 }}
                 aria-hidden
               />
-              <span className="flex-1 truncate text-xs text-[var(--text-secondary)]">{track.name}</span>
+              <span className="min-w-0 flex-1 truncate text-[12px] font-medium text-[var(--os-text-primary)]">
+                {track.name}
+              </span>
             </div>
           ))}
         </div>
 
         <div
           ref={timelineRef}
-          className="relative min-h-0 flex-1 cursor-pointer overflow-x-auto overflow-y-auto bg-[var(--bg-primary)]"
+          className="relative min-h-0 flex-1 cursor-pointer overflow-x-auto overflow-y-auto bg-[var(--os-bg-app)]"
           onClick={handleTimelineClick}
         >
           <div
             className="relative"
             style={{ width: contentWidth, minHeight: Math.max(contentMinHeight, 100) }}
           >
-            <div className="relative h-9 border-b border-[var(--border-default)] bg-[#0f1522]">
+            <div className="relative h-9 border-b border-[var(--os-border-default)] bg-[var(--os-media-card-bg)]">
               {rulerTicks.map(({ sec, isMajor }, idx) => (
                 <div
                   key={`tick-${idx}-${sec}`}
                   className={cn(
                     'absolute bottom-0 border-l',
                     isMajor
-                      ? 'top-0 border-[var(--border-default)]/80'
-                      : 'top-4 border-[var(--border-default)]/45'
+                      ? 'top-0 border-[var(--os-border-default)]/80'
+                      : 'top-4 border-[var(--os-border-default)]/45'
                   )}
                   style={{ left: sec * pixelsPerSecond }}
                 >
                   {isMajor ? (
-                    <span className="absolute left-1 top-1 text-[10px] font-medium tabular-nums text-[var(--text-muted)]">
+                    <span className="absolute left-1 top-1 text-[10px] font-medium tabular-nums text-[var(--os-text-muted)]">
                       {formatRulerLabel(sec)}
                     </span>
                   ) : null}
@@ -1929,8 +1826,8 @@ export function Timeline({
               <div
                 key={track.id}
                 className={cn(
-                  'relative h-14 border-b border-[var(--border-default)]',
-                  trackIndex % 2 === 0 ? 'bg-[#121827]' : 'bg-[#0d111a]',
+                  'relative h-14 border-b border-[var(--os-border-default)]',
+                  trackIndex % 2 === 0 ? 'bg-[var(--os-bg-panel-2)]' : 'bg-[var(--os-bg-subtle)]',
                   !track.visible ? 'opacity-40' : '',
                   track.muted && track.type === 'audio' ? 'opacity-[0.65]' : ''
                 )}
@@ -1946,8 +1843,8 @@ export function Timeline({
                       'absolute top-1 h-12 overflow-hidden rounded-md select-none ring-1 ring-black/40',
                       track.locked ? 'cursor-not-allowed' : 'cursor-move',
                       selectedClipIds?.includes(clip.id)
-                        ? 'ring-2 ring-[var(--accent-primary)]'
-                        : 'hover:ring-[var(--border-active)]/45'
+                        ? 'ring-2 ring-[var(--os-accent-primary)]'
+                        : 'hover:ring-[var(--os-border-accent)]/45'
                     )}
                     style={{
                       left: clip.startTime * pixelsPerSecond,
@@ -2023,11 +1920,11 @@ export function Timeline({
             ))}
 
             <div
-              className="pointer-events-none absolute bottom-0 top-0 z-10 w-px bg-[var(--accent-primary)] shadow-[0_0_12px_rgba(49,180,243,0.55)]"
+              className="pointer-events-none absolute bottom-0 top-0 z-10 w-px bg-[var(--os-accent-primary)] shadow-[0_0_12px_rgba(49,180,243,0.55)]"
               style={{ left: currentTime * pixelsPerSecond }}
             >
               <div
-                className="pointer-events-auto absolute left-1/2 top-0 z-20 h-2.5 w-4 -translate-x-1/2 -translate-y-1/2 cursor-grab rounded-full border border-[#d9edff] bg-[var(--accent-primary)] shadow-md"
+                className="pointer-events-auto absolute left-1/2 top-0 z-20 h-2.5 w-4 -translate-x-1/2 -translate-y-1/2 cursor-grab rounded-full border border-[var(--os-slider-thumb-border)] bg-[var(--os-accent-primary)] shadow-md"
                 onMouseDown={handlePlayheadMouseDown}
                 aria-label="Arrastrar cabezal de reproducción"
               />
@@ -2038,9 +1935,9 @@ export function Timeline({
       )}
 
       {showCropPanel && (
-        <div className="absolute right-3 top-12 z-popover w-[280px] rounded-xl border border-[#2a3348] bg-[#0f1522] p-3 shadow-xl">
-          <p className="text-xs font-semibold text-[#e5edff]">Crop</p>
-          <p className="mt-1 text-[11px] text-[#9fb0d6]">
+        <div className="absolute right-3 top-12 z-popover w-[280px] rounded-xl border border-[var(--os-border-default)] bg-[var(--os-media-card-bg)] p-3 shadow-xl">
+          <p className="text-xs font-semibold text-[var(--os-text-primary)]">Crop</p>
+          <p className="mt-1 text-[11px] text-[var(--os-text-secondary)]">
             {selectedClipContext && ['video', 'image'].includes(selectedClipContext.clip.type)
               ? `Clip: ${selectedClipContext.clip.name}`
               : 'Selecciona un clip de video o imagen'}
@@ -2053,8 +1950,8 @@ export function Timeline({
                 className={cn(
                   'rounded-md border px-2 py-1.5 text-[11px]',
                   cropAspect === opt
-                    ? 'border-sky-400 bg-sky-400/15 text-white'
-                    : 'border-[#2a3348] bg-[#121827] text-[#9fb0d6]'
+                    ? 'border-[var(--os-border-accent)] bg-[var(--os-timeline-selection)] text-[var(--os-text-primary)]'
+                    : 'border-[var(--os-border-default)] bg-[var(--os-bg-panel-2)] text-[var(--os-text-secondary)]'
                 )}
                 onClick={() => setCropAspect(opt)}
               >
@@ -2080,9 +1977,9 @@ export function Timeline({
       )}
 
       {showLayersPanel && (
-        <div className="absolute right-3 top-12 z-popover w-[260px] rounded-xl border border-[#2a3348] bg-[#0f1522] p-3 shadow-xl">
-          <p className="text-xs font-semibold text-[#e5edff]">Layers</p>
-          <p className="mt-1 text-[11px] text-[#9fb0d6]">
+        <div className="absolute right-3 top-12 z-popover w-[260px] rounded-xl border border-[var(--os-border-default)] bg-[var(--os-media-card-bg)] p-3 shadow-xl">
+          <p className="text-xs font-semibold text-[var(--os-text-primary)]">Layers</p>
+          <p className="mt-1 text-[11px] text-[var(--os-text-secondary)]">
             {selectedClipContext ? `Clip: ${selectedClipContext.clip.name}` : 'Selecciona un clip'}
           </p>
           <div className="mt-3 grid grid-cols-2 gap-2">
@@ -2109,9 +2006,9 @@ export function Timeline({
       )}
 
       {showMaskPanel && (
-        <div className="absolute right-3 top-12 z-popover w-[320px] rounded-xl border border-[#2a3348] bg-[#0f1522] p-3 shadow-xl">
-          <p className="text-xs font-semibold text-[#e5edff]">Mask Effects</p>
-          <p className="mt-1 text-[11px] text-[#9fb0d6]">
+        <div className="absolute right-3 top-12 z-popover w-[320px] rounded-xl border border-[var(--os-border-default)] bg-[var(--os-media-card-bg)] p-3 shadow-xl">
+          <p className="text-xs font-semibold text-[var(--os-text-primary)]">Mask Effects</p>
+          <p className="mt-1 text-[11px] text-[var(--os-text-secondary)]">
             {selectedClipContext && ['video', 'image'].includes(selectedClipContext.clip.type)
               ? `Clip: ${selectedClipContext.clip.name}`
               : 'Selecciona un clip de video o imagen'}
@@ -2120,10 +2017,10 @@ export function Timeline({
             {(['top', 'bottom', 'left', 'right'] as const).map((edge) => {
               const value = selectedClipContext?.clip.mediaMask?.[edge] ?? 0;
               return (
-                <div key={edge} className="rounded-md border border-[#2a3348] bg-[#121827] px-2 py-1.5">
+                <div key={edge} className="rounded-md border border-[var(--os-border-default)] bg-[var(--os-bg-panel-2)] px-2 py-1.5">
                   <div className="mb-1 flex items-center justify-between">
-                    <span className="capitalize text-[#d4e0fa]">{edge}</span>
-                    <span className="text-[#8fa3cf]">{(value * 100).toFixed(1)}%</span>
+                    <span className="capitalize text-[var(--os-text-primary)]">{edge}</span>
+                    <span className="text-[var(--os-text-secondary)]">{(value * 100).toFixed(1)}%</span>
                   </div>
                   <input
                     type="range"

@@ -2,10 +2,15 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useEditorStore } from '@/features/editor/store/editorStore';
+import { ep } from '@/features/editor/components/editorPanelUi';
 
 export function ScopesPanel() {
   const { project, currentTime } = useEditorStore();
-  const [realScopes, setRealScopes] = useState<{ waveform: number; vectorscope: number; histogram: number } | null>(null);
+  const [realScopes, setRealScopes] = useState<{
+    waveform: number;
+    vectorscope: number;
+    histogram: number;
+  } | null>(null);
 
   useEffect(() => {
     const video = document.querySelector('[data-openstudio-preview="video"]') as HTMLVideoElement | null;
@@ -57,15 +62,15 @@ export function ScopesPanel() {
   }, [project, currentTime, realScopes]);
 
   return (
-    <div className="space-y-3 text-xs text-zinc-300">
-      <p className="text-[11px] text-zinc-400">
+    <div className={ep.root}>
+      <p className={ep.intro}>
         Scopes de color ({realScopes ? 'señal real del preview' : 'fallback sintético'}).
       </p>
       {Object.entries(metrics).map(([name, value]) => (
-        <div key={name} className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-2">
-          <p className="mb-1 text-zinc-400">{name}</p>
-          <div className="h-2 rounded bg-zinc-800">
-            <div className="h-2 rounded bg-sky-400" style={{ width: `${value}%` }} />
+        <div key={name} className={ep.card}>
+          <p className="mb-1 text-[11px] font-medium capitalize text-[var(--os-text-secondary)]">{name}</p>
+          <div className={ep.meterTrack}>
+            <div className={ep.meterFill} style={{ width: `${value}%` }} />
           </div>
         </div>
       ))}

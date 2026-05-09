@@ -12,7 +12,7 @@ export function KeyframesGraphPanel({ onNotice }: { onNotice?: (msg: string) => 
   const [channel, setChannel] = useState<Channel>('positionX');
   const [selectedKeyId, setSelectedKeyId] = useState<string | null>(null);
   if (!project || !selectedClipId) {
-    return <p className="text-xs text-zinc-500">Selecciona un clip para editar curvas/keyframes.</p>;
+    return <p className="text-xs text-[var(--os-text-muted)]">Selecciona un clip para editar curvas/keyframes.</p>;
   }
 
   const target = project.tracks
@@ -47,12 +47,12 @@ export function KeyframesGraphPanel({ onNotice }: { onNotice?: (msg: string) => 
   };
 
   return (
-    <div className="space-y-2 text-xs text-zinc-300">
-      <p className="text-[11px] text-zinc-400">Graph editor por canal y punto.</p>
+    <div className="space-y-2 text-xs text-[var(--os-text-primary)]">
+      <p className="text-[11px] text-[var(--os-text-secondary)]">Graph editor por canal y punto.</p>
       <div>
-        <label className="text-[10px] uppercase tracking-wide text-zinc-500">Canal</label>
+        <label className="text-[10px] uppercase tracking-wide text-[var(--os-text-muted)]">Canal</label>
         <select
-          className="mt-1 w-full rounded border border-zinc-700 bg-zinc-900 px-2 py-1"
+          className="mt-1 w-full rounded border border-[var(--os-border-default)] bg-[var(--os-surface-1)] px-2 py-1 text-[var(--os-text-primary)]"
           value={channel}
           onChange={(e) => {
             const next = e.target.value as Channel;
@@ -69,9 +69,9 @@ export function KeyframesGraphPanel({ onNotice }: { onNotice?: (msg: string) => 
         </select>
       </div>
       <div>
-        <label className="text-[10px] uppercase tracking-wide text-zinc-500">Punto</label>
+        <label className="text-[10px] uppercase tracking-wide text-[var(--os-text-muted)]">Punto</label>
         <select
-          className="mt-1 w-full rounded border border-zinc-700 bg-zinc-900 px-2 py-1"
+          className="mt-1 w-full rounded border border-[var(--os-border-default)] bg-[var(--os-surface-1)] px-2 py-1 text-[var(--os-text-primary)]"
           value={selectedKey?.id ?? ''}
           onChange={(e) => setSelectedKeyId(e.target.value || null)}
         >
@@ -84,7 +84,13 @@ export function KeyframesGraphPanel({ onNotice }: { onNotice?: (msg: string) => 
       </div>
       <div className="grid grid-cols-2 gap-2">
         {EASINGS.map((e) => (
-          <button key={e} type="button" className="rounded border border-zinc-700 bg-zinc-900 px-2 py-1.5 hover:bg-zinc-800 disabled:opacity-40" onClick={() => applyEasing(e)} disabled={!selectedKey}>
+          <button
+            key={e}
+            type="button"
+            className="rounded border border-[var(--os-border-default)] bg-[var(--os-surface-1)] px-2 py-1.5 text-[var(--os-text-secondary)] hover:bg-[var(--os-surface-2)] disabled:opacity-40"
+            onClick={() => applyEasing(e)}
+            disabled={!selectedKey}
+          >
             {e}
           </button>
         ))}

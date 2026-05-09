@@ -116,6 +116,18 @@ function registerIpcHandlers() {
   });
 }
 
+function resolveWindowIcon() {
+  const iconPng = path.join(__dirname, 'build', 'icon.png');
+  try {
+    if (require('node:fs').existsSync(iconPng)) {
+      return iconPng;
+    }
+  } catch {
+    /* ignore */
+  }
+  return undefined;
+}
+
 async function createWindow() {
   const packagedServer = !isDev ? await startPackagedWebServer() : null;
   const win = new BrowserWindow({
@@ -125,6 +137,7 @@ async function createWindow() {
     minHeight: 700,
     show: false,
     backgroundColor: '#0b0f17',
+    icon: resolveWindowIcon(),
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,

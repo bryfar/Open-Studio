@@ -40,9 +40,15 @@ export default function RootLayout({
 }>) {
   const locale = getLocale();
   return (
-    <html lang={locale} className="h-full">
+    <html
+      lang={locale}
+      className="h-full"
+      data-theme="dark"
+      suppressHydrationWarning
+    >
       <body
-        className={`${inter.variable} ${instrumentSerif.variable} ${poppins.variable} ${montserrat.variable} ${oswald.variable} ${playfair.variable} ${bebas.variable} ${spaceGrotesk.variable} ${firaCode.variable} h-full overflow-hidden`}
+        className={`${inter.variable} ${instrumentSerif.variable} ${poppins.variable} ${montserrat.variable} ${oswald.variable} ${playfair.variable} ${bebas.variable} ${spaceGrotesk.variable} ${firaCode.variable} h-full min-h-0 overflow-hidden antialiased`}
+        suppressHydrationWarning
       >
         {children}
       </body>

@@ -10,5 +10,8 @@
     "start": "next start",
     "lint": "eslint",
     "create:feature": "node ./scripts/create-feature.mjs"
+  },
+  "devDependencies": {
+    "cross-env": "^10.1.0"
   }
 }

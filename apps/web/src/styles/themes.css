@@ -1,0 +1,188 @@
+/**
+ * Open Studio design system v1.0 — paletas editoriales (opt-in).
+ * Sin `data-theme` en `<html>`, manda `tokens.css` (:root) y la UI no cambia.
+ * Con `<html data-theme="light">` o `<html data-theme="dark">`, se aplican estos valores
+ * y el bloque final sincroniza nombres legacy usados en el repo.
+ */
+
+[data-theme="dark"] {
+  --os-bg-base: #ffffff;
+  --os-bg-subtle: #f7f7f5;
+  --os-surface: #ffffff;
+  --os-surface-alt: #f1f1ef;
+
+  --os-text-primary: #191919;
+  --os-text-secondary: #5f5e5b;
+  --os-text-muted: #8c8a86;
+  --os-text-inverse: #ffffff;
+
+  --os-border-default: #e7e5e4;
+  --os-border-strong: #d6d3d1;
+  --os-border-focus: #111111;
+
+  --os-accent: #111111;
+  --os-accent-on: #ffffff;
+
+  --os-success: #1f7a4d;
+  --os-success-soft: #e8f5ee;
+  --os-warning: #a16207;
+  --os-warning-soft: #fff4db;
+  --os-error: #b42318;
+  --os-error-soft: #feeceb;
+
+  --os-overlay: rgba(17, 17, 17, 0.48);
+  --os-selection: rgba(17, 17, 17, 0.08);
+  --os-ring: rgba(17, 17, 17, 0.18);
+
+  --os-timeline-track: #eceae7;
+  --os-timeline-grid: #dddad6;
+  --os-timeline-playhead: #111111;
+  --os-timeline-clip-video: #d9dde6;
+  --os-timeline-clip-audio: #b9e9c9;
+  --os-timeline-clip-text: #e7d6f7;
+  --os-timeline-clip-selected: #111111;
+
+  --os-canvas-bg: #0f0f10;
+  --os-toolbar-bg: rgba(255, 255, 255, 0.86);
+
+  /* Legacy bridge (misma jerarquía que tokens.css) */
+  --os-bg-app: var(--os-bg-base);
+  --os-bg-canvas: var(--os-canvas-bg);
+  --os-bg-elevated: var(--os-surface-alt);
+  --os-bg-panel: var(--os-surface);
+  --os-bg-panel-2: var(--os-surface-alt);
+  --os-bg-hover: #ebeae8;
+  --os-bg-active: #e0dfdc;
+  --os-surface-1: var(--os-surface);
+  --os-surface-2: var(--os-surface-alt);
+  --os-surface-3: #e4e3e0;
+  --os-border-accent: var(--os-border-focus);
+  --os-accent-primary: var(--os-accent);
+  --os-accent-secondary: #5f5e5b;
+  --os-accent-tertiary: #8c8a86;
+  --os-button-primary-bg: var(--os-accent);
+  --os-button-primary-bg-hover: #2a2a2a;
+  --os-button-primary-fg: var(--os-accent-on);
+  --os-button-secondary-bg: var(--os-surface-alt);
+  --os-button-secondary-bg-hover: var(--os-bg-hover);
+  --os-button-secondary-fg: var(--os-text-primary);
+  --os-button-ghost-fg: var(--os-text-secondary);
+  --os-text-disabled: #b0aea8;
+  --os-input-border: var(--os-border-default);
+  --os-input-bg: var(--os-surface);
+  --os-input-fg: var(--os-text-primary);
+  --os-input-placeholder: var(--os-text-muted);
+  --os-slider-track-bg: var(--os-border-default);
+  --os-slider-range-bg: var(--os-accent);
+  --os-slider-thumb-bg: var(--os-accent);
+  --os-slider-thumb-border: #f5f5f4;
+  --os-header-bg: var(--os-toolbar-bg);
+  --os-header-border: var(--os-border-default);
+  --os-media-card-bg: var(--os-surface-alt);
+  --os-media-card-bg-hover: var(--os-bg-hover);
+  --os-media-card-border: var(--os-border-default);
+  --os-timeline-bg: var(--os-bg-subtle);
+  --os-timeline-ruler: var(--os-text-secondary);
+  --os-timeline-track-bg: var(--os-timeline-track);
+  --os-timeline-track-border: var(--os-timeline-grid);
+  --os-timeline-selection: rgba(17, 17, 17, 0.1);
+  --os-clip-video: var(--os-timeline-clip-video);
+  --os-clip-audio: var(--os-timeline-clip-audio);
+  --os-clip-text: var(--os-timeline-clip-text);
+  --os-clip-image: #59d6a9;
+  --os-clip-background: #9ca3af;
+  --os-focus-ring: 0 0 0 2px rgba(17, 17, 17, 0.2);
+  --os-border-light: var(--os-border-default);
+  --os-accent-hover: var(--os-button-primary-bg-hover);
+}
+
+[data-theme="dark"] {
+  --os-bg-base: #141414;
+  --os-bg-subtle: #1c1c1c;
+  --os-surface: #232323;
+  --os-surface-alt: #2c2c2c;
+
+  --os-text-primary: #f5f5f4;
+  --os-text-secondary: #d6d3d1;
+  --os-text-muted: #a8a29e;
+  --os-text-inverse: #111111;
+
+  --os-border-default: #3a3a3a;
+  --os-border-strong: #4a4a4a;
+  --os-border-focus: #ffffff;
+
+  --os-accent: #ffffff;
+  --os-accent-on: #111111;
+
+  --os-success: #4ade80;
+  --os-success-soft: rgba(74, 222, 128, 0.14);
+  --os-warning: #fbbf24;
+  --os-warning-soft: rgba(251, 191, 36, 0.14);
+  --os-error: #f87171;
+  --os-error-soft: rgba(248, 113, 113, 0.14);
+
+  --os-overlay: rgba(0, 0, 0, 0.56);
+  --os-selection: rgba(255, 255, 255, 0.08);
+  --os-ring: rgba(255, 255, 255, 0.18);
+
+  --os-timeline-track: #252525;
+  --os-timeline-grid: #343434;
+  --os-timeline-playhead: #f5f5f4;
+  --os-timeline-clip-video: #4a5160;
+  --os-timeline-clip-audio: #1f7a4d;
+  --os-timeline-clip-text: #6d4aa2;
+  --os-timeline-clip-selected: #ffffff;
+
+  --os-canvas-bg: #0b0b0c;
+  --os-toolbar-bg: rgba(35, 35, 35, 0.86);
+
+  /* Legacy bridge */
+  --os-bg-app: var(--os-bg-base);
+  --os-bg-canvas: var(--os-canvas-bg);
+  --os-bg-elevated: #2e2e2e;
+  --os-bg-panel: var(--os-surface);
+  --os-bg-panel-2: var(--os-surface-alt);
+  --os-bg-hover: #2a2a2a;
+  --os-bg-active: #323232;
+  --os-surface-1: var(--os-surface);
+  --os-surface-2: var(--os-surface-alt);
+  --os-surface-3: #353535;
+  --os-border-accent: var(--os-border-focus);
+  --os-accent-primary: var(--os-accent);
+  --os-accent-secondary: #d6d3d1;
+  --os-accent-tertiary: #a8a29e;
+  --os-button-primary-bg: var(--os-accent);
+  --os-button-primary-bg-hover: #e5e5e5;
+  --os-button-primary-fg: var(--os-accent-on);
+  --os-button-secondary-bg: var(--os-surface-1);
+  --os-button-secondary-bg-hover: var(--os-bg-hover);
+  --os-button-secondary-fg: var(--os-text-primary);
+  --os-button-ghost-fg: var(--os-text-secondary);
+  --os-text-disabled: #78716c;
+  --os-input-border: var(--os-border-default);
+  --os-input-bg: var(--os-surface-1);
+  --os-input-fg: var(--os-text-primary);
+  --os-input-placeholder: var(--os-text-muted);
+  --os-slider-track-bg: var(--os-border-strong);
+  --os-slider-range-bg: var(--os-accent);
+  --os-slider-thumb-bg: var(--os-accent);
+  --os-slider-thumb-border: #3a3a3a;
+  --os-header-bg: var(--os-toolbar-bg);
+  --os-header-border: var(--os-border-default);
+  --os-media-card-bg: var(--os-surface-1);
+  --os-media-card-bg-hover: var(--os-bg-hover);
+  --os-media-card-border: var(--os-border-default);
+  --os-timeline-bg: #1a1a1a;
+  --os-timeline-ruler: var(--os-text-secondary);
+  --os-timeline-track-bg: var(--os-timeline-track);
+  --os-timeline-track-border: var(--os-timeline-grid);
+  --os-timeline-selection: rgba(255, 255, 255, 0.12);
+  --os-clip-video: var(--os-timeline-clip-video);
+  --os-clip-audio: var(--os-timeline-clip-audio);
+  --os-clip-text: var(--os-timeline-clip-text);
+  --os-clip-image: #59d6a9;
+  --os-clip-background: #6b7280;
+  --os-focus-ring: 0 0 0 2px rgba(255, 255, 255, 0.22);
+  --os-border-light: var(--os-border-default);
+  --os-accent-hover: var(--os-button-primary-bg-hover);
+}

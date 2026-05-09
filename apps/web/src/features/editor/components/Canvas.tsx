@@ -198,13 +198,13 @@ export function Canvas() {
         >
           <div
             ref={previewAreaRef}
-            className="flex min-h-0 min-w-0 flex-1 flex-col items-center justify-center overflow-auto"
+            className="relative flex min-h-0 min-w-0 flex-1 flex-col items-center justify-center overflow-auto"
           >
           <div className="relative mx-auto w-full min-w-0 max-w-full" style={previewBoxStyle}>
           <div
             className="absolute inset-0"
             style={{
-              backgroundColor: '#000',
+              backgroundColor: 'var(--os-canvas-bg)',
               zIndex: 0,
             }}
           />
@@ -245,21 +245,21 @@ export function Canvas() {
               </div>
             </div>
           )}
-
+          </div>
           {!canPlayVideo && !isLoading && !hasError && (
-            <div className="absolute inset-0 z-[5] flex items-center justify-center bg-[var(--bg-tertiary)]">
+            <div className="absolute inset-0 z-[15] flex w-full items-center justify-center bg-[var(--bg-tertiary)] px-6">
               {videoClips.length === 0 ? (
-                <div className="text-center">
+                <div className="w-full max-w-none text-center">
                   <icons.video className="mx-auto mb-3 text-[var(--text-muted)]" size={48} />
                   <p className="text-sm font-medium text-[var(--text-muted)]">
                     Añade clips de vídeo a la línea de tiempo
                   </p>
-                  <p className="mt-2 max-w-xs text-xs text-[var(--text-muted)]">
+                  <p className="mt-2 text-sm text-[var(--text-muted)]">
                     Arrastra medios a la biblioteca y haz clic para añadirlos al timeline
                   </p>
                 </div>
               ) : (
-                <div className="text-center">
+                <div className="w-full max-w-none text-center">
                   <p className="text-sm text-[var(--text-muted)]">
                     No hay clip de vídeo en esta posición del cabezal
                   </p>
@@ -268,15 +268,14 @@ export function Canvas() {
             </div>
           )}
           </div>
-          </div>
 
-          <div className="flex w-full min-w-0 shrink-0 items-center justify-end gap-2 border-t border-[#283046] bg-gradient-to-r from-[#0c1018] to-[#080b11] px-3 py-2">
+          <div className="flex w-full min-w-0 shrink-0 items-center justify-end gap-2 border-t border-[var(--os-border-default)] bg-gradient-to-r from-[var(--os-timeline-bg)] to-[var(--os-bg-canvas)] px-3 py-2">
             <label htmlFor="preview-zoom" className="sr-only">
               Zoom de vista previa
             </label>
             <select
               id="preview-zoom"
-              className="box-border h-9 min-w-0 cursor-pointer rounded-lg border border-[#2c3548] bg-[#141c2a] px-3 pr-9 text-[12px] font-medium text-[#e4ebff] shadow-inner shadow-black/20 focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/45"
+              className="box-border h-9 min-w-0 cursor-pointer rounded-[var(--os-input-radius)] border border-[var(--os-input-border)] bg-[var(--os-input-bg)] px-3 pr-9 text-[12px] font-medium text-[var(--os-input-fg)] shadow-inner shadow-black/20 focus:outline-none focus:ring-2 focus:ring-[var(--os-accent-primary)]/45"
               style={{ width: 'fit-content', maxWidth: 'min(100%, 11rem)' }}
               value={zoomSelect}
               onChange={(e) => setZoomSelect(e.target.value)}
@@ -289,12 +288,12 @@ export function Canvas() {
                 </option>
               ))}
             </select>
-            <div className="h-6 w-px shrink-0 bg-[#283046]" aria-hidden />
+            <div className="h-6 w-px shrink-0 bg-[var(--os-border-default)]" aria-hidden />
             <Button
               type="button"
               variant="ghost"
               size="icon"
-              className="h-9 w-9 shrink-0 rounded-lg border border-transparent text-[#b8c5e8] hover:border-[#3d4f6a] hover:bg-[#1a2438]"
+              className="h-9 w-9 shrink-0 rounded-lg border border-transparent text-[var(--os-text-secondary)] hover:border-[var(--os-border-strong)] hover:bg-[var(--os-bg-hover)]"
               title={isPreviewFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}
               onClick={() => void togglePreviewFullscreen()}
             >
