@@ -2,7 +2,7 @@
 
 ![Open Studio Cover](./portada.png)
 
-> The VS Code of web builders: build, edit, ship and scale from one workspace.
+> Open source browser-based video editor with desktop app. Edit, export and create shorts with AI assistance.
 
 English | [Español](./README.es.md)
 
@@ -14,12 +14,18 @@ English | [Español](./README.es.md)
 
 ## ⚡ Why Open Studio?
 
-| Platform | Strengths | Typical limitations | Open Studio difference |
-|---|---|---|---|
-| Webflow | Strong visual builder and CMS | Lower engineering-level control | Combines visual flow + code control + offline desktop |
-| Framer | Very fast for marketing pages | Less focused on complex product pipelines | End-to-end creation focus: pro editor, build, and distribution |
-| V0 | Fast AI UI generation | Requires manual production assembly | Monorepo ready to iterate, test, deploy, and package |
-| Open Studio | Editor + AI + desktop + release pipeline | Requires local initial setup | Open source end-to-end workflow to build and operate products |
+| Compared to | Open Studio Advantage |
+|---|---|
+| CapCut | Open source, self-hosted, extensible |
+| Kdenlive | Runs in browser, cross-platform desktop app |
+| DaVinci Resolve | Lightweight web interface, no download required |
+| Online editors | Works offline, local project storage |
+
+**Open Studio** combines:
+- 🎬 Professional multi-track timeline in the browser
+- 🤖 AI-assisted short video generation
+- 🖥️ Desktop app for offline work
+- 📦 One-click installers for Windows, macOS, Linux
 
 ## 🚀 Quick Start
 
