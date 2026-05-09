@@ -1,6 +1,6 @@
 # ✨ Open Studio
 
-![Open Studio Cover](./Profile banner - 2 (1).png)
+![Open Studio Cover](./docs/images/open-studio-banner.png)
 
 > Open source browser-based video editor with desktop app. Edit, export and create shorts with AI assistance.
 
