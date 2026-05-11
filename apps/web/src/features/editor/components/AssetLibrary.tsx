@@ -40,10 +40,12 @@ import { MulticamProxyPanel } from '@/features/editor/components/MulticamProxyPa
 import { BatchRenderPanel } from '@/features/editor/components/BatchRenderPanel';
 import { SubtitleTrackPanel } from '@/features/editor/components/SubtitleTrackPanel';
 import { TranscriptionPanel } from '@/features/editor/components/TranscriptionPanel';
+import { HyperframesAgentPanel } from '@/features/editor/components/HyperframesAgentPanel';
 import { scheduleMediaFileMetadataProbe } from '@/features/editor/lib/scheduleMediaProbe';
 
 type SectionType =
   | 'workflow'
+  | 'hyperframes-ai'
   | 'ai-shorts'
   | 'audio-pro'
   | 'timeline-pro'
@@ -80,6 +82,7 @@ const LIBRARY_SIDE_GROUPS: { label: string; ariaLabel: string; sections: Library
     ariaLabel: 'Estudio y flujo de trabajo',
     sections: [
       ['workflow', 'Estudio', 'workflow'],
+      ['hyperframes-ai', 'Hyperframes IA', 'layers'],
       ['ai-shorts', 'AI Shorts', 'workflow'],
       ['audio-pro', 'Audio Pro', 'audio'],
       ['timeline-pro', 'Timeline Pro', 'move'],
@@ -129,6 +132,7 @@ const LIBRARY_SIDE_GROUPS: { label: string; ariaLabel: string; sections: Library
 
 const SECTION_LABELS: Record<SectionType, string> = {
   workflow: 'Estudio · flujo rápido',
+  'hyperframes-ai': 'Hyperframes IA · BYOK',
   'ai-shorts': 'AI Shorts · UGC pipeline',
   'audio-pro': 'Audio Pro',
   'timeline-pro': 'Timeline Pro',
@@ -1031,6 +1035,9 @@ export function AssetLibrary({ mode }: { mode?: string }) {
             <ClipGeneratorPanel onNotice={setResourceNotice} />
           )}
 
+          {activeSection === 'hyperframes-ai' && (
+            <HyperframesAgentPanel onNotice={setResourceNotice} />
+          )}
           {activeSection === 'ai-shorts' && (
             <AIShortsPanel onNotice={setResourceNotice} />
           )}

@@ -8,4 +8,6 @@ contextBridge.exposeInMainWorld('openStudioDesktop', {
   saveBytes: (payload) => ipcRenderer.invoke('desktop:file:save-bytes', payload),
   saveText: (payload) => ipcRenderer.invoke('desktop:file:save-text', payload),
   openExternal: (url) => ipcRenderer.invoke('desktop:shell:open-external', url),
+  aiChatCompletion: (payload) => ipcRenderer.invoke('desktop:ai:chat-completion', payload),
+  hyperframesRender: (payload) => ipcRenderer.invoke('desktop:hyperframes:render', payload),
 });

@@ -1,5 +1,7 @@
 const path = require('node:path');
 const fs = require('node:fs/promises');
+const os = require('node:os');
+const { spawn } = require('node:child_process');
 const http = require('node:http');
 const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const { autoUpdater } = require('electron-updater');
@@ -73,6 +75,25 @@ async function writeKvStore(nextState) {
   await fs.writeFile(filePath, JSON.stringify(nextState), 'utf8');
 }
 
+async function findMp4Recursive(dir) {
+  let entries;
+  try {
+    entries = await fs.readdir(dir, { withFileTypes: true });
+  } catch {
+    return null;
+  }
+  for (const e of entries) {
+    const full = path.join(dir, e.name);
+    if (e.isDirectory()) {
+      const nested = await findMp4Recursive(full);
+      if (nested) return nested;
+    } else if (e.name.toLowerCase().endsWith('.mp4')) {
+      return full;
+    }
+  }
+  return null;
+}
+
 async function saveBinaryToPath(defaultFileName, bytes, filters) {
   const { canceled, filePath } = await dialog.showSaveDialog({
     defaultPath: path.join(app.getPath('documents'), defaultFileName),
@@ -131,6 +152,82 @@ function registerIpcHandlers() {
     } catch {
       return { ok: false };
     }
+  });
+
+  ipcMain.handle('desktop:ai:chat-completion', async (_event, payload) => {
+    try {
+      const { apiKey, baseUrl, model, messages } = payload ?? {};
+      if (!apiKey || !baseUrl || !model || !Array.isArray(messages) || messages.length === 0) {
+        return { ok: false, status: 400, error: 'Missing apiKey, baseUrl, model, or messages' };
+      }
+      const url = `${String(baseUrl).replace(/\/$/, '')}/chat/completions`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({ model, messages }),
+      });
+      const text = await res.text();
+      if (!res.ok) {
+        return { ok: false, status: res.status, error: text.slice(0, 4000) };
+      }
+      return { ok: true, data: JSON.parse(text) };
+    } catch (err) {
+      return {
+        ok: false,
+        status: 500,
+        error: err instanceof Error ? err.message : String(err),
+      };
+    }
+  });
+
+  ipcMain.handle('desktop:hyperframes:render', async (_event, payload) => {
+    const html = typeof payload?.html === 'string' ? payload.html : '';
+    if (!html.trim()) {
+      return { ok: false, error: 'Empty HTML', log: '' };
+    }
+    const tmp = await fs.mkdtemp(path.join(os.tmpdir(), 'openstudio-hf-'));
+    await fs.writeFile(path.join(tmp, 'index.html'), html, 'utf8');
+    let log = '';
+    return await new Promise((resolve) => {
+      const cmd = process.platform === 'win32' ? 'npx.cmd' : 'npx';
+      const proc = spawn(cmd, ['hyperframes', 'render'], {
+        cwd: tmp,
+        shell: true,
+        env: { ...process.env },
+      });
+      proc.stdout?.on('data', (d) => {
+        log += d.toString();
+      });
+      proc.stderr?.on('data', (d) => {
+        log += d.toString();
+      });
+      proc.on('error', (err) => {
+        resolve({ ok: false, error: err.message, log });
+      });
+      proc.on('close', async (code) => {
+        if (code !== 0) {
+          resolve({
+            ok: false,
+            error: `hyperframes render exited with ${code}. Install FFmpeg; run npx hyperframes --help.`,
+            log,
+          });
+          return;
+        }
+        try {
+          const mp4 = await findMp4Recursive(tmp);
+          resolve({ ok: true, outputPath: mp4 ?? undefined, log });
+        } catch (e) {
+          resolve({
+            ok: false,
+            error: e instanceof Error ? e.message : String(e),
+            log,
+          });
+        }
+      });
+    });
   });
 }
 
